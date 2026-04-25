@@ -1,23 +1,12 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { getDb } from "@/lib/mongodb";
-import PhotosGalleryClient from "./PhotosGalleryClient";
+import { PhotoGallery } from "@/app/components/photo-gallery";
+import { getLatestPhotos, getPhotoCategories } from "@/lib/content";
 
 export default async function PhotosPage() {
-  const db = await getDb();
-
-  const result = await db
-    .collection("photos")
-    .find({})
-    .sort({ createdAt: -1 })
-    .toArray();
-
-  const photos = result.map((photo: any) => ({
-    ...photo,
-    _id: photo._id.toString(),
-    createdAt: photo.createdAt?.toISOString?.() || "",
-  }));
+  const photos = await getLatestPhotos(24);
+  const categories = getPhotoCategories(photos);
 
   return (
     <main className="site-shell">
@@ -39,13 +28,10 @@ export default async function PhotosPage() {
       <section className="landing-hero photo-hero">
         <div className="hero-kicker">PHOTO GALLERY</div>
 
-        <h1 className="hero-title">
-          把生活片段放进一个可以浏览的画廊。
-        </h1>
+        <h1 className="hero-title">把生活片段放进一个可以浏览的画廊。</h1>
 
         <p className="hero-subtitle">
-          按分类整理照片，记录旅行、日常、风景和灵感瞬间。
-          点击任意图片可以放大浏览。
+          优先展示你上传到相册的照片；如果还没有独立相册数据，就回退到文章封面和示例内容。
         </p>
 
         <div className="hero-actions">
@@ -58,7 +44,9 @@ export default async function PhotosPage() {
         </div>
       </section>
 
-      <PhotosGalleryClient photos={photos} />
+      <section className="container section">
+        <PhotoGallery photos={photos} categories={categories} />
+      </section>
     </main>
   );
 }
