@@ -15,6 +15,41 @@ export type Post = {
   updatedAt?: Date | string;
 };
 
+export type PostVisit = {
+  _id: string;
+  slug: string;
+  ip: string;
+  device: string;
+  platform: string;
+  browser: string;
+  userAgent: string;
+  createdAt?: Date | string;
+};
+
+export type TrafficPoint = {
+  key: string;
+  label: string;
+  pv: number;
+  uv: number;
+};
+
+export type TrafficOverview = {
+  totalPv: number;
+  totalUv: number;
+  recentPv: number;
+  recentUv: number;
+  daily: TrafficPoint[];
+};
+
+export type TopPostTraffic = {
+  _id: string;
+  title: string;
+  slug: string;
+  views: number;
+  uv: number;
+  date?: string;
+};
+
 export type Photo = {
   _id: string;
   url?: string;
@@ -28,6 +63,17 @@ export type Photo = {
 type RawDocument = Record<string, unknown> & {
   _id?: { toString(): string } | string;
 };
+
+type PostVisitInput = {
+  ip?: string;
+  device?: string;
+  platform?: string;
+  browser?: string;
+  userAgent?: string;
+};
+
+const POST_VIEW_DEDUP_WINDOW_MS = 10 * 60 * 1000;
+const TRAFFIC_TIME_ZONE = "Asia/Shanghai";
 
 const FALLBACK_PHOTOS: Photo[] = [
   {
@@ -106,6 +152,45 @@ function mapPhoto(document: RawDocument): Photo {
   };
 }
 
+function mapPostVisit(document: RawDocument): PostVisit {
+  return {
+    _id: String(document._id),
+    slug: String(document.slug ?? ""),
+    ip: document.ip ? String(document.ip) : "",
+    device: document.device ? String(document.device) : "",
+    platform: document.platform ? String(document.platform) : "",
+    browser: document.browser ? String(document.browser) : "",
+    userAgent: document.userAgent ? String(document.userAgent) : "",
+    createdAt:
+      document.createdAt instanceof Date || typeof document.createdAt === "string"
+        ? document.createdAt
+        : undefined,
+  };
+}
+
+function formatTrafficKey(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: TRAFFIC_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const year = parts.find((part) => part.type === "year")?.value || "0000";
+  const month = parts.find((part) => part.type === "month")?.value || "00";
+  const day = parts.find((part) => part.type === "day")?.value || "00";
+
+  return `${year}-${month}-${day}`;
+}
+
+function formatTrafficLabel(date: Date) {
+  return new Intl.DateTimeFormat("zh-CN", {
+    timeZone: TRAFFIC_TIME_ZONE,
+    month: "numeric",
+    day: "numeric",
+  }).format(date);
+}
+
 async function safeQuery<T>(work: () => Promise<T>, fallback: T): Promise<T> {
   try {
     return await work();
@@ -149,6 +234,334 @@ export async function incrementPostViews(slug: string) {
     const db = await getDb();
     await db.collection("posts").updateOne({ slug }, { $inc: { views: 1 } });
   }, undefined);
+}
+
+function sanitizeVisitField(value: string | undefined, fallback: string) {
+  const normalized = String(value || "").trim();
+
+  if (!normalized) {
+    return fallback;
+  }
+
+  return normalized.slice(0, 240);
+}
+
+export async function trackPostView(
+  slug: string,
+  visit: PostVisitInput
+): Promise<number> {
+  const db = await getDb();
+  const now = new Date();
+  const ip = sanitizeVisitField(visit.ip, "unknown");
+  const device = sanitizeVisitField(visit.device, "Unknown device");
+  const platform = sanitizeVisitField(visit.platform, "Unknown platform");
+  const browser = sanitizeVisitField(visit.browser, "Unknown browser");
+  const userAgent = sanitizeVisitField(visit.userAgent, "");
+  const dedupeBoundary = new Date(now.getTime() - POST_VIEW_DEDUP_WINDOW_MS);
+  const recentVisit = await db.collection("post_visits").findOne(
+    {
+      slug,
+      ip,
+      userAgent,
+      createdAt: { $gte: dedupeBoundary },
+    },
+    {
+      projection: { _id: 1 },
+    }
+  );
+
+  if (recentVisit) {
+    const existingPost = await db.collection("posts").findOne(
+      { slug, published: true },
+      { projection: { views: 1 } }
+    );
+
+    if (!existingPost) {
+      throw new Error("Post not found");
+    }
+
+    return Number(existingPost.views ?? 0);
+  }
+
+  const updated = await db.collection("posts").findOneAndUpdate(
+    { slug, published: true },
+    {
+      $inc: { views: 1 },
+      $set: { updatedAt: now },
+    },
+    {
+      returnDocument: "after",
+      projection: { views: 1 },
+    }
+  );
+
+  if (!updated) {
+    throw new Error("Post not found");
+  }
+
+  await db.collection("post_visits").insertOne({
+    slug,
+    ip,
+    device,
+    platform,
+    browser,
+    userAgent,
+    createdAt: now,
+  });
+
+  return Number(updated.views ?? 0);
+}
+
+export async function getRecentPostVisits(
+  slug: string,
+  limit = 12
+): Promise<PostVisit[]> {
+  return safeQuery(async () => {
+    const db = await getDb();
+    const cursor = db
+      .collection("post_visits")
+      .find({ slug })
+      .sort({ createdAt: -1 });
+
+    if (limit > 0) {
+      cursor.limit(limit);
+    }
+
+    const visits = await cursor.toArray();
+    return visits.map((visit) => mapPostVisit(visit as RawDocument));
+  }, []);
+}
+
+export async function getLatestPostVisitsBySlugs(
+  slugs: string[]
+): Promise<Record<string, PostVisit>> {
+  return safeQuery(async () => {
+    const normalizedSlugs = Array.from(
+      new Set(slugs.map((slug) => slug.trim()).filter(Boolean))
+    );
+
+    if (normalizedSlugs.length === 0) {
+      return {};
+    }
+
+    const db = await getDb();
+    const visits = await db
+      .collection("post_visits")
+      .find({ slug: { $in: normalizedSlugs } })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    const latestVisits: Record<string, PostVisit> = {};
+
+    for (const visit of visits) {
+      const mappedVisit = mapPostVisit(visit as RawDocument);
+
+      if (!mappedVisit.slug || latestVisits[mappedVisit.slug]) {
+        continue;
+      }
+
+      latestVisits[mappedVisit.slug] = mappedVisit;
+    }
+
+    return latestVisits;
+  }, {});
+}
+
+export async function getUniqueVisitorCountsBySlugs(
+  slugs: string[]
+): Promise<Record<string, number>> {
+  return safeQuery(async () => {
+    const normalizedSlugs = Array.from(
+      new Set(slugs.map((slug) => slug.trim()).filter(Boolean))
+    );
+
+    if (normalizedSlugs.length === 0) {
+      return {};
+    }
+
+    const db = await getDb();
+    const aggregates = await db
+      .collection("post_visits")
+      .aggregate<{
+        _id: string;
+        count: number;
+      }>([
+        {
+          $match: {
+            slug: { $in: normalizedSlugs },
+          },
+        },
+        {
+          $group: {
+            _id: {
+              slug: "$slug",
+              ip: "$ip",
+              userAgent: "$userAgent",
+            },
+          },
+        },
+        {
+          $group: {
+            _id: "$_id.slug",
+            count: { $sum: 1 },
+          },
+        },
+      ])
+      .toArray();
+
+    return Object.fromEntries(
+      aggregates.map((item) => [String(item._id), Number(item.count ?? 0)])
+    );
+  }, {});
+}
+
+export async function getTrafficOverview(days = 7): Promise<TrafficOverview> {
+  return safeQuery(async () => {
+    const normalizedDays = Math.max(1, Math.floor(days));
+    const db = await getDb();
+    const rangeStart = new Date(
+      Date.now() - (normalizedDays + 1) * 24 * 60 * 60 * 1000
+    );
+
+    const [totalPvAggregate, totalUvAggregate, recentVisits] = await Promise.all([
+      db
+        .collection("posts")
+        .aggregate<{ _id: null; total: number }>([
+          {
+            $group: {
+              _id: null,
+              total: { $sum: { $ifNull: ["$views", 0] } },
+            },
+          },
+        ])
+        .toArray(),
+      db
+        .collection("post_visits")
+        .aggregate<{ _id: null; total: number }>([
+          {
+            $group: {
+              _id: {
+                ip: "$ip",
+                userAgent: "$userAgent",
+              },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              total: { $sum: 1 },
+            },
+          },
+        ])
+        .toArray(),
+      db
+        .collection("post_visits")
+        .find({
+          createdAt: { $gte: rangeStart },
+        })
+        .project({
+          ip: 1,
+          userAgent: 1,
+          createdAt: 1,
+        })
+        .toArray(),
+    ]);
+
+    const daily = Array.from({ length: normalizedDays }, (_, index) => {
+      const date = new Date();
+      date.setDate(date.getDate() - (normalizedDays - 1 - index));
+
+      return {
+        key: formatTrafficKey(date),
+        label: formatTrafficLabel(date),
+        pv: 0,
+        uv: 0,
+      };
+    });
+
+    const dailyMap = new Map(
+      daily.map((point) => [
+        point.key,
+        {
+          point,
+          visitors: new Set<string>(),
+        },
+      ])
+    );
+    const recentVisitors = new Set<string>();
+
+    for (const visit of recentVisits) {
+      const createdAt =
+        visit.createdAt instanceof Date
+          ? visit.createdAt
+          : new Date(String(visit.createdAt || ""));
+
+      if (Number.isNaN(createdAt.getTime())) {
+        continue;
+      }
+
+      const key = formatTrafficKey(createdAt);
+      const bucket = dailyMap.get(key);
+
+      if (!bucket) {
+        continue;
+      }
+
+      const identity = `${String(visit.ip ?? "unknown")}::${String(
+        visit.userAgent ?? ""
+      )}`;
+      bucket.point.pv += 1;
+      bucket.visitors.add(identity);
+      recentVisitors.add(identity);
+    }
+
+    for (const bucket of dailyMap.values()) {
+      bucket.point.uv = bucket.visitors.size;
+    }
+
+    return {
+      totalPv: Number(totalPvAggregate[0]?.total ?? 0),
+      totalUv: Number(totalUvAggregate[0]?.total ?? 0),
+      recentPv: daily.reduce((sum, point) => sum + point.pv, 0),
+      recentUv: recentVisitors.size,
+      daily,
+    };
+  }, {
+    totalPv: 0,
+    totalUv: 0,
+    recentPv: 0,
+    recentUv: 0,
+    daily: [],
+  });
+}
+
+export async function getTopPostsByTraffic(
+  limit = 5
+): Promise<TopPostTraffic[]> {
+  return safeQuery(async () => {
+    const normalizedLimit = Math.max(1, Math.floor(limit));
+    const db = await getDb();
+    const posts = await db
+      .collection("posts")
+      .find({ published: true })
+      .sort({ views: -1, createdAt: -1 })
+      .limit(normalizedLimit)
+      .toArray();
+
+    const mappedPosts = posts.map((post) => mapPost(post as RawDocument));
+    const uvCounts = await getUniqueVisitorCountsBySlugs(
+      mappedPosts.map((post) => post.slug)
+    );
+
+    return mappedPosts.map((post) => ({
+      _id: post._id,
+      title: post.title,
+      slug: post.slug,
+      views: Number(post.views ?? 0),
+      uv: uvCounts[post.slug] || 0,
+      date: post.date,
+    }));
+  }, []);
 }
 
 export async function getStoredPhotos(limit = 24): Promise<Photo[]> {

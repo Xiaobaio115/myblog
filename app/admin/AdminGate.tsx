@@ -1,68 +1,82 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useState, useSyncExternalStore } from "react";
+
+const navItems = [
+  { href: "/admin", label: "总览" },
+  { href: "/admin/posts", label: "文章管理" },
+  { href: "/admin/posts/new", label: "新建文章" },
+  { href: "/admin/photos", label: "相册管理" },
+  { href: "/articles", label: "查看文章" },
+  { href: "/photos", label: "查看相册" },
+];
 
 export default function AdminGate({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const storedPassword = useSyncExternalStore(
+    subscribeToAdminPassword,
+    getAdminPasswordSnapshot,
+    () => ""
+  );
   const [password, setPassword] = useState("");
-  const [authed, setAuthed] = useState(false);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    const savedPassword = localStorage.getItem("admin_password");
-    if (savedPassword) {
-      setAuthed(true);
-    }
-    setReady(true);
-  }, []);
+  const authed = Boolean(storedPassword);
 
   function login() {
     if (!password.trim()) {
-      alert("请输入后台密码");
+      alert("请输入后台密码。");
       return;
     }
 
     localStorage.setItem("admin_password", password);
-    setAuthed(true);
+    window.dispatchEvent(new Event("admin-password-change"));
   }
 
   function logout() {
     localStorage.removeItem("admin_password");
-    setAuthed(false);
     setPassword("");
-  }
-
-  if (!ready) {
-    return null;
+    window.dispatchEvent(new Event("admin-password-change"));
   }
 
   if (!authed) {
     return (
-      <main className="admin-login-page">
-        <section className="admin-login-card">
-          <div className="admin-badge">LUNA NOTES ADMIN</div>
-          <h1>博客后台</h1>
-          <p>输入一次后台密码后，就可以进入文章和相册管理。</p>
+      <main className="admin-page">
+        <div className="admin-panel narrow admin-login-card">
+          <div className="section-head">
+            <div>
+              <div className="admin-kicker">LUNA NOTES ADMIN</div>
+              <h1 className="section-title">后台登录</h1>
+              <p className="section-copy">输入一次后台密码后，就可以进入文章和相册管理。</p>
+            </div>
+          </div>
 
           <input
             type="password"
             className="admin-input"
             placeholder="输入后台密码"
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") login();
+            onChange={(event) => setPassword(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                login();
+              }
             }}
           />
 
-          <button className="admin-button" onClick={login}>
-            进入后台
-          </button>
-        </section>
+          <div className="admin-actions">
+            <button type="button" className="admin-button" onClick={login}>
+              进入后台
+            </button>
+            <Link href="/" className="secondary-link">
+              返回首页
+            </Link>
+          </div>
+        </div>
       </main>
     );
   }
@@ -70,19 +84,29 @@ export default function AdminGate({
   return (
     <div className="admin-shell">
       <aside className="admin-sidebar">
-        <Link href="/" className="admin-brand">
+        <Link href="/admin" className="admin-brand">
           LUNA NOTES
         </Link>
 
         <nav className="admin-menu">
-          <Link href="/admin">总览</Link>
-          <Link href="/admin/posts">文章管理</Link>
-          <Link href="/admin/photos">相册管理</Link>
-          <Link href="/photos">查看相册</Link>
-          <Link href="/">返回首页</Link>
+          {navItems.map((item) => {
+            const active =
+              pathname === item.href ||
+              (item.href !== "/admin" && pathname.startsWith(`${item.href}/`));
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`admin-menu-link${active ? " active" : ""}`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
-        <button className="admin-logout" onClick={logout}>
+        <button type="button" className="secondary-link admin-logout" onClick={logout}>
           退出后台
         </button>
       </aside>
@@ -90,4 +114,28 @@ export default function AdminGate({
       <section className="admin-main">{children}</section>
     </div>
   );
+}
+
+function subscribeToAdminPassword(onStoreChange: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  const handleChange = () => onStoreChange();
+
+  window.addEventListener("storage", handleChange);
+  window.addEventListener("admin-password-change", handleChange);
+
+  return () => {
+    window.removeEventListener("storage", handleChange);
+    window.removeEventListener("admin-password-change", handleChange);
+  };
+}
+
+function getAdminPasswordSnapshot() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  return window.localStorage.getItem("admin_password") || "";
 }

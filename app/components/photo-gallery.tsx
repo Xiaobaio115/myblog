@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import type { Photo } from "@/lib/content";
 
 interface Props {
@@ -13,27 +13,31 @@ interface Props {
 export function PhotoGallery({ photos, categories }: Props) {
   const [activeCategory, setActiveCategory] = useState("全部");
   const [visible, setVisible] = useState(true);
-  const [displayed, setDisplayed] = useState<Photo[]>(photos);
 
-  function changeCategory(cat: string) {
-    if (cat === activeCategory) return;
+  const displayed = useMemo(
+    () =>
+      activeCategory === "全部"
+        ? photos
+        : photos.filter((photo) => photo.category === activeCategory),
+    [activeCategory, photos]
+  );
+
+  function changeCategory(category: string) {
+    if (category === activeCategory) {
+      return;
+    }
+
     setVisible(false);
-    setTimeout(() => {
-      setActiveCategory(cat);
-      setDisplayed(cat === "全部" ? photos : photos.filter((p) => p.category === cat));
-      setVisible(true);
-    }, 220);
-  }
 
-  useEffect(() => {
-    setDisplayed(
-      activeCategory === "全部" ? photos : photos.filter((p) => p.category === activeCategory)
-    );
-  }, [photos, activeCategory]);
+    window.setTimeout(() => {
+      setActiveCategory(category);
+      setVisible(true);
+    }, 180);
+  }
 
   return (
     <div>
-      {categories.length > 0 && (
+      {categories.length > 0 ? (
         <div className="category-tabs">
           <button
             className={`category-tab${activeCategory === "全部" ? " active" : ""}`}
@@ -41,26 +45,28 @@ export function PhotoGallery({ photos, categories }: Props) {
           >
             全部
           </button>
-          {categories.map((cat) => (
+          {categories.map((category) => (
             <button
-              key={cat}
-              className={`category-tab${activeCategory === cat ? " active" : ""}`}
-              onClick={() => changeCategory(cat)}
+              key={category}
+              className={`category-tab${activeCategory === category ? " active" : ""}`}
+              onClick={() => changeCategory(category)}
             >
-              {cat}
+              {category}
             </button>
           ))}
         </div>
-      )}
+      ) : null}
 
-      <div className={`photo-masonry${visible ? " gallery-visible" : " gallery-hidden"}`}>
+      <div
+        className={`photo-gallery-grid${visible ? " gallery-visible" : " gallery-hidden"}`}
+      >
         {displayed.map((photo, index) => (
           <div
             key={photo._id}
             className="gallery-item"
-            style={{ animationDelay: `${Math.min(index * 0.04, 0.6)}s` }}
+            style={{ animationDelay: `${Math.min(index * 0.04, 0.48)}s` }}
           >
-            <div className="photo-card">
+            <div className="photo-card gallery-card">
               {photo.url ? (
                 <img src={photo.url} alt={photo.caption} className="photo-media" />
               ) : photo.emoji ? (
@@ -68,10 +74,11 @@ export function PhotoGallery({ photos, categories }: Props) {
               ) : (
                 <div className="photo-fallback">📷</div>
               )}
+
               <div className="photo-overlay">
-                {photo.category && (
+                {photo.category ? (
                   <span className="photo-cat-badge">{photo.category}</span>
-                )}
+                ) : null}
                 <p className="photo-caption">{photo.caption}</p>
                 <p className="photo-date">{photo.date}</p>
               </div>
@@ -80,12 +87,12 @@ export function PhotoGallery({ photos, categories }: Props) {
         ))}
       </div>
 
-      {displayed.length === 0 && (
+      {displayed.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">📷</div>
-          <p>该分类下还没有照片，去后台上传一张吧。</p>
+          <p>这个分类下还没有照片，去后台上传一张吧。</p>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -24,7 +24,7 @@ export async function GET(request: Request) {
       .toArray();
 
     return NextResponse.json(
-      photos.map((photo: any) => ({
+      photos.map((photo) => ({
         ...photo,
         _id: photo._id.toString(),
       }))

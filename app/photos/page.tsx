@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { PhotoGallery } from "@/app/components/photo-gallery";
+import { SiteFrame } from "@/app/components/site-frame";
 import { getLatestPhotos, getPhotoCategories } from "@/lib/content";
 
 export default async function PhotosPage() {
@@ -9,37 +10,20 @@ export default async function PhotosPage() {
   const categories = getPhotoCategories(photos);
 
   return (
-    <main className="site-shell">
-      <nav className="site-topbar">
-        <Link href="/" className="site-logo">
-          LUNA NOTES
-        </Link>
-
-        <div className="site-nav">
-          <Link href="/">首页</Link>
-          <Link href="/posts">文章</Link>
-          <Link href="/photos" className="active">
-            相册
-          </Link>
-          <Link href="/admin">后台</Link>
-        </div>
-      </nav>
-
-      <section className="landing-hero photo-hero">
-        <div className="hero-kicker">PHOTO GALLERY</div>
-
+    <SiteFrame>
+      <section className="hero container">
+        <p className="eyebrow">PHOTO GALLERY</p>
         <h1 className="hero-title">把生活片段放进一个可以浏览的画廊。</h1>
-
-        <p className="hero-subtitle">
-          优先展示你上传到相册的照片；如果还没有独立相册数据，就回退到文章封面和示例内容。
+        <p className="hero-copy">
+          优先展示已上传到相册的内容；如果还没有独立相册数据，就回退到文章封面和示例内容。
         </p>
 
         <div className="hero-actions">
-          <Link href="/admin/photos" className="primary-button">
+          <Link href="/admin/photos" className="primary-link">
             上传照片
           </Link>
-          <Link href="/" className="secondary-button">
-            返回首页
+          <Link href="/articles" className="secondary-link">
+            查看文章
           </Link>
         </div>
       </section>
@@ -47,6 +31,6 @@ export default async function PhotosPage() {
       <section className="container section">
         <PhotoGallery photos={photos} categories={categories} />
       </section>
-    </main>
+    </SiteFrame>
   );
 }

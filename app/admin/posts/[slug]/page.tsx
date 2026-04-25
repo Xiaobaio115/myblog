@@ -1,84 +1,52 @@
 export const dynamic = "force-dynamic";
 
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { marked } from "marked";
+import {
+  getRecentPostVisits,
+  getUniqueVisitorCountsBySlugs,
+} from "@/lib/content";
 import { getDb } from "@/lib/mongodb";
+import { PostEditor } from "./post-editor";
 
-export default async function PostDetailPage({
-  params,
-}: {
+type PageProps = {
   params: Promise<{ slug: string }>;
-}) {
+};
+
+export default async function AdminPostEditPage({ params }: PageProps) {
   const { slug } = await params;
-
   const db = await getDb();
-
-  const post = await db.collection("posts").findOne({
-    slug,
-    published: true,
-  });
+  const [post, recentVisits, uniqueVisitorCounts] = await Promise.all([
+    db.collection("posts").findOne({ slug }),
+    getRecentPostVisits(slug, 12),
+    getUniqueVisitorCountsBySlugs([slug]),
+  ]);
 
   if (!post) {
     notFound();
   }
 
-  await db.collection("posts").updateOne(
-    { slug },
-    {
-      $inc: { views: 1 },
-      $set: { updatedAt: new Date() },
-    }
-  );
-
-  const html = await marked.parse(post.content || "");
-
   return (
-    <main className="site-shell">
-      <div className="bg-orbs">
-        <div className="orb orb1" />
-        <div className="orb orb2" />
-        <div className="orb orb3" />
-      </div>
-
-      <article className="article-detail">
-        <Link href="/" className="back-link">
-          ← 返回首页
-        </Link>
-
-        <div className="card-tags">
-          {(post.tags || []).map((tag: string) => (
-            <span key={tag} className="card-tag">
-              {tag}
-            </span>
-          ))}
-        </div>
-
-        <h1 className="article-title">{post.title}</h1>
-
-        <div className="article-meta">
-          <span>📅 {post.date || "刚刚"}</span>
-          <span>👁 {(post.views || 0) + 1} 次阅读</span>
-        </div>
-
-        {post.coverUrl && (
-          <img
-            src={post.coverUrl}
-            alt={post.title}
-            className="article-cover"
-          />
-        )}
-
-        <div
-          className="article-content"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
-
-        <div className="comments-placeholder">
-          <h2>💬 评论区</h2>
-          <p>下一步我们会把 Twikoo 评论接回这里。</p>
-        </div>
-      </article>
+    <main className="admin-page">
+      <PostEditor
+        post={{
+          title: String(post.title ?? ""),
+          slug: String(post.slug ?? ""),
+          excerpt: post.excerpt ? String(post.excerpt) : "",
+          content: post.content ? String(post.content) : "",
+          coverUrl: post.coverUrl ? String(post.coverUrl) : "",
+          tags: Array.isArray(post.tags)
+            ? post.tags.map((tag) => String(tag)).filter(Boolean)
+            : [],
+          date: post.date ? String(post.date) : "",
+          views:
+            typeof post.views === "number"
+              ? post.views
+              : Number(post.views ?? 0),
+          published: Boolean(post.published),
+        }}
+        recentVisits={recentVisits}
+        uniqueVisitors={uniqueVisitorCounts[slug] || 0}
+      />
     </main>
   );
 }
