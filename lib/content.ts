@@ -11,6 +11,7 @@ export type Post = {
   date?: string;
   views?: number;
   published?: boolean;
+  isPrivate?: boolean;
   createdAt?: Date | string;
   updatedAt?: Date | string;
 };
@@ -48,6 +49,7 @@ export type TopPostTraffic = {
   views: number;
   uv: number;
   date?: string;
+  isPrivate?: boolean;
 };
 
 export type Photo = {
@@ -58,6 +60,8 @@ export type Photo = {
   emoji?: string;
   sourceHref?: string;
   category?: string;
+  pathname?: string;
+  isPrivate?: boolean;
 };
 
 type RawDocument = Record<string, unknown> & {
@@ -92,7 +96,7 @@ const FALLBACK_PHOTOS: Photo[] = [
     _id: "fallback-3",
     caption: "旅行前随手写下的清单",
     date: "轻松记录",
-    emoji: "🗺️",
+    emoji: "📝",
   },
   {
     _id: "fallback-4",
@@ -110,7 +114,7 @@ const FALLBACK_PHOTOS: Photo[] = [
     _id: "fallback-6",
     caption: "一个适合写长文的雨天",
     date: "安静时刻",
-    emoji: "🌧️",
+    emoji: "🌧",
   },
 ];
 
@@ -130,7 +134,8 @@ function mapPost(document: RawDocument): Post {
       typeof document.views === "number"
         ? document.views
         : Number(document.views ?? 0),
-    published: Boolean(document.published),
+    published: document.published !== false,
+    isPrivate: Boolean(document.isPrivate),
     createdAt:
       document.createdAt instanceof Date || typeof document.createdAt === "string"
         ? document.createdAt
@@ -146,9 +151,13 @@ function mapPhoto(document: RawDocument): Photo {
   return {
     _id: String(document._id),
     url: document.url ? String(document.url) : "",
+    pathname: document.pathname ? String(document.pathname) : "",
     caption: String(document.caption ?? "相册照片"),
     date: String(document.date ?? "刚刚"),
+    emoji: document.emoji ? String(document.emoji) : "",
+    sourceHref: document.sourceHref ? String(document.sourceHref) : "",
     category: document.category ? String(document.category) : "",
+    isPrivate: Boolean(document.isPrivate),
   };
 }
 
@@ -200,13 +209,45 @@ async function safeQuery<T>(work: () => Promise<T>, fallback: T): Promise<T> {
   }
 }
 
+function sanitizeVisitField(value: string | undefined, fallback: string) {
+  const normalized = String(value || "").trim();
+  return normalized ? normalized.slice(0, 240) : fallback;
+}
+
+function getPublicPostQuery() {
+  return {
+    published: true,
+    isPrivate: { $ne: true },
+  };
+}
+
+function getPublicPhotoQuery() {
+  return {
+    isPrivate: { $ne: true },
+  };
+}
+
 export async function getPublishedPosts(limit = 12): Promise<Post[]> {
   return safeQuery(async () => {
     const db = await getDb();
     const cursor = db
       .collection("posts")
-      .find({ published: true })
+      .find(getPublicPostQuery())
       .sort({ createdAt: -1 });
+
+    if (limit > 0) {
+      cursor.limit(limit);
+    }
+
+    const posts = await cursor.toArray();
+    return posts.map((post) => mapPost(post as RawDocument));
+  }, []);
+}
+
+export async function getAdminPosts(limit = 100): Promise<Post[]> {
+  return safeQuery(async () => {
+    const db = await getDb();
+    const cursor = db.collection("posts").find().sort({ createdAt: -1 });
 
     if (limit > 0) {
       cursor.limit(limit);
@@ -221,8 +262,8 @@ export async function getPublishedPost(slug: string): Promise<Post | null> {
   return safeQuery(async () => {
     const db = await getDb();
     const post = await db.collection("posts").findOne({
+      ...getPublicPostQuery(),
       slug,
-      published: true,
     });
 
     return post ? mapPost(post as RawDocument) : null;
@@ -234,16 +275,6 @@ export async function incrementPostViews(slug: string) {
     const db = await getDb();
     await db.collection("posts").updateOne({ slug }, { $inc: { views: 1 } });
   }, undefined);
-}
-
-function sanitizeVisitField(value: string | undefined, fallback: string) {
-  const normalized = String(value || "").trim();
-
-  if (!normalized) {
-    return fallback;
-  }
-
-  return normalized.slice(0, 240);
 }
 
 export async function trackPostView(
@@ -258,6 +289,7 @@ export async function trackPostView(
   const browser = sanitizeVisitField(visit.browser, "Unknown browser");
   const userAgent = sanitizeVisitField(visit.userAgent, "");
   const dedupeBoundary = new Date(now.getTime() - POST_VIEW_DEDUP_WINDOW_MS);
+
   const recentVisit = await db.collection("post_visits").findOne(
     {
       slug,
@@ -265,14 +297,12 @@ export async function trackPostView(
       userAgent,
       createdAt: { $gte: dedupeBoundary },
     },
-    {
-      projection: { _id: 1 },
-    }
+    { projection: { _id: 1 } }
   );
 
   if (recentVisit) {
     const existingPost = await db.collection("posts").findOne(
-      { slug, published: true },
+      { ...getPublicPostQuery(), slug },
       { projection: { views: 1 } }
     );
 
@@ -284,7 +314,7 @@ export async function trackPostView(
   }
 
   const updated = await db.collection("posts").findOneAndUpdate(
-    { slug, published: true },
+    { ...getPublicPostQuery(), slug },
     {
       $inc: { views: 1 },
       $set: { updatedAt: now },
@@ -356,11 +386,9 @@ export async function getLatestPostVisitsBySlugs(
     for (const visit of visits) {
       const mappedVisit = mapPostVisit(visit as RawDocument);
 
-      if (!mappedVisit.slug || latestVisits[mappedVisit.slug]) {
-        continue;
+      if (mappedVisit.slug && !latestVisits[mappedVisit.slug]) {
+        latestVisits[mappedVisit.slug] = mappedVisit;
       }
-
-      latestVisits[mappedVisit.slug] = mappedVisit;
     }
 
     return latestVisits;
@@ -382,15 +410,8 @@ export async function getUniqueVisitorCountsBySlugs(
     const db = await getDb();
     const aggregates = await db
       .collection("post_visits")
-      .aggregate<{
-        _id: string;
-        count: number;
-      }>([
-        {
-          $match: {
-            slug: { $in: normalizedSlugs },
-          },
-        },
+      .aggregate<{ _id: string; count: number }>([
+        { $match: { slug: { $in: normalizedSlugs } } },
         {
           $group: {
             _id: {
@@ -416,128 +437,120 @@ export async function getUniqueVisitorCountsBySlugs(
 }
 
 export async function getTrafficOverview(days = 7): Promise<TrafficOverview> {
-  return safeQuery(async () => {
-    const normalizedDays = Math.max(1, Math.floor(days));
-    const db = await getDb();
-    const rangeStart = new Date(
-      Date.now() - (normalizedDays + 1) * 24 * 60 * 60 * 1000
-    );
+  return safeQuery(
+    async () => {
+      const normalizedDays = Math.max(1, Math.floor(days));
+      const db = await getDb();
+      const rangeStart = new Date(
+        Date.now() - (normalizedDays + 1) * 24 * 60 * 60 * 1000
+      );
 
-    const [totalPvAggregate, totalUvAggregate, recentVisits] = await Promise.all([
-      db
-        .collection("posts")
-        .aggregate<{ _id: null; total: number }>([
-          {
-            $group: {
-              _id: null,
-              total: { $sum: { $ifNull: ["$views", 0] } },
-            },
-          },
-        ])
-        .toArray(),
-      db
-        .collection("post_visits")
-        .aggregate<{ _id: null; total: number }>([
-          {
-            $group: {
-              _id: {
-                ip: "$ip",
-                userAgent: "$userAgent",
+      const [totalPvAggregate, totalUvAggregate, recentVisits] = await Promise.all([
+        db
+          .collection("posts")
+          .aggregate<{ _id: null; total: number }>([
+            {
+              $group: {
+                _id: null,
+                total: { $sum: { $ifNull: ["$views", 0] } },
               },
             },
-          },
-          {
-            $group: {
-              _id: null,
-              total: { $sum: 1 },
+          ])
+          .toArray(),
+        db
+          .collection("post_visits")
+          .aggregate<{ _id: null; total: number }>([
+            {
+              $group: {
+                _id: {
+                  ip: "$ip",
+                  userAgent: "$userAgent",
+                },
+              },
             },
-          },
-        ])
-        .toArray(),
-      db
-        .collection("post_visits")
-        .find({
-          createdAt: { $gte: rangeStart },
-        })
-        .project({
-          ip: 1,
-          userAgent: 1,
-          createdAt: 1,
-        })
-        .toArray(),
-    ]);
+            {
+              $group: {
+                _id: null,
+                total: { $sum: 1 },
+              },
+            },
+          ])
+          .toArray(),
+        db
+          .collection("post_visits")
+          .find({ createdAt: { $gte: rangeStart } })
+          .project({ ip: 1, userAgent: 1, createdAt: 1 })
+          .toArray(),
+      ]);
 
-    const daily = Array.from({ length: normalizedDays }, (_, index) => {
-      const date = new Date();
-      date.setDate(date.getDate() - (normalizedDays - 1 - index));
+      const daily = Array.from({ length: normalizedDays }, (_, index) => {
+        const date = new Date();
+        date.setDate(date.getDate() - (normalizedDays - 1 - index));
+
+        return {
+          key: formatTrafficKey(date),
+          label: formatTrafficLabel(date),
+          pv: 0,
+          uv: 0,
+        };
+      });
+
+      const dailyMap = new Map(
+        daily.map((point) => [
+          point.key,
+          { point, visitors: new Set<string>() },
+        ])
+      );
+      const recentVisitors = new Set<string>();
+
+      for (const visit of recentVisits) {
+        const createdAt =
+          visit.createdAt instanceof Date
+            ? visit.createdAt
+            : new Date(String(visit.createdAt || ""));
+
+        if (Number.isNaN(createdAt.getTime())) {
+          continue;
+        }
+
+        const key = formatTrafficKey(createdAt);
+        const bucket = dailyMap.get(key);
+
+        if (!bucket) {
+          continue;
+        }
+
+        const identity = `${String(visit.ip ?? "unknown")}::${String(
+          visit.userAgent ?? ""
+        )}`;
+        bucket.point.pv += 1;
+        bucket.visitors.add(identity);
+        recentVisitors.add(identity);
+      }
+
+      for (const bucket of dailyMap.values()) {
+        bucket.point.uv = bucket.visitors.size;
+      }
 
       return {
-        key: formatTrafficKey(date),
-        label: formatTrafficLabel(date),
-        pv: 0,
-        uv: 0,
+        totalPv: Number(totalPvAggregate[0]?.total ?? 0),
+        totalUv: Number(totalUvAggregate[0]?.total ?? 0),
+        recentPv: daily.reduce((sum, point) => sum + point.pv, 0),
+        recentUv: recentVisitors.size,
+        daily,
       };
-    });
-
-    const dailyMap = new Map(
-      daily.map((point) => [
-        point.key,
-        {
-          point,
-          visitors: new Set<string>(),
-        },
-      ])
-    );
-    const recentVisitors = new Set<string>();
-
-    for (const visit of recentVisits) {
-      const createdAt =
-        visit.createdAt instanceof Date
-          ? visit.createdAt
-          : new Date(String(visit.createdAt || ""));
-
-      if (Number.isNaN(createdAt.getTime())) {
-        continue;
-      }
-
-      const key = formatTrafficKey(createdAt);
-      const bucket = dailyMap.get(key);
-
-      if (!bucket) {
-        continue;
-      }
-
-      const identity = `${String(visit.ip ?? "unknown")}::${String(
-        visit.userAgent ?? ""
-      )}`;
-      bucket.point.pv += 1;
-      bucket.visitors.add(identity);
-      recentVisitors.add(identity);
+    },
+    {
+      totalPv: 0,
+      totalUv: 0,
+      recentPv: 0,
+      recentUv: 0,
+      daily: [],
     }
-
-    for (const bucket of dailyMap.values()) {
-      bucket.point.uv = bucket.visitors.size;
-    }
-
-    return {
-      totalPv: Number(totalPvAggregate[0]?.total ?? 0),
-      totalUv: Number(totalUvAggregate[0]?.total ?? 0),
-      recentPv: daily.reduce((sum, point) => sum + point.pv, 0),
-      recentUv: recentVisitors.size,
-      daily,
-    };
-  }, {
-    totalPv: 0,
-    totalUv: 0,
-    recentPv: 0,
-    recentUv: 0,
-    daily: [],
-  });
+  );
 }
 
-export async function getTopPostsByTraffic(
-  limit = 5
-): Promise<TopPostTraffic[]> {
+export async function getTopPostsByTraffic(limit = 5): Promise<TopPostTraffic[]> {
   return safeQuery(async () => {
     const normalizedLimit = Math.max(1, Math.floor(limit));
     const db = await getDb();
@@ -560,14 +573,19 @@ export async function getTopPostsByTraffic(
       views: Number(post.views ?? 0),
       uv: uvCounts[post.slug] || 0,
       date: post.date,
+      isPrivate: Boolean(post.isPrivate),
     }));
   }, []);
 }
 
-export async function getStoredPhotos(limit = 24): Promise<Photo[]> {
+export async function getStoredPhotos(
+  limit = 24,
+  options?: { includePrivate?: boolean }
+): Promise<Photo[]> {
   return safeQuery(async () => {
     const db = await getDb();
-    const cursor = db.collection("photos").find().sort({ createdAt: -1 });
+    const query = options?.includePrivate ? {} : getPublicPhotoQuery();
+    const cursor = db.collection("photos").find(query).sort({ createdAt: -1 });
 
     if (limit > 0) {
       cursor.limit(limit);
@@ -576,6 +594,10 @@ export async function getStoredPhotos(limit = 24): Promise<Photo[]> {
     const photos = await cursor.toArray();
     return photos.map((photo) => mapPhoto(photo as RawDocument));
   }, []);
+}
+
+export async function getAdminPhotos(limit = 100): Promise<Photo[]> {
+  return getStoredPhotos(limit, { includePrivate: true });
 }
 
 export async function getLatestPhotos(limit = 24): Promise<Photo[]> {
@@ -595,6 +617,7 @@ export async function getLatestPhotos(limit = 24): Promise<Photo[]> {
       caption: post.title,
       date: post.date || "最新文章",
       sourceHref: `/posts/${post.slug}`,
+      isPrivate: false,
     }));
 
   if (derivedPhotos.length > 0) {
@@ -604,12 +627,12 @@ export async function getLatestPhotos(limit = 24): Promise<Photo[]> {
   return FALLBACK_PHOTOS.slice(0, limit);
 }
 
-export function getPhotoCategories(photos: Photo[]): string[] {
+export function getPhotoCategories(photos: Photo[]) {
   return Array.from(
     new Set(
       photos
-        .map((p) => p.category)
-        .filter((c): c is string => Boolean(c))
+        .map((photo) => photo.category)
+        .filter((category): category is string => Boolean(category))
     )
   );
 }
@@ -627,12 +650,7 @@ export function filterPosts(posts: Post[], keyword: string, tag: string) {
   return posts.filter((post) => {
     const matchesKeyword =
       !normalizedKeyword ||
-      [
-        post.title,
-        post.excerpt,
-        post.content,
-        ...(post.tags || []),
-      ]
+      [post.title, post.excerpt, post.content, ...(post.tags || [])]
         .filter(Boolean)
         .some((value) =>
           String(value).toLowerCase().includes(normalizedKeyword)

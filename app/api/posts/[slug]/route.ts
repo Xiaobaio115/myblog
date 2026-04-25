@@ -8,11 +8,30 @@ type RouteProps = {
   params: Promise<{ slug: string }>;
 };
 
-function toPostPayload(post: Record<string, unknown> & { _id: { toString(): string } }) {
+function toPostPayload(
+  post: Record<string, unknown> & { _id: { toString(): string } }
+) {
   return {
     ...post,
     _id: post._id.toString(),
   };
+}
+
+async function requireAdmin(request: Request) {
+  if (!process.env.ADMIN_PASSWORD) {
+    return NextResponse.json(
+      { error: "服务端尚未配置 ADMIN_PASSWORD。" },
+      { status: 500 }
+    );
+  }
+
+  const adminPassword = request.headers.get("x-admin-password");
+
+  if (adminPassword !== process.env.ADMIN_PASSWORD) {
+    return NextResponse.json({ error: "后台密码错误。" }, { status: 401 });
+  }
+
+  return null;
 }
 
 export async function GET(_request: Request, { params }: RouteProps) {
@@ -25,27 +44,21 @@ export async function GET(_request: Request, { params }: RouteProps) {
       return NextResponse.json({ error: "文章不存在。" }, { status: 404 });
     }
 
-    return NextResponse.json(toPostPayload(post as typeof post & { _id: { toString(): string } }));
+    return NextResponse.json(
+      toPostPayload(post as typeof post & { _id: { toString(): string } })
+    );
   } catch (error) {
     console.error("GET /api/posts/[slug] error:", error);
-
     return NextResponse.json({ error: "读取文章失败。" }, { status: 500 });
   }
 }
 
 export async function PATCH(request: Request, { params }: RouteProps) {
   try {
-    const adminPassword = request.headers.get("x-admin-password");
+    const authError = await requireAdmin(request);
 
-    if (!process.env.ADMIN_PASSWORD) {
-      return NextResponse.json(
-        { error: "服务端尚未配置 ADMIN_PASSWORD。" },
-        { status: 500 }
-      );
-    }
-
-    if (adminPassword !== process.env.ADMIN_PASSWORD) {
-      return NextResponse.json({ error: "后台密码错误。" }, { status: 401 });
+    if (authError) {
+      return authError;
     }
 
     const { slug: currentSlug } = await params;
@@ -59,7 +72,8 @@ export async function PATCH(request: Request, { params }: RouteProps) {
     const tags = Array.isArray(body.tags)
       ? body.tags.map((tag: unknown) => String(tag).trim()).filter(Boolean)
       : [];
-    const published = body.published ?? true;
+    const published = body.published !== false;
+    const isPrivate = Boolean(body.isPrivate);
 
     if (!title) {
       return NextResponse.json({ error: "文章标题不能为空。" }, { status: 400 });
@@ -103,11 +117,19 @@ export async function PATCH(request: Request, { params }: RouteProps) {
           content,
           coverUrl,
           tags,
-          published: Boolean(published),
+          published,
+          isPrivate,
           updatedAt: now,
         },
       }
     );
+
+    if (nextSlug !== currentSlug) {
+      await db.collection("post_visits").updateMany(
+        { slug: currentSlug },
+        { $set: { slug: nextSlug } }
+      );
+    }
 
     return NextResponse.json({
       success: true,
@@ -115,24 +137,16 @@ export async function PATCH(request: Request, { params }: RouteProps) {
     });
   } catch (error) {
     console.error("PATCH /api/posts/[slug] error:", error);
-
     return NextResponse.json({ error: "保存文章失败。" }, { status: 500 });
   }
 }
 
 export async function DELETE(request: Request, { params }: RouteProps) {
   try {
-    const adminPassword = request.headers.get("x-admin-password");
+    const authError = await requireAdmin(request);
 
-    if (!process.env.ADMIN_PASSWORD) {
-      return NextResponse.json(
-        { error: "服务端尚未配置 ADMIN_PASSWORD。" },
-        { status: 500 }
-      );
-    }
-
-    if (adminPassword !== process.env.ADMIN_PASSWORD) {
-      return NextResponse.json({ error: "后台密码错误。" }, { status: 401 });
+    if (authError) {
+      return authError;
     }
 
     const { slug } = await params;
@@ -143,10 +157,11 @@ export async function DELETE(request: Request, { params }: RouteProps) {
       return NextResponse.json({ error: "文章不存在。" }, { status: 404 });
     }
 
+    await db.collection("post_visits").deleteMany({ slug });
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("DELETE /api/posts/[slug] error:", error);
-
     return NextResponse.json({ error: "删除文章失败。" }, { status: 500 });
   }
 }

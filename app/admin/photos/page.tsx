@@ -10,6 +10,7 @@ type Photo = {
   pathname?: string;
   caption: string;
   category: string;
+  isPrivate?: boolean;
   createdAt?: string;
 };
 
@@ -23,7 +24,7 @@ async function parseJsonSafely(response: Response) {
   }
 
   try {
-    return JSON.parse(text) as unknown;
+    return JSON.parse(text) as Record<string, unknown>;
   } catch {
     return { error: text };
   }
@@ -43,11 +44,13 @@ export default function AdminPhotosPage() {
   const [caption, setCaption] = useState("");
   const [category, setCategory] = useState("日常");
   const [customCategory, setCustomCategory] = useState("");
+  const [isPrivate, setIsPrivate] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [message, setMessage] = useState("");
+  const [busyPhotoId, setBusyPhotoId] = useState("");
 
   const categories = useMemo(() => {
     const fromPhotos = photos.map((photo) => photo.category).filter(Boolean);
@@ -71,11 +74,10 @@ export default function AdminPhotosPage() {
       const response = await fetch("/api/photos", {
         cache: "no-store",
       });
-
       const data = await parseJsonSafely(response);
 
       if (response.ok && Array.isArray(data)) {
-        setPhotos(data as Photo[]);
+        setPhotos(data as unknown as Photo[]);
       }
     } catch (error) {
       console.error("load photos failed:", error);
@@ -134,7 +136,7 @@ export default function AdminPhotosPage() {
         },
       });
 
-      const saveResponse = await fetch("/api/photos", {
+      const response = await fetch("/api/photos", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -145,27 +147,29 @@ export default function AdminPhotosPage() {
           pathname: blob.pathname,
           caption: caption.trim() || "我的照片",
           category: finalCategory,
+          isPrivate,
         }),
       });
 
-      const data = (await parseJsonSafely(saveResponse)) as
-        | { error?: string; photo?: Photo }
-        | null;
+      const data = await parseJsonSafely(response);
 
-      if (!saveResponse.ok) {
-        throw new Error(data?.error || "保存相册信息失败。");
+      if (!response.ok) {
+        throw new Error(
+          typeof data?.error === "string" ? data.error : "保存相册信息失败。"
+        );
       }
 
       setCaption("");
       setCategory(finalCategory);
       setCustomCategory("");
+      setIsPrivate(false);
       setFile(null);
       setPreview("");
       setUploadProgress(0);
       setMessage("图片已上传到相册。");
 
       if (data?.photo) {
-        setPhotos((current) => [data.photo as Photo, ...current]);
+        setPhotos((current) => [data.photo as unknown as Photo, ...current]);
       } else {
         await loadPhotos();
       }
@@ -176,12 +180,65 @@ export default function AdminPhotosPage() {
     }
   }
 
+  async function togglePrivate(photo: Photo) {
+    const password = localStorage.getItem("admin_password") || "";
+
+    if (!password) {
+      setMessage("后台密码已丢失，请重新进入后台。");
+      return;
+    }
+
+    setBusyPhotoId(photo._id);
+    setMessage("");
+
+    try {
+      const response = await fetch(`/api/photos/${photo._id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": password,
+        },
+        body: JSON.stringify({
+          isPrivate: !photo.isPrivate,
+        }),
+      });
+
+      const data = await parseJsonSafely(response);
+
+      if (!response.ok) {
+        throw new Error(
+          typeof data?.error === "string" ? data.error : "更新照片失败。"
+        );
+      }
+
+      setPhotos((current) =>
+        current.map((item) =>
+          item._id === photo._id
+            ? { ...item, isPrivate: !photo.isPrivate }
+            : item
+        )
+      );
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "更新照片失败。");
+    } finally {
+      setBusyPhotoId("");
+    }
+  }
+
   async function deletePhoto(id: string) {
     if (!confirm("确定删除这张照片吗？")) {
       return;
     }
 
     const password = localStorage.getItem("admin_password") || "";
+
+    if (!password) {
+      setMessage("后台密码已丢失，请重新进入后台。");
+      return;
+    }
+
+    setBusyPhotoId(id);
+    setMessage("");
 
     try {
       const response = await fetch(`/api/photos/${id}`, {
@@ -191,16 +248,20 @@ export default function AdminPhotosPage() {
         },
       });
 
-      const data = (await parseJsonSafely(response)) as { error?: string } | null;
+      const data = await parseJsonSafely(response);
 
       if (!response.ok) {
-        throw new Error(data?.error || "删除失败。");
+        throw new Error(
+          typeof data?.error === "string" ? data.error : "删除照片失败。"
+        );
       }
 
       setPhotos((current) => current.filter((photo) => photo._id !== id));
       setMessage("照片已删除。");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "删除失败。");
+      setMessage(error instanceof Error ? error.message : "删除照片失败。");
+    } finally {
+      setBusyPhotoId("");
     }
   }
 
@@ -212,128 +273,175 @@ export default function AdminPhotosPage() {
             <div className="admin-kicker">Photos</div>
             <h1 className="section-title">管理相册</h1>
             <p className="section-copy">
-              图片现在会从浏览器直接上传到 Vercel Blob，大图不会再经过 Next.js 函数。
+              图片会从浏览器直接上传到 Blob。你也可以把单张照片设成仅后台可见。
             </p>
           </div>
         </div>
 
         {message ? <div className="status-banner">{message}</div> : null}
 
-        <div className="admin-grid">
-          <div className="upload-panel">
-            <input
-              className="admin-input"
-              placeholder="照片说明"
-              value={caption}
-              onChange={(event) => setCaption(event.target.value)}
-            />
+        <div className="photo-admin-layout">
+          <section className="photo-upload-card">
+            <div className="photo-upload-preview">
+              {preview ? (
+                <Image
+                  src={preview}
+                  alt="预览"
+                  width={1200}
+                  height={900}
+                  sizes="(max-width: 960px) calc(100vw - 40px), 360px"
+                  unoptimized
+                  className="admin-preview"
+                />
+              ) : (
+                <div className="photo-upload-empty">
+                  <div className="photo-upload-icon">图</div>
+                  <strong>拖一张图进来，或者点下面选择文件</strong>
+                  <p>支持大图直传，不再走 Next.js 函数大请求体。</p>
+                </div>
+              )}
+            </div>
 
-            <select
-              className="admin-input"
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-            >
-              {categories.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-              <option value="__custom__">自定义分类</option>
-            </select>
-
-            {category === "__custom__" ? (
+            <div className="photo-upload-form">
               <input
                 className="admin-input"
-                placeholder="输入新的分类，例如胶片"
-                value={customCategory}
-                onChange={(event) => setCustomCategory(event.target.value)}
+                placeholder="照片说明"
+                value={caption}
+                onChange={(event) => setCaption(event.target.value)}
               />
-            ) : null}
 
-            <input
-              className="admin-input"
-              type="file"
-              accept="image/*"
-              onChange={(event) => handleFileChange(event.target.files?.[0] || null)}
-            />
-
-            {uploading ? (
-              <div className="upload-progress">
-                <div className="upload-progress-bar">
-                  <div
-                    className="upload-progress-value"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
-                </div>
-                <span>上传中 {uploadProgress}%</span>
-              </div>
-            ) : null}
-
-            {preview ? (
-              <Image
-                src={preview}
-                alt="预览"
-                width={1200}
-                height={900}
-                sizes="(max-width: 720px) calc(100vw - 24px), 50vw"
-                unoptimized
-                className="admin-preview"
-              />
-            ) : (
-              <div className="empty-state compact">
-                <div className="empty-icon">图</div>
-                <p>选择图片后会在这里显示预览。</p>
-              </div>
-            )}
-
-            <div className="admin-actions">
-              <button
-                type="button"
-                className="admin-button"
-                onClick={uploadPhoto}
-                disabled={uploading}
+              <select
+                className="admin-input"
+                value={category}
+                onChange={(event) => setCategory(event.target.value)}
               >
-                {uploading ? "上传中..." : "上传到相册"}
-              </button>
-            </div>
-          </div>
-
-          <div>
-            {photos.length > 0 ? (
-              <div className="upload-grid">
-                {photos.map((photo) => (
-                  <article key={photo._id} className="upload-photo">
-                    <Image
-                      src={photo.url}
-                      alt={photo.caption}
-                      width={110}
-                      height={88}
-                      sizes="110px"
-                      unoptimized
-                      className="photo-media"
-                    />
-                    <div className="upload-photo-body">
-                      <strong>{photo.caption}</strong>
-                      <span>{photo.category || "未分类"}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="danger-btn"
-                      onClick={() => deletePhoto(photo._id)}
-                      disabled={uploading}
-                    >
-                      删除
-                    </button>
-                  </article>
+                {categories.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
                 ))}
+                <option value="__custom__">自定义分类</option>
+              </select>
+
+              {category === "__custom__" ? (
+                <input
+                  className="admin-input"
+                  placeholder="输入新的分类，例如胶片"
+                  value={customCategory}
+                  onChange={(event) => setCustomCategory(event.target.value)}
+                />
+              ) : null}
+
+              <input
+                className="admin-input"
+                type="file"
+                accept="image/*"
+                onChange={(event) =>
+                  handleFileChange(event.target.files?.[0] || null)
+                }
+              />
+
+              <label className="checkbox-row">
+                <input
+                  type="checkbox"
+                  checked={isPrivate}
+                  onChange={(event) => setIsPrivate(event.target.checked)}
+                />
+                <span>仅后台可见</span>
+              </label>
+
+              {uploading ? (
+                <div className="upload-progress">
+                  <div className="upload-progress-bar">
+                    <div
+                      className="upload-progress-value"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                  <span>上传中 {uploadProgress}%</span>
+                </div>
+              ) : null}
+
+              <div className="admin-actions">
+                <button
+                  type="button"
+                  className="admin-button"
+                  onClick={uploadPhoto}
+                  disabled={uploading}
+                >
+                  {uploading ? "上传中..." : "上传到相册"}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section className="photo-library-card">
+            <div className="dash-recent-header">
+              <strong>相册内容</strong>
+              <span className="dash-recent-meta">共 {photos.length} 张</span>
+            </div>
+
+            {photos.length > 0 ? (
+              <div className="photo-admin-grid">
+                {photos.map((photo) => {
+                  const busy = busyPhotoId === photo._id;
+
+                  return (
+                    <article key={photo._id} className="photo-admin-item">
+                      <Image
+                        src={photo.url}
+                        alt={photo.caption}
+                        width={640}
+                        height={480}
+                        sizes="(max-width: 960px) 50vw, 240px"
+                        unoptimized
+                        className="photo-admin-media"
+                      />
+
+                      <div className="photo-admin-body">
+                        <div className="photo-admin-meta">
+                          <strong>{photo.caption}</strong>
+                          <span>{photo.category || "未分类"}</span>
+                        </div>
+
+                        <div className="photo-admin-tags">
+                          <span
+                            className={`post-visit-chip ${photo.isPrivate ? "post-visit-chip-muted" : ""}`}
+                          >
+                            {photo.isPrivate ? "仅后台可见" : "前台可见"}
+                          </span>
+                        </div>
+
+                        <div className="photo-admin-actions">
+                          <button
+                            type="button"
+                            className="secondary-link photo-admin-action"
+                            onClick={() => void togglePrivate(photo)}
+                            disabled={busy || uploading}
+                          >
+                            {photo.isPrivate ? "设为公开" : "设为私密"}
+                          </button>
+                          <button
+                            type="button"
+                            className="danger-btn photo-admin-action"
+                            onClick={() => void deletePhoto(photo._id)}
+                            disabled={busy || uploading}
+                          >
+                            {busy ? "处理中..." : "删除"}
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             ) : (
-              <div className="empty-state compact">
+              <div className="photo-library-empty">
                 <div className="empty-icon">册</div>
                 <p>相册里还没有照片，先上传第一张。</p>
               </div>
             )}
-          </div>
+          </section>
         </div>
       </div>
     </main>

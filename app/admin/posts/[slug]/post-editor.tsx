@@ -24,6 +24,7 @@ type EditablePost = {
   date?: string;
   views?: number;
   published?: boolean;
+  isPrivate?: boolean;
 };
 
 type EditorProps = {
@@ -94,6 +95,7 @@ export function PostEditor({
     loadDraft(draftKey, baseForm)
   );
   const [published, setPublished] = useState(post.published !== false);
+  const [isPrivate, setIsPrivate] = useState(Boolean(post.isPrivate));
 
   useEffect(() => {
     saveDraft(draftKey, form);
@@ -129,6 +131,7 @@ export function PostEditor({
             .map((tag) => tag.trim())
             .filter(Boolean),
           published,
+          isPrivate,
         }),
       });
 
@@ -162,7 +165,7 @@ export function PostEditor({
   }
 
   async function deletePost() {
-    if (!confirm("确定删除这篇文章吗？此操作不可恢复。")) {
+    if (!confirm("确定删除这篇文章吗？文章和本地访问记录会一起删除。")) {
       return;
     }
 
@@ -207,6 +210,7 @@ export function PostEditor({
     clearDraft(draftKey);
     setForm(baseForm);
     setPublished(post.published !== false);
+    setIsPrivate(Boolean(post.isPrivate));
     setStatus("本地草稿已清空。");
   }
 
@@ -217,7 +221,7 @@ export function PostEditor({
           <div className="admin-kicker">Edit</div>
           <h1 className="section-title">编辑文章</h1>
           <p className="section-copy">
-            你可以修改标题、slug、摘要、封面、正文和发布状态。
+            你可以修改标题、slug、摘要、封面、正文、发布状态和私密状态。
           </p>
         </div>
 
@@ -225,9 +229,11 @@ export function PostEditor({
           <Link href="/admin/posts" className="secondary-link">
             返回管理
           </Link>
-          <Link href={`/posts/${sourceSlug}`} className="secondary-link">
-            查看前台
-          </Link>
+          {published && !isPrivate ? (
+            <Link href={`/posts/${sourceSlug}`} className="secondary-link">
+              查看前台
+            </Link>
+          ) : null}
         </div>
       </div>
 
@@ -289,14 +295,24 @@ export function PostEditor({
         />
       </div>
 
-      <label className="checkbox-row">
-        <input
-          type="checkbox"
-          checked={published}
-          onChange={(event) => setPublished(event.target.checked)}
-        />
-        <span>发布到前台</span>
-      </label>
+      <div className="checkbox-group">
+        <label className="checkbox-row">
+          <input
+            type="checkbox"
+            checked={published}
+            onChange={(event) => setPublished(event.target.checked)}
+          />
+          <span>发布到站点</span>
+        </label>
+        <label className="checkbox-row">
+          <input
+            type="checkbox"
+            checked={isPrivate}
+            onChange={(event) => setIsPrivate(event.target.checked)}
+          />
+          <span>仅后台可见</span>
+        </label>
+      </div>
 
       <div className="post-manage-meta">
         <span>{post.date || "刚刚发布"}</span>

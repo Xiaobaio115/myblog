@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getPublishedPosts } from "@/lib/content";
 import { getDb } from "@/lib/mongodb";
 
 export const runtime = "nodejs";
@@ -6,23 +7,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const db = await getDb();
-
-    const posts = await db
-      .collection("posts")
-      .find({ published: true })
-      .sort({ createdAt: -1 })
-      .toArray();
-
-    return NextResponse.json(
-      posts.map((post) => ({
-        ...post,
-        _id: String(post._id),
-      }))
-    );
+    const posts = await getPublishedPosts(100);
+    return NextResponse.json(posts);
   } catch (error) {
     console.error("GET /api/posts error:", error);
-
     return NextResponse.json({ error: "读取文章失败。" }, { status: 500 });
   }
 }
@@ -51,6 +39,8 @@ export async function POST(request: Request) {
     const tags = Array.isArray(body.tags)
       ? body.tags.map((tag: unknown) => String(tag).trim()).filter(Boolean)
       : [];
+    const published = body.published !== false;
+    const isPrivate = Boolean(body.isPrivate);
 
     if (!title) {
       return NextResponse.json({ error: "文章标题不能为空。" }, { status: 400 });
@@ -75,7 +65,6 @@ export async function POST(request: Request) {
     }
 
     const now = new Date();
-
     const post = {
       title,
       slug,
@@ -83,7 +72,8 @@ export async function POST(request: Request) {
       content,
       coverUrl,
       tags,
-      published: body.published ?? true,
+      published,
+      isPrivate,
       views: 0,
       date: now.toLocaleDateString("zh-CN"),
       createdAt: now,
@@ -99,7 +89,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("POST /api/posts error:", error);
-
     return NextResponse.json({ error: "发布文章失败。" }, { status: 500 });
   }
 }

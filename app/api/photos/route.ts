@@ -4,12 +4,41 @@ import { getDb } from "@/lib/mongodb";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+async function requireAdmin(request: Request) {
+  if (!process.env.ADMIN_PASSWORD) {
+    return NextResponse.json(
+      { error: "服务器未配置 ADMIN_PASSWORD" },
+      { status: 500 }
+    );
+  }
+
+  const adminPassword = request.headers.get("x-admin-password");
+
+  if (adminPassword !== process.env.ADMIN_PASSWORD) {
+    return NextResponse.json(
+      { error: "未授权，后台密码错误" },
+      { status: 401 }
+    );
+  }
+
+  return null;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
+    const onlyPublic = searchParams.get("public") === "1";
     const db = await getDb();
-    const query = category && category !== "全部" ? { category } : {};
+    const query: Record<string, unknown> = {};
+
+    if (category && category !== "全部") {
+      query.category = category;
+    }
+
+    if (onlyPublic) {
+      query.isPrivate = { $ne: true };
+    }
 
     const photos = await db
       .collection("photos")
@@ -25,27 +54,16 @@ export async function GET(request: Request) {
     );
   } catch (error) {
     console.error("GET /api/photos error:", error);
-
     return NextResponse.json({ error: "读取相册失败" }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const adminPassword = request.headers.get("x-admin-password");
+    const authError = await requireAdmin(request);
 
-    if (!process.env.ADMIN_PASSWORD) {
-      return NextResponse.json(
-        { error: "服务器未配置 ADMIN_PASSWORD" },
-        { status: 500 }
-      );
-    }
-
-    if (adminPassword !== process.env.ADMIN_PASSWORD) {
-      return NextResponse.json(
-        { error: "未授权，后台密码错误" },
-        { status: 401 }
-      );
+    if (authError) {
+      return authError;
     }
 
     const contentType = request.headers.get("content-type") || "";
@@ -53,21 +71,22 @@ export async function POST(request: Request) {
     let pathname = "";
     let caption = "我的照片";
     let category = "日常";
+    let isPrivate = false;
 
     if (contentType.includes("application/json")) {
       const body = await request.json();
-
       url = String(body.url || "").trim();
       pathname = String(body.pathname || "").trim();
       caption = String(body.caption || "我的照片").trim();
       category = String(body.category || "日常").trim();
+      isPrivate = Boolean(body.isPrivate);
     } else {
       const formData = await request.formData();
-
       url = String(formData.get("url") || "").trim();
       pathname = String(formData.get("pathname") || "").trim();
       caption = String(formData.get("caption") || "我的照片").trim();
       category = String(formData.get("category") || "日常").trim();
+      isPrivate = String(formData.get("isPrivate") || "") === "true";
     }
 
     if (!url) {
@@ -80,6 +99,8 @@ export async function POST(request: Request) {
       pathname,
       caption,
       category,
+      isPrivate,
+      date: now.toLocaleDateString("zh-CN"),
       createdAt: now,
       updatedAt: now,
     };
@@ -96,7 +117,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("POST /api/photos error:", error);
-
     return NextResponse.json(
       { error: "保存相册图片失败，请检查 Vercel 日志" },
       { status: 500 }

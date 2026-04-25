@@ -43,6 +43,7 @@ export default function AdminNewPostPage() {
   const [status, setStatus] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [slugTouched, setSlugTouched] = useState(false);
+  const [isPrivate, setIsPrivate] = useState(false);
   const [form, setForm] = useState<PostFormShape>(() =>
     loadDraft(DRAFT_KEY, initialForm)
   );
@@ -70,6 +71,7 @@ export default function AdminNewPostPage() {
   function resetDraft() {
     clearDraft(DRAFT_KEY);
     setSlugTouched(false);
+    setIsPrivate(false);
     setForm(initialForm);
     setStatus("本地草稿已清空。");
   }
@@ -104,6 +106,7 @@ export default function AdminNewPostPage() {
             .map((tag) => tag.trim())
             .filter(Boolean),
           published: true,
+          isPrivate,
         }),
       });
 
@@ -115,8 +118,11 @@ export default function AdminNewPostPage() {
         );
       }
 
+      const createdSlug =
+        typeof data?.slug === "string" ? data.slug : form.slug.trim();
+
       clearDraft(DRAFT_KEY);
-      router.push(`/admin/posts?created=${encodeURIComponent(form.slug.trim())}`);
+      router.push(`/admin/posts?created=${encodeURIComponent(createdSlug)}`);
       router.refresh();
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "发布文章失败。");
@@ -133,7 +139,7 @@ export default function AdminNewPostPage() {
             <div className="admin-kicker">Create</div>
             <h1 className="section-title">发布文章</h1>
             <p className="section-copy">
-              文章会写入 MongoDB 的 <code>posts</code> 集合，并立即出现在前台文章列表中。
+              文章会写入 MongoDB 的 `posts` 集合。你也可以将它设为仅后台可见。
             </p>
           </div>
 
@@ -203,6 +209,21 @@ export default function AdminNewPostPage() {
           />
         </div>
 
+        <div className="checkbox-group">
+          <label className="checkbox-row">
+            <input type="checkbox" checked readOnly />
+            <span>发布到站点</span>
+          </label>
+          <label className="checkbox-row">
+            <input
+              type="checkbox"
+              checked={isPrivate}
+              onChange={(event) => setIsPrivate(event.target.checked)}
+            />
+            <span>仅后台可见</span>
+          </label>
+        </div>
+
         <MarkdownEditor
           value={form.content}
           onChange={(content) => setForm({ ...form, content })}
@@ -216,7 +237,7 @@ export default function AdminNewPostPage() {
             onClick={submitPost}
             disabled={submitting}
           >
-            {submitting ? "发布中…" : "发布文章"}
+            {submitting ? "发布中..." : "发布文章"}
           </button>
         </div>
       </div>

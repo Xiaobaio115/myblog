@@ -1,11 +1,12 @@
 import Link from "next/link";
 import {
   filterPosts,
+  getAdminPosts,
   getAllTags,
   getLatestPostVisitsBySlugs,
-  getPublishedPosts,
   getUniqueVisitorCountsBySlugs,
 } from "@/lib/content";
+import { DeletePostButton } from "./delete-post-button";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +50,7 @@ export default async function AdminPostsPage({
   const query = pickFirst(params.q).trim();
   const selectedTag = pickFirst(params.tag).trim();
 
-  const posts = await getPublishedPosts(100);
+  const posts = await getAdminPosts(200);
   const tags = getAllTags(posts);
   const filteredPosts = filterPosts(posts, query, selectedTag);
   const postSlugs = filteredPosts.map((post) => post.slug);
@@ -83,7 +84,7 @@ export default async function AdminPostsPage({
             <div className="admin-kicker">Posts</div>
             <h1 className="section-title">管理文章</h1>
             <p className="section-copy">
-              这里会列出已发布文章，你可以继续筛选、编辑，并直接查看最近访问来源和累计 UV。
+              这里会列出后台所有文章，包括仅后台可见的私密内容。你可以直接编辑、删除或查看最近访问来源。
             </p>
           </div>
 
@@ -130,9 +131,9 @@ export default async function AdminPostsPage({
 
         {createdSlug ? (
           <div className="status-banner">
-            文章已发布。
-            <Link href={`/posts/${createdSlug}`} className="inline-link">
-              立即查看
+            文章已保存。
+            <Link href={`/admin/posts/${createdSlug}`} className="inline-link">
+              继续编辑
             </Link>
           </div>
         ) : null}
@@ -149,6 +150,7 @@ export default async function AdminPostsPage({
             {filteredPosts.map((post) => {
               const latestVisit = latestVisits[post.slug];
               const uniqueVisitors = uniqueVisitorCounts[post.slug] || 0;
+              const isVisibleOnSite = post.published !== false && !post.isPrivate;
 
               return (
                 <article key={post._id} className="post-manage-item">
@@ -158,12 +160,22 @@ export default async function AdminPostsPage({
 
                     <div className="post-manage-meta">
                       <span>Slug: {post.slug}</span>
-                      <span>{post.date || "刚刚发布"}</span>
+                      <span>{post.date || "刚刚创建"}</span>
                       <span>浏览 {post.views || 0}</span>
                       <span>UV {uniqueVisitors}</span>
                     </div>
 
                     <div className="post-visit-summary">
+                      <span
+                        className={`post-visit-chip ${isVisibleOnSite ? "" : "post-visit-chip-muted"}`}
+                      >
+                        {post.published === false
+                          ? "未发布"
+                          : post.isPrivate
+                            ? "仅后台可见"
+                            : "前台可见"}
+                      </span>
+
                       {latestVisit ? (
                         <>
                           <span className="post-visit-chip">
@@ -190,9 +202,12 @@ export default async function AdminPostsPage({
                     <Link href={`/admin/posts/${post.slug}`} className="secondary-link">
                       编辑
                     </Link>
-                    <Link href={`/posts/${post.slug}`} className="secondary-link">
-                      查看文章
-                    </Link>
+                    {isVisibleOnSite ? (
+                      <Link href={`/posts/${post.slug}`} className="secondary-link">
+                        查看文章
+                      </Link>
+                    ) : null}
+                    <DeletePostButton slug={post.slug} />
                   </div>
                 </article>
               );

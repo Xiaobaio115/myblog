@@ -42,7 +42,8 @@ export default async function AdminPostEditPage({ params }: PageProps) {
             typeof post.views === "number"
               ? post.views
               : Number(post.views ?? 0),
-          published: Boolean(post.published),
+          published: post.published !== false,
+          isPrivate: Boolean(post.isPrivate),
         }}
         recentVisits={recentVisits}
         uniqueVisitors={uniqueVisitorCounts[slug] || 0}

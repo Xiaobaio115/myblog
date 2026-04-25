@@ -1,8 +1,8 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import {
-  getPublishedPosts,
-  getStoredPhotos,
+  getAdminPhotos,
+  getAdminPosts,
   getTopPostsByTraffic,
   getTrafficOverview,
 } from "@/lib/content";
@@ -11,8 +11,8 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const [posts, photos, traffic, topPosts] = await Promise.all([
-    getPublishedPosts(100),
-    getStoredPhotos(100),
+    getAdminPosts(100),
+    getAdminPhotos(100),
     getTrafficOverview(7),
     getTopPostsByTraffic(5),
   ]);
