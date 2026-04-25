@@ -28,6 +28,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const url = String(body.url || "").trim();
     const caption = String(body.caption || "").trim();
+    const category = String(body.category || "").trim();
 
     if (!url) {
       return NextResponse.json({ error: "照片地址不能为空。" }, { status: 400 });
@@ -39,6 +40,7 @@ export async function POST(request: Request) {
     const result = await db.collection("photos").insertOne({
       url,
       caption: caption || "我的照片",
+      category: category || "日常",
       date: now.toLocaleDateString("zh-CN"),
       createdAt: now,
       updatedAt: now,

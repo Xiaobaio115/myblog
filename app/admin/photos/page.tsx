@@ -9,6 +9,7 @@ type PhotoItem = {
   url?: string;
   caption: string;
   date: string;
+  category?: string;
 };
 
 type ApiPayload = {
@@ -33,6 +34,7 @@ async function parseJsonSafely(response: Response) {
 export default function AdminPhotosPage() {
   const [password, setPassword] = useState("");
   const [caption, setCaption] = useState("");
+  const [category, setCategory] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -113,6 +115,7 @@ export default function AdminPhotosPage() {
         body: JSON.stringify({
           url: uploadData.url,
           caption: caption.trim(),
+          category: category.trim() || "日常",
         }),
       });
 
@@ -124,6 +127,7 @@ export default function AdminPhotosPage() {
 
       setSelectedFile(null);
       setCaption("");
+      setCategory("");
       setMessage("照片已加入相册。");
       await refreshPhotos();
     } catch (error) {
@@ -199,6 +203,14 @@ export default function AdminPhotosPage() {
 
             <input
               className="admin-input"
+              type="text"
+              placeholder="分类（如：日常、旅行、风景）"
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+            />
+
+            <input
+              className="admin-input"
               type="file"
               accept="image/*"
               onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
@@ -237,7 +249,7 @@ export default function AdminPhotosPage() {
                     ) : null}
                     <div className="upload-photo-body">
                       <strong>{photo.caption}</strong>
-                      <span>{photo.date}</span>
+                      <span>{photo.category ? `${photo.category} · ` : ""}{photo.date}</span>
                     </div>
                     <button
                       type="button"

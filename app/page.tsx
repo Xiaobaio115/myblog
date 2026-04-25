@@ -19,10 +19,10 @@ export default async function HomePage() {
   return (
     <SiteFrame>
       <section className="hero container">
-        <p className="eyebrow">生活记录 / 文章归档 / 图像收藏</p>
-        <h1 className="hero-title">把现在这个单一首页，改成和模板同样完整的博客门面。</h1>
+        <p className="eyebrow">生活记录 / 文章分享 / 相册收藏</p>
+        <h1 className="hero-title">欢迎来到我的博客，记录生活与思考。</h1>
         <p className="hero-copy">
-          首页负责建立氛围，文章页负责检索内容，相册页负责收纳瞬间。这样整个项目才会真正像一个博客，而不是一张静态卡片。
+          这里有我的文章、相册和日常记录。浏览文章、探索相册，一起分享生活的每一个瞬间。
         </p>
 
         <div className="hero-actions">
@@ -111,7 +111,7 @@ export default async function HomePage() {
           <div>
             <h2 className="section-title">最新文章</h2>
             <p className="section-copy">
-              保持和 `blog_html.html` 一样的内容节奏：首页先看最新内容，再继续深入。
+              最近更新的文章，记录我的想法与见闻。
             </p>
           </div>
           <Link href="/articles" className="section-link">
@@ -138,7 +138,7 @@ export default async function HomePage() {
           <div>
             <h2 className="section-title">精选相册</h2>
             <p className="section-copy">
-              首页不再只有文章卡片，增加相册入口后，视觉层次会更接近模板。
+              精选的日常照片、旅行瞬间与喜欢的画面。
             </p>
           </div>
           <Link href="/photos" className="section-link">

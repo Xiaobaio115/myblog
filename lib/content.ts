@@ -22,6 +22,7 @@ export type Photo = {
   date: string;
   emoji?: string;
   sourceHref?: string;
+  category?: string;
 };
 
 type RawDocument = Record<string, unknown> & {
@@ -101,6 +102,7 @@ function mapPhoto(document: RawDocument): Photo {
     url: document.url ? String(document.url) : "",
     caption: String(document.caption ?? "相册照片"),
     date: String(document.date ?? "刚刚"),
+    category: document.category ? String(document.category) : "",
   };
 }
 
@@ -187,6 +189,16 @@ export async function getLatestPhotos(limit = 24): Promise<Photo[]> {
   }
 
   return FALLBACK_PHOTOS.slice(0, limit);
+}
+
+export function getPhotoCategories(photos: Photo[]): string[] {
+  return Array.from(
+    new Set(
+      photos
+        .map((p) => p.category)
+        .filter((c): c is string => Boolean(c))
+    )
+  );
 }
 
 export function getAllTags(posts: Post[]) {

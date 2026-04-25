@@ -44,9 +44,9 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
     <SiteFrame>
       <section className="hero container">
         <p className="eyebrow">文章目录</p>
-        <h1 className="hero-title">把博客从单页改成真正可逛的内容空间。</h1>
+        <h1 className="hero-title">全部文章</h1>
         <p className="hero-copy">
-          这里会按标签和关键词筛选文章，结构上对应 `blog_html.html` 里的文章总览页。
+          按标签和关键词筛选，找到你感兴趣的内容。
         </p>
       </section>
 
