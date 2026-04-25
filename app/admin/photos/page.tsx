@@ -11,6 +11,25 @@ type PhotoItem = {
   date: string;
 };
 
+type ApiPayload = {
+  error?: string;
+  url?: string;
+};
+
+async function parseJsonSafely(response: Response) {
+  const text = await response.text();
+
+  if (!text.trim()) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return { error: text } satisfies ApiPayload;
+  }
+}
+
 export default function AdminPhotosPage() {
   const [password, setPassword] = useState("");
   const [caption, setCaption] = useState("");
@@ -25,7 +44,7 @@ export default function AdminPhotosPage() {
   );
 
   useEffect(() => {
-    refreshPhotos();
+    void refreshPhotos();
   }, []);
 
   useEffect(() => {
@@ -39,10 +58,10 @@ export default function AdminPhotosPage() {
   async function refreshPhotos() {
     try {
       const response = await fetch("/api/photos", { cache: "no-store" });
-      const data = await response.json();
+      const data = await parseJsonSafely(response);
 
       if (response.ok && Array.isArray(data)) {
-        setPhotos(data);
+        setPhotos(data as PhotoItem[]);
       }
     } catch (error) {
       console.error("refresh photos failed:", error);
@@ -75,10 +94,14 @@ export default function AdminPhotosPage() {
         body: formData,
       });
 
-      const uploadData = await uploadResponse.json();
+      const uploadData = (await parseJsonSafely(uploadResponse)) as ApiPayload | null;
 
       if (!uploadResponse.ok) {
-        throw new Error(uploadData.error || "上传图片失败。");
+        throw new Error(uploadData?.error || "上传图片失败。");
+      }
+
+      if (!uploadData?.url) {
+        throw new Error("上传接口没有返回图片地址。");
       }
 
       const saveResponse = await fetch("/api/photos", {
@@ -93,10 +116,10 @@ export default function AdminPhotosPage() {
         }),
       });
 
-      const saveData = await saveResponse.json();
+      const saveData = (await parseJsonSafely(saveResponse)) as ApiPayload | null;
 
       if (!saveResponse.ok) {
-        throw new Error(saveData.error || "保存照片失败。");
+        throw new Error(saveData?.error || "保存照片失败。");
       }
 
       setSelectedFile(null);
@@ -127,10 +150,10 @@ export default function AdminPhotosPage() {
         },
       });
 
-      const data = await response.json();
+      const data = (await parseJsonSafely(response)) as ApiPayload | null;
 
       if (!response.ok) {
-        throw new Error(data.error || "删除失败。");
+        throw new Error(data?.error || "删除失败。");
       }
 
       setMessage("照片已删除。");
@@ -149,7 +172,9 @@ export default function AdminPhotosPage() {
           <div>
             <h1 className="section-title">管理相册</h1>
             <p className="section-copy">
-              上传后会先写入 Blob，再把元数据保存到 MongoDB 的 `photos` 集合。
+              上传后会先写入 Blob，再把元数据保存到 MongoDB 的
+              <code> photos </code>
+              集合。
             </p>
           </div>
         </div>
@@ -183,7 +208,7 @@ export default function AdminPhotosPage() {
               <img src={previewUrl} alt="预览" className="admin-preview" />
             ) : (
               <div className="empty-state compact">
-                <div className="empty-icon">🖼️</div>
+                <div className="empty-icon">📤</div>
                 <p>选择图片后会在这里预览。</p>
               </div>
             )}
@@ -228,7 +253,7 @@ export default function AdminPhotosPage() {
             ) : (
               <div className="empty-state compact">
                 <div className="empty-icon">📷</div>
-                <p>相册里还没有照片，上传一张就能在 `/photos` 页面看到。</p>
+                <p>相册里还没有照片，上传一张后就会出现在 `/photos` 页面。</p>
               </div>
             )}
           </div>
