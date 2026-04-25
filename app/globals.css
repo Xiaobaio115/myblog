@@ -1,68 +1,70 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-:root {
   --pink-50: #fff5f9;
   --pink-100: #ffe4f0;
   --pink-200: #ffc2dd;
   --pink-300: #ff90c0;
   --pink-400: #ff5ca8;
   --pink-500: #f0318a;
+  --pink-600: #d4006e;
+
+  --purple-300: #d8b4fe;
   --purple-400: #c084fc;
   --purple-500: #a855f7;
+
   --bg: #ffffff;
   --bg2: #fff8fc;
   --bg3: #fff0f7;
+
   --border: rgba(240, 49, 138, 0.12);
+  --border-soft: rgba(240, 49, 138, 0.08);
+
   --text: #1a0a12;
   --text2: #4a2035;
   --muted: #9b6880;
+
   --shadow: 0 2px 16px rgba(240, 49, 138, 0.08);
   --shadow-hover: 0 8px 32px rgba(240, 49, 138, 0.16);
+
   --radius: 16px;
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --font-sans: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
+  min-height: 100vh;
   background: var(--bg);
   color: var(--text);
   font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
 }
 
 a {
   color: inherit;
   text-decoration: none;
 }
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+/* ===== Page Shell ===== */
 
 .site-shell {
   min-height: 100vh;
@@ -75,6 +77,8 @@ a {
   margin: 0 auto;
   padding: 0 24px;
 }
+
+/* ===== Background Orbs ===== */
 
 .bg-orbs {
   position: fixed;
@@ -129,14 +133,18 @@ a {
   }
 }
 
+/* ===== Navbar ===== */
+
 .nav {
   position: sticky;
   top: 0;
   z-index: 50;
   background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
   padding: 14px 0;
+  box-shadow: 0 1px 0 var(--border-soft);
 }
 
 .nav-inner {
@@ -148,6 +156,7 @@ a {
 .nav-logo {
   font-size: 1.25rem;
   font-weight: 800;
+  letter-spacing: -0.3px;
   background: linear-gradient(135deg, var(--pink-500), var(--purple-500));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -174,6 +183,8 @@ a {
   background: var(--pink-100);
 }
 
+/* ===== Hero ===== */
+
 .hero {
   position: relative;
   z-index: 1;
@@ -194,6 +205,22 @@ a {
   box-shadow:
     0 0 0 6px var(--pink-100),
     0 8px 30px rgba(240, 49, 138, 0.2);
+  animation: pulse-ring 3.5s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 6px var(--pink-100),
+      0 8px 30px rgba(240, 49, 138, 0.2);
+  }
+
+  50% {
+    box-shadow:
+      0 0 0 12px var(--pink-50),
+      0 8px 40px rgba(240, 49, 138, 0.14);
+  }
 }
 
 .hero h1 {
@@ -201,6 +228,7 @@ a {
   font-weight: 900;
   line-height: 1.15;
   margin: 0 0 14px;
+  letter-spacing: -0.5px;
   background: linear-gradient(
     135deg,
     #1a0a12 0%,
@@ -235,6 +263,14 @@ a {
   font-size: 0.8rem;
   font-weight: 500;
   box-shadow: 0 1px 4px rgba(240, 49, 138, 0.06);
+  transition: all 0.2s;
+}
+
+.tag-chip:hover {
+  border-color: var(--pink-400);
+  color: var(--pink-500);
+  background: var(--pink-50);
+  transform: translateY(-1px);
 }
 
 .tag-chip.selected {
@@ -243,6 +279,8 @@ a {
   color: #fff;
   box-shadow: 0 4px 14px rgba(240, 49, 138, 0.3);
 }
+
+/* ===== Section ===== */
 
 .section-title {
   position: relative;
@@ -253,6 +291,7 @@ a {
   display: flex;
   align-items: center;
   gap: 10px;
+  letter-spacing: -0.2px;
 }
 
 .section-title::after {
@@ -261,6 +300,8 @@ a {
   height: 1px;
   background: linear-gradient(to right, var(--border), transparent);
 }
+
+/* ===== Article Cards ===== */
 
 .cards-grid {
   position: relative;
@@ -308,6 +349,7 @@ a {
   object-fit: cover;
   border-radius: 12px;
   margin-bottom: 14px;
+  border: 1px solid var(--border-soft);
 }
 
 .card-meta {
@@ -372,6 +414,8 @@ a {
   font-size: 0.76rem;
 }
 
+/* ===== Empty State ===== */
+
 .empty-card {
   position: relative;
   z-index: 1;
@@ -398,10 +442,195 @@ a {
   font-weight: 700;
 }
 
+/* ===== Admin Page ===== */
+
+.admin-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top right, #ffe4f0, transparent 36%),
+    linear-gradient(135deg, #fff5f9, #ffffff);
+  padding: 60px 24px;
+}
+
+.admin-card {
+  max-width: 760px;
+  margin: 0 auto;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: 22px;
+  padding: 32px;
+  box-shadow: var(--shadow-hover);
+}
+
+.admin-card h1 {
+  margin: 0 0 8px;
+  font-size: 2rem;
+  font-weight: 900;
+}
+
+.admin-card p {
+  margin: 0 0 24px;
+  color: var(--muted);
+}
+
+.admin-input,
+.admin-textarea {
+  width: 100%;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  font: inherit;
+  outline: none;
+  background: #fff;
+  color: var(--text);
+  transition: all 0.2s;
+}
+
+.admin-input:focus,
+.admin-textarea:focus {
+  border-color: var(--pink-400);
+  box-shadow: 0 0 0 3px rgba(240, 49, 138, 0.1);
+}
+
+.admin-textarea {
+  min-height: 260px;
+  resize: vertical;
+}
+
+.admin-button {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  color: #fff;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--pink-500), var(--purple-500));
+  box-shadow: 0 6px 20px rgba(240, 49, 138, 0.3);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 26px rgba(240, 49, 138, 0.38);
+}
+
+/* ===== Article Detail ===== */
+
+.article-detail {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+.back-link {
+  display: inline-flex;
+  margin-bottom: 28px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.back-link:hover {
+  color: var(--pink-500);
+}
+
+.article-title {
+  font-size: 2.2rem;
+  font-weight: 900;
+  line-height: 1.25;
+  margin: 12px 0 16px;
+  letter-spacing: -0.5px;
+}
+
+.article-meta {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 0.86rem;
+  margin-bottom: 28px;
+}
+
+.article-cover {
+  width: 100%;
+  max-height: 440px;
+  object-fit: cover;
+  border-radius: 18px;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow);
+}
+
+.article-content {
+  color: var(--text2);
+  font-size: 1rem;
+  line-height: 1.9;
+}
+
+.article-content h2 {
+  color: var(--text);
+  font-size: 1.35rem;
+  margin: 32px 0 14px;
+}
+
+.article-content h3 {
+  color: var(--pink-600);
+  font-size: 1.08rem;
+  margin: 22px 0 10px;
+}
+
+.article-content p {
+  margin: 0 0 16px;
+}
+
+.article-content code {
+  background: var(--pink-50);
+  border: 1px solid var(--border);
+  padding: 2px 7px;
+  border-radius: 6px;
+  color: var(--pink-600);
+}
+
+.article-content pre {
+  background: #fdf6fa;
+  border: 1.5px solid var(--border);
+  padding: 20px;
+  border-radius: 12px;
+  overflow-x: auto;
+  margin: 20px 0;
+}
+
+.article-content blockquote {
+  border-left: 3px solid var(--pink-400);
+  padding: 14px 20px;
+  margin: 20px 0;
+  background: var(--pink-50);
+  border-radius: 0 10px 10px 0;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* ===== Mobile ===== */
+
 @media (max-width: 700px) {
+  .container {
+    padding: 0 18px;
+  }
+
   .nav-inner {
     flex-direction: column;
     gap: 12px;
+  }
+
+  .nav-links {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .hero {
+    padding-top: 52px;
   }
 
   .hero h1 {
@@ -410,5 +639,13 @@ a {
 
   .cards-grid {
     grid-template-columns: 1fr;
+  }
+
+  .article-title {
+    font-size: 1.7rem;
+  }
+
+  .admin-card {
+    padding: 24px;
   }
 }
