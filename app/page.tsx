@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { getDb } from "@/lib/mongodb";
+import { getDb } from "@/lib/mongodb";//1
 
 export default async function HomePage() {
   const db = await getDb();
