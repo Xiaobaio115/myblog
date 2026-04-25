@@ -1669,6 +1669,31 @@ img {
   color: var(--muted);
 }
 
+.upload-progress {
+  display: grid;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.upload-progress span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.upload-progress-bar {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(240, 50, 141, 0.08);
+}
+
+.upload-progress-value {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(240, 50, 141, 0.92), rgba(160, 104, 255, 0.88));
+  transition: width 0.2s ease;
+}
+
 .visitor-panel {
   margin: 18px 0 24px;
   padding: 22px;

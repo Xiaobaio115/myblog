@@ -1,4 +1,3 @@
-import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 
@@ -9,13 +8,8 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
-
     const db = await getDb();
-
-    const query =
-      category && category !== "全部"
-        ? { category }
-        : {};
+    const query = category && category !== "全部" ? { category } : {};
 
     const photos = await db
       .collection("photos")
@@ -32,10 +26,7 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("GET /api/photos error:", error);
 
-    return NextResponse.json(
-      { error: "读取相册失败" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "读取相册失败" }, { status: 500 });
   }
 }
 
@@ -57,61 +48,36 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!process.env.BLOB_READ_WRITE_TOKEN) {
-      return NextResponse.json(
-        { error: "服务器未配置 BLOB_READ_WRITE_TOKEN" },
-        { status: 500 }
-      );
+    const contentType = request.headers.get("content-type") || "";
+    let url = "";
+    let pathname = "";
+    let caption = "我的照片";
+    let category = "日常";
+
+    if (contentType.includes("application/json")) {
+      const body = await request.json();
+
+      url = String(body.url || "").trim();
+      pathname = String(body.pathname || "").trim();
+      caption = String(body.caption || "我的照片").trim();
+      category = String(body.category || "日常").trim();
+    } else {
+      const formData = await request.formData();
+
+      url = String(formData.get("url") || "").trim();
+      pathname = String(formData.get("pathname") || "").trim();
+      caption = String(formData.get("caption") || "我的照片").trim();
+      category = String(formData.get("category") || "日常").trim();
     }
 
-    const formData = await request.formData();
-
-    const file = formData.get("file");
-    const caption = String(formData.get("caption") || "我的照片").trim();
-    const category = String(formData.get("category") || "日常").trim();
-
-    if (!file || !(file instanceof File)) {
-      return NextResponse.json(
-        { error: "没有收到图片文件" },
-        { status: 400 }
-      );
+    if (!url) {
+      return NextResponse.json({ error: "缺少图片地址" }, { status: 400 });
     }
-
-    if (!file.type.startsWith("image/")) {
-      return NextResponse.json(
-        { error: "只能上传图片文件" },
-        { status: 400 }
-      );
-    }
-
-    const maxSize = 8 * 1024 * 1024;
-
-    if (file.size > maxSize) {
-      return NextResponse.json(
-        { error: "图片不能超过 8MB，请先压缩图片" },
-        { status: 413 }
-      );
-    }
-
-    const safeCategory = category.replace(/[^\u4e00-\u9fa5a-zA-Z0-9_-]/g, "");
-    const safeName = file.name
-      .replace(/\s+/g, "-")
-      .replace(/[^a-zA-Z0-9._-]/g, "");
-
-    const pathname = `photos/${safeCategory || "default"}/${Date.now()}-${
-      safeName || "image.jpg"
-    }`;
-
-    const blob = await put(pathname, file, {
-      access: "public",
-      addRandomSuffix: true,
-    });
 
     const now = new Date();
-
     const photo = {
-      url: blob.url,
-      pathname: blob.pathname,
+      url,
+      pathname,
       caption,
       category,
       createdAt: now,
@@ -132,7 +98,7 @@ export async function POST(request: Request) {
     console.error("POST /api/photos error:", error);
 
     return NextResponse.json(
-      { error: "上传图片失败，请检查 Vercel 日志" },
+      { error: "保存相册图片失败，请检查 Vercel 日志" },
       { status: 500 }
     );
   }

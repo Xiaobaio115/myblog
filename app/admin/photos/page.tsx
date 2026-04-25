@@ -1,5 +1,6 @@
 "use client";
 
+import { upload } from "@vercel/blob/client";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 
@@ -28,6 +29,15 @@ async function parseJsonSafely(response: Response) {
   }
 }
 
+function buildSafeFilename(file: File, category: string) {
+  const safeCategory = category.replace(/[^\u4e00-\u9fa5a-zA-Z0-9_-]/g, "");
+  const safeName = file.name
+    .replace(/\s+/g, "-")
+    .replace(/[^a-zA-Z0-9._-]/g, "");
+
+  return `photos/${safeCategory || "default"}/${Date.now()}-${safeName || "image.jpg"}`;
+}
+
 export default function AdminPhotosPage() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [caption, setCaption] = useState("");
@@ -36,6 +46,7 @@ export default function AdminPhotosPage() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [message, setMessage] = useState("");
 
   const categories = useMemo(() => {
@@ -106,29 +117,43 @@ export default function AdminPhotosPage() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("caption", caption.trim() || "我的照片");
-    formData.append("category", finalCategory);
-
     setUploading(true);
+    setUploadProgress(0);
     setMessage("");
 
     try {
-      const response = await fetch("/api/photos", {
-        method: "POST",
+      const blob = await upload(buildSafeFilename(file, finalCategory), file, {
+        access: "public",
+        handleUploadUrl: "/api/photos/upload",
         headers: {
           "x-admin-password": password,
         },
-        body: formData,
+        multipart: file.size > 5 * 1024 * 1024,
+        onUploadProgress: ({ percentage }) => {
+          setUploadProgress(Math.round(percentage));
+        },
       });
 
-      const data = (await parseJsonSafely(response)) as
+      const saveResponse = await fetch("/api/photos", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-password": password,
+        },
+        body: JSON.stringify({
+          url: blob.url,
+          pathname: blob.pathname,
+          caption: caption.trim() || "我的照片",
+          category: finalCategory,
+        }),
+      });
+
+      const data = (await parseJsonSafely(saveResponse)) as
         | { error?: string; photo?: Photo }
         | null;
 
-      if (!response.ok) {
-        throw new Error(data?.error || "上传失败。");
+      if (!saveResponse.ok) {
+        throw new Error(data?.error || "保存相册信息失败。");
       }
 
       setCaption("");
@@ -136,6 +161,7 @@ export default function AdminPhotosPage() {
       setCustomCategory("");
       setFile(null);
       setPreview("");
+      setUploadProgress(0);
       setMessage("图片已上传到相册。");
 
       if (data?.photo) {
@@ -186,7 +212,7 @@ export default function AdminPhotosPage() {
             <div className="admin-kicker">Photos</div>
             <h1 className="section-title">管理相册</h1>
             <p className="section-copy">
-              上传图片到 Vercel Blob，并把分类、标题等元数据保存到 MongoDB。
+              图片现在会从浏览器直接上传到 Vercel Blob，大图不会再经过 Next.js 函数。
             </p>
           </div>
         </div>
@@ -231,6 +257,18 @@ export default function AdminPhotosPage() {
               onChange={(event) => handleFileChange(event.target.files?.[0] || null)}
             />
 
+            {uploading ? (
+              <div className="upload-progress">
+                <div className="upload-progress-bar">
+                  <div
+                    className="upload-progress-value"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+                <span>上传中 {uploadProgress}%</span>
+              </div>
+            ) : null}
+
             {preview ? (
               <Image
                 src={preview}
@@ -243,7 +281,7 @@ export default function AdminPhotosPage() {
               />
             ) : (
               <div className="empty-state compact">
-                <div className="empty-icon">🖼️</div>
+                <div className="empty-icon">图</div>
                 <p>选择图片后会在这里显示预览。</p>
               </div>
             )}
@@ -255,7 +293,7 @@ export default function AdminPhotosPage() {
                 onClick={uploadPhoto}
                 disabled={uploading}
               >
-                {uploading ? "上传中…" : "上传到相册"}
+                {uploading ? "上传中..." : "上传到相册"}
               </button>
             </div>
           </div>
@@ -291,7 +329,7 @@ export default function AdminPhotosPage() {
               </div>
             ) : (
               <div className="empty-state compact">
-                <div className="empty-icon">📷</div>
+                <div className="empty-icon">册</div>
                 <p>相册里还没有照片，先上传第一张。</p>
               </div>
             )}
