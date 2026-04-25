@@ -1,94 +1,84 @@
-/* eslint-disable @next/next/no-img-element */
-
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 
-type PhotoItem = {
+type Photo = {
   _id: string;
-  url?: string;
+  url: string;
+  pathname?: string;
   caption: string;
-  date: string;
-  category?: string;
+  category: string;
+  createdAt?: string;
 };
 
-type ApiPayload = {
-  error?: string;
-  url?: string;
-};
-
-async function parseJsonSafely(response: Response) {
-  const text = await response.text();
-
-  if (!text.trim()) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    return { error: text } satisfies ApiPayload;
-  }
-}
+const DEFAULT_CATEGORIES = ["日常", "旅行", "风景", "美食", "截图", "灵感"];
 
 export default function AdminPhotosPage() {
-  const [password, setPassword] = useState("");
+  const [photos, setPhotos] = useState<Photo[]>([]);
   const [caption, setCaption] = useState("");
-  const [category, setCategory] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [photos, setPhotos] = useState<PhotoItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [category, setCategory] = useState("日常");
+  const [customCategory, setCustomCategory] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState("");
+  const [uploading, setUploading] = useState(false);
 
-  const previewUrl = useMemo(
-    () => (selectedFile ? URL.createObjectURL(selectedFile) : ""),
-    [selectedFile]
-  );
+  const categories = useMemo(() => {
+    const fromPhotos = photos.map((photo) => photo.category).filter(Boolean);
+    return Array.from(new Set([...DEFAULT_CATEGORIES, ...fromPhotos]));
+  }, [photos]);
 
-  useEffect(() => {
-    void refreshPhotos();
-  }, []);
+  async function loadPhotos() {
+    const res = await fetch("/api/photos", {
+      cache: "no-store",
+    });
 
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
+    const data = await res.json();
 
-  async function refreshPhotos() {
-    try {
-      const response = await fetch("/api/photos", { cache: "no-store" });
-      const data = await parseJsonSafely(response);
-
-      if (response.ok && Array.isArray(data)) {
-        setPhotos(data as PhotoItem[]);
-      }
-    } catch (error) {
-      console.error("refresh photos failed:", error);
+    if (res.ok) {
+      setPhotos(data);
     }
   }
 
-  async function handleUpload() {
+  useEffect(() => {
+    loadPhotos();
+  }, []);
+
+  function handleFileChange(selectedFile: File | null) {
+    setFile(selectedFile);
+
     if (!selectedFile) {
-      setMessage("请先选择一张图片。");
+      setPreview("");
       return;
     }
 
-    if (!password.trim()) {
-      setMessage("请先输入后台密码。");
+    setPreview(URL.createObjectURL(selectedFile));
+  }
+
+  async function uploadPhoto() {
+    if (!file) {
+      alert("请先选择图片");
       return;
     }
 
-    setLoading(true);
-    setMessage("");
+    const finalCategory =
+      category === "自定义" ? customCategory.trim() : category;
+
+    if (!finalCategory) {
+      alert("请输入分类");
+      return;
+    }
+
+    const password = localStorage.getItem("admin_password") || "";
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("caption", caption || "我的照片");
+    formData.append("category", finalCategory);
+
+    setUploading(true);
 
     try {
-      const formData = new FormData();
-      formData.append("file", selectedFile);
-
-      const uploadResponse = await fetch("/api/upload", {
+      const res = await fetch("/api/photos", {
         method: "POST",
         headers: {
           "x-admin-password": password,
@@ -96,181 +86,149 @@ export default function AdminPhotosPage() {
         body: formData,
       });
 
-      const uploadData = (await parseJsonSafely(uploadResponse)) as ApiPayload | null;
+      const data = await res.json();
 
-      if (!uploadResponse.ok) {
-        throw new Error(uploadData?.error || "上传图片失败。");
+      if (!res.ok) {
+        alert(data.error || "上传失败");
+        return;
       }
 
-      if (!uploadData?.url) {
-        throw new Error("上传接口没有返回图片地址。");
-      }
-
-      const saveResponse = await fetch("/api/photos", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-password": password,
-        },
-        body: JSON.stringify({
-          url: uploadData.url,
-          caption: caption.trim(),
-          category: category.trim() || "日常",
-        }),
-      });
-
-      const saveData = (await parseJsonSafely(saveResponse)) as ApiPayload | null;
-
-      if (!saveResponse.ok) {
-        throw new Error(saveData?.error || "保存照片失败。");
-      }
-
-      setSelectedFile(null);
       setCaption("");
-      setCategory("");
-      setMessage("照片已加入相册。");
-      await refreshPhotos();
+      setCategory(finalCategory);
+      setCustomCategory("");
+      setFile(null);
+      setPreview("");
+
+      await loadPhotos();
+
+      alert("上传成功！");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "上传失败。");
+      console.error(error);
+      alert("上传失败，请查看 Vercel 日志");
     } finally {
-      setLoading(false);
+      setUploading(false);
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!password.trim()) {
-      setMessage("删除照片前请先输入后台密码。");
+  async function deletePhoto(id: string) {
+    if (!confirm("确定删除这张照片吗？")) return;
+
+    const password = localStorage.getItem("admin_password") || "";
+
+    const res = await fetch(`/api/photos/${id}`, {
+      method: "DELETE",
+      headers: {
+        "x-admin-password": password,
+      },
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || "删除失败");
       return;
     }
 
-    setLoading(true);
-    setMessage("");
-
-    try {
-      const response = await fetch(`/api/photos/${id}`, {
-        method: "DELETE",
-        headers: {
-          "x-admin-password": password,
-        },
-      });
-
-      const data = (await parseJsonSafely(response)) as ApiPayload | null;
-
-      if (!response.ok) {
-        throw new Error(data?.error || "删除失败。");
-      }
-
-      setMessage("照片已删除。");
-      await refreshPhotos();
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "删除失败。");
-    } finally {
-      setLoading(false);
-    }
+    setPhotos((items) => items.filter((item) => item._id !== id));
   }
 
   return (
-    <main className="admin-page">
-      <div className="admin-panel">
-        <div className="section-head">
-          <div>
-            <h1 className="section-title">管理相册</h1>
-            <p className="section-copy">
-              上传后会先写入 Blob，再把元数据保存到 MongoDB 的
-              <code> photos </code>
-              集合。
-            </p>
-          </div>
-        </div>
-
-        <div className="admin-grid">
-          <div className="upload-panel">
-            <input
-              className="admin-input"
-              type="password"
-              placeholder="后台密码"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-
-            <input
-              className="admin-input"
-              type="text"
-              placeholder="照片说明"
-              value={caption}
-              onChange={(event) => setCaption(event.target.value)}
-            />
-
-            <input
-              className="admin-input"
-              type="text"
-              placeholder="分类（如：日常、旅行、风景）"
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-            />
-
-            <input
-              className="admin-input"
-              type="file"
-              accept="image/*"
-              onChange={(event) => setSelectedFile(event.target.files?.[0] || null)}
-            />
-
-            {previewUrl ? (
-              <img src={previewUrl} alt="预览" className="admin-preview" />
-            ) : (
-              <div className="empty-state compact">
-                <div className="empty-icon">📤</div>
-                <p>选择图片后会在这里预览。</p>
-              </div>
-            )}
-
-            <div className="admin-actions">
-              <button
-                type="button"
-                className="admin-button"
-                onClick={handleUpload}
-                disabled={loading}
-              >
-                {loading ? "处理中..." : "上传到相册"}
-              </button>
-            </div>
-          </div>
-
-          <div>
-            {message ? <div className="status-banner">{message}</div> : null}
-
-            {photos.length > 0 ? (
-              <div className="upload-grid">
-                {photos.map((photo) => (
-                  <article key={photo._id} className="upload-photo">
-                    {photo.url ? (
-                      <img src={photo.url} alt={photo.caption} className="photo-media" />
-                    ) : null}
-                    <div className="upload-photo-body">
-                      <strong>{photo.caption}</strong>
-                      <span>{photo.category ? `${photo.category} · ` : ""}{photo.date}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="danger-btn"
-                      onClick={() => handleDelete(photo._id)}
-                      disabled={loading}
-                    >
-                      删除
-                    </button>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <div className="empty-state compact">
-                <div className="empty-icon">📷</div>
-                <p>相册里还没有照片，上传一张后就会出现在 `/photos` 页面。</p>
-              </div>
-            )}
-          </div>
+    <main className="admin-dashboard">
+      <div className="admin-page-head">
+        <div>
+          <div className="admin-badge">PHOTO MANAGER</div>
+          <h1>相册管理</h1>
+          <p>上传图片到 Vercel Blob，并按分类保存到 MongoDB。</p>
         </div>
       </div>
+
+      <section className="photo-admin-layout">
+        <div className="photo-upload-panel">
+          <h2>上传新照片</h2>
+
+          <input
+            className="admin-input"
+            placeholder="照片说明"
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+          />
+
+          <select
+            className="admin-input"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            {categories.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+            <option value="自定义">自定义分类</option>
+          </select>
+
+          {category === "自定义" && (
+            <input
+              className="admin-input"
+              placeholder="输入新的分类，例如 胶片"
+              value={customCategory}
+              onChange={(e) => setCustomCategory(e.target.value)}
+            />
+          )}
+
+          <label className="photo-file-drop">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) =>
+                handleFileChange(e.target.files?.[0] || null)
+              }
+            />
+
+            {preview ? (
+              <img src={preview} alt="预览" />
+            ) : (
+              <div>
+                <span>📤</span>
+                <p>点击选择图片</p>
+                <small>支持 JPG、PNG、WebP、GIF</small>
+              </div>
+            )}
+          </label>
+
+          <button
+            className="admin-button"
+            onClick={uploadPhoto}
+            disabled={uploading}
+          >
+            {uploading ? "上传中..." : "上传到相册"}
+          </button>
+        </div>
+
+        <div className="photo-manage-panel">
+          <h2>已上传照片</h2>
+
+          {photos.length === 0 ? (
+            <div className="empty-mini">还没有照片</div>
+          ) : (
+            <div className="photo-manage-list">
+              {photos.map((photo) => (
+                <div key={photo._id} className="photo-manage-item">
+                  <img src={photo.url} alt={photo.caption} />
+
+                  <div>
+                    <strong>{photo.caption}</strong>
+                    <p>{photo.category}</p>
+                  </div>
+
+                  <button onClick={() => deletePhoto(photo._id)}>
+                    删除
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
     </main>
   );
 }
