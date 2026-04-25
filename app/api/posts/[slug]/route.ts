@@ -1,30 +1,47 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 export async function GET(
   request: Request,
   context: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = await context.params;
+  try {
+    const { slug } = await context.params;
 
-  const db = await getDb();
-
-  const post = await db.collection("posts").findOne({
-    slug,
-    published: true,
-  });
-
-  if (!post) {
-    return NextResponse.json({ error: "文章不存在" }, { status: 404 });
-  }
-
-  await db.collection("posts").updateOne(
-    { slug },
-    {
-      $inc: { views: 1 },
-      $set: { updatedAt: new Date() },
+    if (!slug) {
+      return NextResponse.json(
+        { error: "缺少文章 slug" },
+        { status: 400 }
+      );
     }
-  );
 
-  return NextResponse.json(post);
+    const db = await getDb();
+
+    const post = await db.collection("posts").findOne({
+      slug,
+      published: true,
+    });
+
+    if (!post) {
+      return NextResponse.json(
+        { error: "文章不存在" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      ...post,
+      _id: post._id.toString(),
+    });
+  } catch (error) {
+    console.error("GET /api/posts/[slug] error:", error);
+
+    return NextResponse.json(
+      { error: "服务器错误，读取文章失败" },
+      { status: 500 }
+    );
+  }
 }
