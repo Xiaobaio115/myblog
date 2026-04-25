@@ -3,18 +3,17 @@
 import { useState } from "react";
 
 export default function AdminPostsPage() {
+  const [password, setPassword] = useState("");
   const [form, setForm] = useState({
     title: "",
     slug: "",
     excerpt: "",
-    content: "",
     tags: "",
     coverUrl: "",
+    content: "",
   });
 
   async function submitPost() {
-    const password = localStorage.getItem("admin_password") || "";
-
     const res = await fetch("/api/posts", {
       method: "POST",
       headers: {
@@ -22,81 +21,98 @@ export default function AdminPostsPage() {
         "x-admin-password": password,
       },
       body: JSON.stringify({
-        ...form,
-        tags: form.tags.split(",").map((tag) => tag.trim()),
+        title: form.title,
+        slug: form.slug,
+        excerpt: form.excerpt,
+        content: form.content,
+        coverUrl: form.coverUrl,
+        tags: form.tags
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter(Boolean),
         published: true,
       }),
     });
 
     const data = await res.json();
 
-    if (data.success) {
-      alert("发布成功！");
-      setForm({
-        title: "",
-        slug: "",
-        excerpt: "",
-        content: "",
-        tags: "",
-        coverUrl: "",
-      });
-    } else {
+    if (!res.ok) {
       alert(data.error || "发布失败");
+      return;
     }
+
+    alert("发布成功！");
+
+    setForm({
+      title: "",
+      slug: "",
+      excerpt: "",
+      tags: "",
+      coverUrl: "",
+      content: "",
+    });
   }
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
-      <h1 className="mb-6 text-3xl font-bold">发布文章</h1>
+    <main className="admin-page">
+      <div className="admin-card">
+        <h1>发布文章</h1>
+        <p>填写内容后会保存到 MongoDB 的 blog.posts 集合。</p>
 
-      <input
-        className="mb-3 w-full rounded-xl border px-4 py-3"
-        placeholder="文章标题"
-        value={form.title}
-        onChange={(e) => setForm({ ...form, title: e.target.value })}
-      />
+        <input
+          className="admin-input"
+          type="password"
+          placeholder="后台密码"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
-      <input
-        className="mb-3 w-full rounded-xl border px-4 py-3"
-        placeholder="slug，例如 kyoto-sakura-trip"
-        value={form.slug}
-        onChange={(e) => setForm({ ...form, slug: e.target.value })}
-      />
+        <input
+          className="admin-input"
+          placeholder="文章标题"
+          value={form.title}
+          onChange={(e) => setForm({ ...form, title: e.target.value })}
+        />
 
-      <input
-        className="mb-3 w-full rounded-xl border px-4 py-3"
-        placeholder="摘要"
-        value={form.excerpt}
-        onChange={(e) => setForm({ ...form, excerpt: e.target.value })}
-      />
+        <input
+          className="admin-input"
+          placeholder="slug，例如 my-first-post"
+          value={form.slug}
+          onChange={(e) => setForm({ ...form, slug: e.target.value })}
+        />
 
-      <input
-        className="mb-3 w-full rounded-xl border px-4 py-3"
-        placeholder="标签，用英文逗号分隔，例如 生活,旅行,日本"
-        value={form.tags}
-        onChange={(e) => setForm({ ...form, tags: e.target.value })}
-      />
+        <input
+          className="admin-input"
+          placeholder="摘要"
+          value={form.excerpt}
+          onChange={(e) => setForm({ ...form, excerpt: e.target.value })}
+        />
 
-      <input
-        className="mb-3 w-full rounded-xl border px-4 py-3"
-        placeholder="封面图 URL"
-        value={form.coverUrl}
-        onChange={(e) => setForm({ ...form, coverUrl: e.target.value })}
-      />
+        <input
+          className="admin-input"
+          placeholder="标签，用英文逗号分隔，例如 生活,旅行,技术"
+          value={form.tags}
+          onChange={(e) => setForm({ ...form, tags: e.target.value })}
+        />
 
-      <textarea
-        className="mb-3 h-80 w-full rounded-xl border px-4 py-3"
-        placeholder="文章正文，支持 Markdown"
-        value={form.content}
-        onChange={(e) => setForm({ ...form, content: e.target.value })}
-      />
+        <input
+          className="admin-input"
+          placeholder="封面图 URL，可先留空"
+          value={form.coverUrl}
+          onChange={(e) => setForm({ ...form, coverUrl: e.target.value })}
+        />
 
-      <button
-        onClick={submitPost}
-        className="rounded-xl bg-pink-500 px-6 py-3 font-bold text-white"
-      >
-        发布文章
-      </button>
+        <textarea
+          className="admin-textarea"
+          placeholder="正文，支持 Markdown"
+          value={form.content}
+          onChange={(e) => setForm({ ...form, content: e.target.value })}
+        />
+
+        <button className="admin-button" onClick={submitPost}>
+          发布文章 ✨
+        </button>
+      </div>
     </main>
   );
 }
