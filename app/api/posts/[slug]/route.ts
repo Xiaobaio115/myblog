@@ -6,10 +6,10 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   request: Request,
-  context: { params: Promise<{ slug: string }> }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const { slug } = await context.params;
+    const { slug } = await params;
 
     if (!slug) {
       return NextResponse.json(
@@ -40,7 +40,7 @@ export async function GET(
     console.error("GET /api/posts/[slug] error:", error);
 
     return NextResponse.json(
-      { error: "服务器错误，读取文章失败" },
+      { error: "读取文章失败" },
       { status: 500 }
     );
   }
