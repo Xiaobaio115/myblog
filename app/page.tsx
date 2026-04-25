@@ -2,6 +2,11 @@ import Link from "next/link";
 import { getDb } from "@/lib/mongodb";
 
 export default async function HomePage() {
+    return (
+    <main>
+      <h1>我的博客</h1>
+    </main>
+  );
   const db = await getDb();
 
   const posts = await db
