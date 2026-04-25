@@ -1,82 +1,79 @@
-import { getDb } from "@/lib/mongodb";
+/* eslint-disable @next/next/no-img-element */
+
+export const dynamic = "force-dynamic";
+
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { marked } from "marked";
+import { SiteFrame } from "@/app/components/site-frame";
+import { TwikooComments } from "@/app/components/twikoo-comments";
+import {
+  getPublishedPost,
+  incrementPostViews,
+} from "@/lib/content";
 
-export default async function PostPage({
-  params,
-}: {
+type PostPageProps = {
   params: Promise<{ slug: string }>;
-}) {
+};
+
+export default async function PostPage({ params }: PostPageProps) {
   const { slug } = await params;
-
-  const db = await getDb();
-
-  const post = await db.collection("posts").findOne({
-    slug,
-    published: true,
-  });
+  const post = await getPublishedPost(slug);
 
   if (!post) {
     notFound();
   }
 
-  await db.collection("posts").updateOne(
-    { slug },
-    {
-      $inc: { views: 1 },
-    }
-  );
+  await incrementPostViews(slug);
 
-  const html = marked(post.content || "");
+  const html = await marked.parse(post.content || "");
+  const currentViews = (post.views || 0) + 1;
 
   return (
-    <main className="mx-auto max-w-3xl px-6 py-10">
-      <a href="/" className="text-sm text-gray-500">
-        ← 返回首页
-      </a>
+    <SiteFrame>
+      <article className="article-layout">
+        <div className="container">
+          <Link href="/articles" className="back-link">
+            ← 返回文章列表
+          </Link>
 
-      <article className="mt-8">
-        <div className="mb-3 text-sm text-pink-500">
-          {post.tags?.join(" / ")}
-        </div>
+          <header className="article-header">
+            <div className="tag-list">
+              {(post.tags || []).map((tag) => (
+                <span key={tag} className="card-tag">
+                  {tag}
+                </span>
+              ))}
+            </div>
 
-        <h1 className="text-4xl font-bold">{post.title}</h1>
+            <h1 className="article-title">{post.title}</h1>
 
-        <div className="mt-4 text-sm text-gray-400">
-           {post.views || 0} 次阅读
-        </div>
+            <div className="article-meta-bar">
+              <span>{post.date || "刚刚发布"}</span>
+              <span>{currentViews} 次阅读</span>
+            </div>
+          </header>
 
-        {post.coverUrl && (
-          <img
-            src={post.coverUrl}
-            alt={post.title}
-            className="my-8 w-full rounded-2xl object-cover"
+          {post.coverUrl ? (
+            <img src={post.coverUrl} alt={post.title} className="article-detail-cover" />
+          ) : null}
+
+          <div
+            className="article-content"
+            dangerouslySetInnerHTML={{ __html: html }}
           />
-        )}
 
-        <div
-          className="prose prose-pink mt-8 max-w-none"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+          <section className="comments-section">
+            <div className="section-head">
+              <div>
+                <h2 className="section-title">评论区</h2>
+                <p className="section-copy">和模板一样保留 Twikoo 挂载点，方便后续接入真实评论。</p>
+              </div>
+            </div>
+            <TwikooComments envId={process.env.TWIKOO_ENV_ID} path={`/posts/${slug}`} />
+          </section>
+        </div>
       </article>
-
-      <section className="mt-12 border-t pt-8">
-        <h2 className="mb-4 text-xl font-bold">评论区</h2>
-        <div id="twikoo"></div>
-
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              twikoo.init({
-                envId: "${process.env.TWIKOO_ENV_ID}",
-                el: "#twikoo",
-                path: "/posts/${slug}",
-                lang: "zh-CN"
-              })
-            `,
-          }}
-        />
-      </section>
-    </main>
+    </SiteFrame>
   );
 }

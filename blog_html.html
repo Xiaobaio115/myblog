@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><base href="https://d16ilfvy4mv02r.cloudfront.net/workspaces/y2omkhFk6aSS4jWbIklaPp271ukCbcpo/e2818925-9bf0-4591-8d66-8e499db1650e/files/">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>✨ 我的小宇宙博客</title>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<!-- Twikoo 评论系统 -->
+<script src="https://cdn.jsdelivr.net/npm/twikoo@1.6.39/dist/twikoo.all.min.js"></script>
+<style>
+  :root {
+    --pink-50: #fff5f9;
+    --pink-100: #ffe4f0;
+    --pink-200: #ffc2dd;
+    --pink-300: #ff90c0;
+    --pink-400: #ff5ca8;
+    --pink-500: #f0318a;
+    --pink-600: #d4006e;
+    --purple-300: #d8b4fe;
+    --purple-400: #c084fc;
+    --purple-500: #a855f7;
+    --bg: #ffffff;
+    --bg2: #fff8fc;
+    --bg3: #fff0f7;
+    --border: rgba(240,49,138,0.12);
+    --border-soft: rgba(240,49,138,0.08);
+    --text: #1a0a12;
+    --text2: #4a2035;
+    --muted: #9b6880;
+    --shadow: 0 2px 16px rgba(240,49,138,0.08);
+    --shadow-hover: 0 8px 32px rgba(240,49,138,0.16);
+    --radius: 16px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+
+  .bg-orbs { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+  .orb { position:absolute; border-radius:50%; filter:blur(90px); opacity:0.35; animation:float 14s ease-in-out infinite; }
+  .orb1 { width:600px; height:600px; background:radial-gradient(circle,#ffc2dd,transparent); top:-200px; right:-150px; }
+  .orb2 { width:450px; height:450px; background:radial-gradient(circle,#e9d5ff,transparent); bottom:-120px; left:-100px; animation-delay:-5s; }
+  .orb3 { width:350px; height:350px; background:radial-gradient(circle,#ffd6eb,transparent); top:40%; left:35%; animation-delay:-10s; }
+  @keyframes float { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-28px) scale(1.04)} }
+
+  #app { position:relative; z-index:1; }
+  .container { max-width:1200px; margin:0 auto; padding:0 24px; }
+
+  /* Navbar */
+  nav { position:sticky; top:0; z-index:100; background:rgba(255,255,255,0.82); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-bottom:1px solid var(--border); padding:14px 0; box-shadow:0 1px 0 var(--border-soft); }
+  .nav-inner { display:flex; align-items:center; justify-content:space-between; }
+  .nav-logo { font-size:1.25rem; font-weight:800; cursor:pointer; background:linear-gradient(135deg,var(--pink-500),var(--purple-500)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; letter-spacing:-0.3px; }
+  .nav-links { display:flex; gap:4px; align-items:center; }
+  .nav-btn { background:none; border:none; color:var(--muted); padding:8px 16px; border-radius:10px; cursor:pointer; font-size:0.88rem; font-weight:500; transition:all 0.2s; }
+  .nav-btn:hover { color:var(--pink-500); background:var(--pink-50); }
+  .nav-btn.active { color:var(--pink-500); background:var(--pink-100); font-weight:600; }
+  .nav-search { display:flex; align-items:center; gap:8px; background:var(--bg3); border:1.5px solid var(--border); border-radius:10px; padding:8px 14px; transition:all 0.2s; }
+  .nav-search:focus-within { border-color:var(--pink-400); background:#fff; box-shadow:0 0 0 3px rgba(240,49,138,0.08); }
+  .nav-search input { background:none; border:none; outline:none; color:var(--text); font-size:0.88rem; width:170px; }
+  .nav-search input::placeholder { color:var(--muted); }
+
+  /* Hero */
+  .hero { padding:72px 0 52px; text-align:center; }
+  .hero-avatar { width:88px; height:88px; border-radius:50%; background:linear-gradient(135deg,var(--pink-400),var(--purple-400)); display:flex; align-items:center; justify-content:center; font-size:2.4rem; margin:0 auto 22px; box-shadow:0 0 0 6px var(--pink-100),0 8px 30px rgba(240,49,138,0.2); animation:pulse-ring 3.5s ease-in-out infinite; }
+  @keyframes pulse-ring { 0%,100%{box-shadow:0 0 0 6px var(--pink-100),0 8px 30px rgba(240,49,138,0.2)} 50%{box-shadow:0 0 0 12px var(--pink-50),0 8px 40px rgba(240,49,138,0.14)} }
+  .hero h1 { font-size:2.5rem; font-weight:800; line-height:1.2; margin-bottom:14px; background:linear-gradient(135deg,#1a0a12 0%,var(--pink-500) 55%,var(--purple-500) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; letter-spacing:-0.5px; }
+  .hero p { color:var(--muted); font-size:1rem; max-width:480px; margin:0 auto 26px; line-height:1.75; }
+  .hero-tags { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .tag-chip { background:#fff; border:1.5px solid var(--border); color:var(--muted); padding:6px 16px; border-radius:100px; font-size:0.8rem; font-weight:500; cursor:pointer; transition:all 0.2s; box-shadow:0 1px 4px rgba(240,49,138,0.06); }
+  .tag-chip:hover { border-color:var(--pink-400); color:var(--pink-500); background:var(--pink-50); transform:translateY(-1px); }
+  .tag-chip.selected { background:var(--pink-500); border-color:var(--pink-500); color:#fff; box-shadow:0 4px 14px rgba(240,49,138,0.3); transform:translateY(-1px); }
+
+  .section-title { font-size:1.15rem; font-weight:700; color:var(--text); margin-bottom:20px; display:flex; align-items:center; gap:10px; letter-spacing:-0.2px; }
+  .section-title::after { content:''; flex:1; height:1px; background:linear-gradient(to right,var(--border),transparent); }
+
+  .cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:18px; margin-bottom:48px; }
+
+  /* Article Card */
+  .article-card { background:#fff; border:1.5px solid var(--border); border-radius:var(--radius); padding:22px; cursor:pointer; transition:all 0.25s; position:relative; overflow:hidden; box-shadow:var(--shadow); }
+  .article-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:linear-gradient(90deg,var(--pink-400),var(--purple-400)); opacity:0; transition:opacity 0.25s; }
+  .article-card:hover { transform:translateY(-4px); border-color:rgba(240,49,138,0.25); box-shadow:var(--shadow-hover); }
+  .article-card:hover::before { opacity:1; }
+  .card-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .card-tags { display:flex; gap:5px; flex-wrap:wrap; }
+  .card-tag { font-size:0.7rem; padding:3px 10px; border-radius:100px; font-weight:500; }
+  .card-tag.tech { border:1px solid rgba(168,85,247,0.3); color:var(--purple-500); background:rgba(168,85,247,0.08); }
+  .card-tag.life { border:1px solid rgba(240,49,138,0.3); color:var(--pink-500); background:rgba(240,49,138,0.08); }
+  .card-date { font-size:0.73rem; color:var(--muted); }
+  .card-title { font-size:1.05rem; font-weight:700; color:var(--text); margin-bottom:8px; line-height:1.45; }
+  .card-excerpt { font-size:0.855rem; color:var(--muted); line-height:1.7; margin-bottom:16px; }
+  .card-footer { display:flex; align-items:center; justify-content:space-between; }
+  .read-more { font-size:0.82rem; color:var(--pink-500); font-weight:600; display:flex; align-items:center; gap:4px; transition:gap 0.2s; }
+  .article-card:hover .read-more { gap:8px; }
+  .card-stats { display:flex; gap:12px; color:var(--muted); font-size:0.76rem; }
+
+  /* Article Detail */
+  .article-detail { max-width:740px; margin:0 auto; padding:40px 0 80px; }
+  .back-btn { display:flex; align-items:center; gap:6px; color:var(--muted); font-size:0.88rem; cursor:pointer; margin-bottom:30px; transition:color 0.2s; width:fit-content; font-weight:500; }
+  .back-btn:hover { color:var(--pink-500); }
+  .article-title { font-size:1.9rem; font-weight:800; line-height:1.3; margin-bottom:16px; color:var(--text); letter-spacing:-0.4px; }
+  .article-meta-bar { display:flex; align-items:center; gap:16px; flex-wrap:wrap; color:var(--muted); font-size:0.83rem; margin-bottom:16px; }
+  .article-content { font-size:1rem; line-height:1.9; color:var(--text2); }
+  .article-content h2 { font-size:1.35rem; color:var(--text); margin:32px 0 14px; font-weight:700; }
+  .article-content h3 { font-size:1.05rem; color:var(--pink-600); margin:22px 0 10px; font-weight:600; }
+  .article-content p { margin-bottom:16px; }
+  .article-content code { background:var(--pink-50); border:1px solid var(--border); padding:2px 8px; border-radius:6px; color:var(--pink-600); font-size:0.875em; font-family:'Courier New',monospace; }
+  .article-content pre { background:#fdf6fa; border:1.5px solid var(--border); padding:20px; border-radius:12px; overflow-x:auto; margin:20px 0; }
+  .article-content pre code { background:none; border:none; padding:0; font-size:0.875rem; color:var(--text2); }
+  .article-content blockquote { border-left:3px solid var(--pink-400); padding:14px 20px; margin:20px 0; background:var(--pink-50); border-radius:0 10px 10px 0; color:var(--muted); font-style:italic; }
+  .article-content ul,.article-content ol { padding-left:22px; margin-bottom:16px; }
+  .article-content li { margin-bottom:8px; }
+
+  /* Comments — Twikoo */
+  .comments-section { margin-top:48px; }
+  /* Twikoo 粉色主题覆盖 */
+  #twikoo .tk-submit .el-button--primary { background:linear-gradient(135deg,#f0318a,#a855f7) !important; border:none !important; box-shadow:0 4px 14px rgba(240,49,138,0.3) !important; }
+  #twikoo .tk-submit .el-button--primary:hover { transform:translateY(-1px); }
+  #twikoo .tk-comment { border:1.5px solid rgba(240,49,138,0.1) !important; border-radius:14px !important; padding:16px !important; margin-bottom:14px; transition:all 0.2s; }
+  #twikoo .tk-comment:hover { border-color:rgba(240,49,138,0.28) !important; box-shadow:0 4px 20px rgba(240,49,138,0.09) !important; }
+  #twikoo .tk-input,.tk-row input,.tk-row textarea { border:1.5px solid rgba(240,49,138,0.18) !important; border-radius:10px !important; font-family:inherit !important; }
+  #twikoo .tk-input:focus,.tk-row input:focus,.tk-row textarea:focus { border-color:#f0318a !important; box-shadow:0 0 0 3px rgba(240,49,138,0.1) !important; }
+  /* 占位提示 */
+  .twikoo-tip { background:var(--bg2); border:1.5px dashed rgba(240,49,138,0.25); border-radius:var(--radius); padding:36px 24px; text-align:center; color:var(--muted); }
+  .twikoo-tip code { background:var(--pink-50); border:1px solid var(--border); padding:2px 8px; border-radius:6px; color:var(--pink-600); font-size:0.85em; }
+  .twikoo-tip a { color:var(--pink-500); font-weight:600; text-decoration:none; }
+  /* 保留上传功能用的 form-input */
+  .form-input { width:100%; background:#fff; border:1.5px solid var(--border); border-radius:10px; padding:11px 16px; color:var(--text); font-size:0.88rem; outline:none; transition:all 0.2s; font-family:inherit; }
+  .form-input:focus { border-color:var(--pink-400); box-shadow:0 0 0 3px rgba(240,49,138,0.1); }
+  .form-input::placeholder { color:#c9a0b8; }
+  textarea.form-input { resize:vertical; min-height:100px; }
+  .submit-btn { background:linear-gradient(135deg,var(--pink-500),var(--purple-500)); border:none; color:#fff; padding:11px 26px; border-radius:10px; font-size:0.9rem; font-weight:600; cursor:pointer; transition:all 0.2s; box-shadow:0 4px 14px rgba(240,49,138,0.28); }
+  .submit-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(240,49,138,0.38); }
+
+  /* ===== Photos ===== */
+  .photos-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+  .upload-btn {
+    display:flex; align-items:center; gap:8px;
+    background:linear-gradient(135deg,var(--pink-500),var(--purple-500));
+    border:none; color:#fff; padding:10px 20px; border-radius:10px;
+    font-size:0.88rem; font-weight:600; cursor:pointer;
+    transition:all 0.2s; box-shadow:0 4px 14px rgba(240,49,138,0.28);
+  }
+  .upload-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(240,49,138,0.38); }
+
+  /* Drop Zone */
+  .drop-zone {
+    border:2px dashed var(--pink-300); border-radius:var(--radius);
+    padding:40px 24px; text-align:center; margin-bottom:28px;
+    background:var(--pink-50); cursor:pointer;
+    transition:all 0.2s; position:relative;
+  }
+  .drop-zone.drag-over { border-color:var(--pink-500); background:var(--pink-100); transform:scale(1.01); }
+  .drop-zone input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+  .drop-icon { font-size:2.5rem; margin-bottom:10px; }
+  .drop-text { font-size:0.95rem; color:var(--pink-500); font-weight:600; margin-bottom:4px; }
+  .drop-sub { font-size:0.8rem; color:var(--muted); }
+
+  /* Upload Modal */
+  .modal-mask { position:fixed; inset:0; background:rgba(26,10,18,0.5); backdrop-filter:blur(8px); z-index:200; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .modal-box { background:#fff; border-radius:20px; padding:32px; width:100%; max-width:480px; box-shadow:0 20px 60px rgba(240,49,138,0.2); border:1.5px solid var(--border); }
+  .modal-title { font-size:1.1rem; font-weight:700; color:var(--text); margin-bottom:20px; display:flex; align-items:center; gap:8px; }
+  .modal-preview { width:100%; aspect-ratio:1.5; object-fit:cover; border-radius:12px; margin-bottom:16px; border:1.5px solid var(--border); display:block; }
+  .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:16px; }
+  .cancel-btn { background:none; border:1.5px solid var(--border); color:var(--muted); padding:10px 20px; border-radius:10px; font-size:0.88rem; font-weight:500; cursor:pointer; transition:all 0.2s; }
+  .cancel-btn:hover { border-color:var(--pink-300); color:var(--pink-500); }
+
+  /* Photos Grid */
+  .photos-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px; margin-bottom:48px; }
+  .photo-card { border-radius:14px; overflow:hidden; border:1.5px solid var(--border); cursor:pointer; transition:all 0.3s; position:relative; aspect-ratio:1; background:var(--bg3); box-shadow:var(--shadow); }
+  .photo-card:hover { transform:scale(1.03); border-color:rgba(240,49,138,0.3); box-shadow:var(--shadow-hover); }
+  .photo-card img { width:100%; height:100%; object-fit:cover; display:block; }
+  .photo-emoji-wrap { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:3.2rem; gap:8px; background:linear-gradient(135deg,#fff,var(--pink-50)); }
+  .photo-label { font-size:0.73rem; color:var(--muted); }
+  .photo-overlay { position:absolute; inset:0; background:linear-gradient(to top,rgba(240,49,138,0.6),transparent); opacity:0; transition:opacity 0.3s; display:flex; align-items:flex-end; justify-content:space-between; padding:14px; }
+  .photo-card:hover .photo-overlay { opacity:1; }
+  .photo-caption-text { font-size:0.82rem; color:#fff; font-weight:600; flex:1; }
+  .photo-del-btn { background:rgba(255,255,255,0.25); border:none; color:#fff; width:28px; height:28px; border-radius:50%; cursor:pointer; font-size:0.9rem; display:flex; align-items:center; justify-content:center; transition:background 0.2s; flex-shrink:0; }
+  .photo-del-btn:hover { background:rgba(220,0,80,0.7); }
+
+  /* Lightbox */
+  .lightbox { position:fixed; inset:0; background:rgba(10,0,6,0.9); backdrop-filter:blur(12px); z-index:300; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .lightbox img { max-width:90vw; max-height:85vh; object-fit:contain; border-radius:16px; box-shadow:0 20px 80px rgba(240,49,138,0.3); }
+  .lightbox-close { position:absolute; top:20px; right:24px; background:rgba(255,255,255,0.15); border:none; color:#fff; font-size:1.4rem; width:44px; height:44px; border-radius:50%; cursor:pointer; transition:background 0.2s; }
+  .lightbox-close:hover { background:rgba(240,49,138,0.5); }
+  .lightbox-caption { position:absolute; bottom:24px; left:50%; transform:translateX(-50%); background:rgba(240,49,138,0.2); backdrop-filter:blur(10px); color:#fff; padding:10px 24px; border-radius:100px; font-size:0.9rem; font-weight:500; border:1px solid rgba(255,255,255,0.2); white-space:nowrap; }
+
+  /* Upload progress bar */
+  .upload-progress { margin-bottom:16px; }
+  .progress-bar-wrap { height:6px; background:var(--pink-100); border-radius:3px; overflow:hidden; }
+  .progress-bar-fill { height:100%; background:linear-gradient(90deg,var(--pink-400),var(--purple-400)); border-radius:3px; transition:width 0.3s; }
+  .progress-label { font-size:0.78rem; color:var(--muted); margin-top:4px; }
+
+  /* Misc */
+  .empty-state { text-align:center; padding:60px 20px; color:var(--muted); font-size:0.95rem; }
+  .empty-icon { font-size:3rem; margin-bottom:12px; }
+  .divider { height:1px; background:var(--border); margin:40px 0; }
+  ::-webkit-scrollbar { width:6px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--pink-200); border-radius:3px; }
+
+  @media(max-width:700px) {
+    .hero h1 { font-size:1.85rem; }
+    .cards-grid { grid-template-columns:1fr; }
+    .nav-search { display:none; }
+    .form-row { flex-direction:column; }
+    .photos-grid { grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="bg-orbs">
+    <div class="orb orb1"></div>
+    <div class="orb orb2"></div>
+    <div class="orb orb3"></div>
+  </div>
+
+  <!-- Navbar -->
+  <nav>
+    <div class="container nav-inner">
+      <div class="nav-logo" @click="goHome">✨ 我的小宇宙</div>
+      <div class="nav-links">
+        <button class="nav-btn" :class="{active:page==='home'}" @click="goHome">🏠 首页</button>
+        <button class="nav-btn" :class="{active:page==='articles'}" @click="page='articles';selectedArticle=null">📝 文章</button>
+        <button class="nav-btn" :class="{active:page==='photos'}" @click="page='photos'">📷 相册</button>
+      </div>
+      <div class="nav-search">
+        <span style="color:var(--muted);font-size:0.85rem;">🔍</span>
+        <input v-model="searchQuery" type="text" placeholder="搜索文章..." @focus="page='articles';selectedArticle=null"/>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- HOME -->
+    <template v-if="page==='home'">
+      <section class="hero">
+        <div class="hero-avatar">🌸</div>
+        <h1>Hi，我是 Luna 👋</h1>
+        <p>记录生活里有趣的瞬间，分享技术上的小发现。欢迎来到我的小宇宙 ✨</p>
+        <div class="hero-tags">
+          <span class="tag-chip" :class="{selected:selectedTag===''}" @click="selectedTag=''">全部</span>
+          <span v-for="tag in allTags" :key="tag" class="tag-chip" :class="{selected:selectedTag===tag}" @click="filterByTag(tag)">{{ tag }}</span>
+        </div>
+      </section>
+
+      <div class="section-title">📝 最新文章</div>
+      <div class="cards-grid">
+        <div v-for="article in filteredArticles.slice(0,6)" :key="article.id" class="article-card" @click="openArticle(article)">
+          <div class="card-meta">
+            <div class="card-tags"><span v-for="t in article.tags" :key="t" class="card-tag" :class="isTechTag(t)?'tech':'life'">{{ t }}</span></div>
+            <span class="card-date">{{ article.date }}</span>
+          </div>
+          <div class="card-title">{{ article.title }}</div>
+          <div class="card-excerpt">{{ article.excerpt }}</div>
+          <div class="card-footer">
+            <span class="read-more">阅读全文 →</span>
+            <div class="card-stats"><span>👁 {{ article.views }}</span><span>💬 {{ article.comments.length }}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">📷 最近照片</div>
+      <div class="photos-grid" style="grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">
+        <div v-for="photo in allPhotos.slice(0,6)" :key="photo.id" class="photo-card" @click="openLightbox(photo)">
+          <img v-if="photo.url" :src="photo.url" :alt="photo.caption"/>
+          <div v-else class="photo-emoji-wrap">{{ photo.emoji }}<span class="photo-label">{{ photo.date }}</span></div>
+          <div class="photo-overlay">
+            <span class="photo-caption-text">{{ photo.caption }}</span>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- ARTICLES LIST -->
+    <template v-else-if="page==='articles' && !selectedArticle">
+      <div style="padding:36px 0 20px;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px;">
+          <span class="tag-chip" :class="{selected:selectedTag===''}" @click="selectedTag=''">全部</span>
+          <span v-for="tag in allTags" :key="tag" class="tag-chip" :class="{selected:selectedTag===tag}" @click="selectedTag=tag">{{ tag }}</span>
+        </div>
+        <div class="section-title">📝 {{ searchQuery?'搜索：'+searchQuery:(selectedTag||'所有文章') }}</div>
+        <div class="cards-grid" v-if="filteredArticles.length">
+          <div v-for="article in filteredArticles" :key="article.id" class="article-card" @click="openArticle(article)">
+            <div class="card-meta">
+              <div class="card-tags"><span v-for="t in article.tags" :key="t" class="card-tag" :class="isTechTag(t)?'tech':'life'">{{ t }}</span></div>
+              <span class="card-date">{{ article.date }}</span>
+            </div>
+            <div class="card-title">{{ article.title }}</div>
+            <div class="card-excerpt">{{ article.excerpt }}</div>
+            <div class="card-footer">
+              <span class="read-more">阅读全文 →</span>
+              <div class="card-stats"><span>👁 {{ article.views }}</span><span>💬 {{ article.comments.length }}</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="empty-state" v-else><div class="empty-icon">🔍</div><div>没有找到相关文章...</div></div>
+      </div>
+    </template>
+
+    <!-- ARTICLE DETAIL -->
+    <template v-else-if="selectedArticle">
+      <div class="article-detail">
+        <div class="back-btn" @click="selectedArticle=null">← 返回列表</div>
+        <div style="margin-bottom:12px;">
+          <span v-for="t in selectedArticle.tags" :key="t" class="card-tag" :class="isTechTag(t)?'tech':'life'" style="margin-right:6px;">{{ t }}</span>
+        </div>
+        <div class="article-title">{{ selectedArticle.title }}</div>
+        <div class="article-meta-bar">
+          <span>📅 {{ selectedArticle.date }}</span>
+          <span>👁 {{ selectedArticle.views }} 次阅读</span>
+          <span>💬 评论</span>
+        </div>
+        <div class="article-content" v-html="selectedArticle.content"></div>
+        <div class="divider"></div>
+        <div class="comments-section">
+          <div class="section-title">💬 评论区</div>
+          <!-- Twikoo 挂载点 -->
+          <div :id="'twikoo-' + selectedArticle.id"></div>
+        </div>
+      </div>
+    </template>
+
+    <!-- PHOTOS PAGE -->
+    <template v-else-if="page==='photos'">
+      <div style="padding:36px 0 20px;">
+        <div class="photos-header">
+          <div class="section-title" style="margin-bottom:0;flex:1;">📷 我的相册 <span style="color:var(--muted);font-size:0.85rem;font-weight:400;">({{ allPhotos.length }})</span></div>
+          <button class="upload-btn" @click="triggerUpload">
+            <span>📤</span> 上传照片
+          </button>
+        </div>
+
+        <!-- Drop Zone -->
+        <div class="drop-zone" :class="{['drag-over']:isDragging}"
+          @dragover.prevent="isDragging=true"
+          @dragleave.prevent="isDragging=false"
+          @drop.prevent="handleDrop">
+          <input type="file" accept="image/*" multiple ref="fileInputRef" @change="handleFileChange"/>
+          <div class="drop-icon">🖼️</div>
+          <div class="drop-text">点击或拖拽图片到这里上传</div>
+          <div class="drop-sub">支持 JPG、PNG、GIF、WebP，可多选</div>
+        </div>
+
+        <!-- Upload queue progress -->
+        <div v-if="uploadQueue.length" style="margin-bottom:20px;">
+          <div v-for="item in uploadQueue" :key="item.name" class="upload-progress">
+            <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--muted);margin-bottom:4px;">
+              <span>{{ item.name }}</span><span>{{ item.progress }}%</span>
+            </div>
+            <div class="progress-bar-wrap"><div class="progress-bar-fill" :style="{width:item.progress+'%'}"></div></div>
+          </div>
+        </div>
+
+        <!-- Photos grid -->
+        <div class="photos-grid" v-if="allPhotos.length">
+          <div v-for="photo in allPhotos" :key="photo.id" class="photo-card" @click="openLightbox(photo)">
+            <img v-if="photo.url" :src="photo.url" :alt="photo.caption"/>
+            <div v-else class="photo-emoji-wrap">{{ photo.emoji }}<span class="photo-label">{{ photo.date }}</span></div>
+            <div class="photo-overlay">
+              <span class="photo-caption-text">{{ photo.caption }}</span>
+              <button v-if="photo.url" class="photo-del-btn" @click.stop="deletePhoto(photo.id)" title="删除">🗑</button>
+            </div>
+          </div>
+        </div>
+        <div class="empty-state" v-else>
+          <div class="empty-icon">📭</div>
+          <div>还没有照片，快来上传第一张吧！</div>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <!-- Upload Caption Modal -->
+  <div class="modal-mask" v-if="uploadModal.show" @click.self="uploadModal.show=false">
+    <div class="modal-box">
+      <div class="modal-title">🌸 添加图片描述</div>
+      <img :src="uploadModal.preview" class="modal-preview" alt="预览"/>
+      <input class="form-input" v-model="uploadModal.caption" placeholder="给这张照片写点什么..." style="margin-bottom:0;"/>
+      <div class="modal-actions">
+        <button class="cancel-btn" @click="uploadModal.show=false">取消</button>
+        <button class="submit-btn" @click="confirmUpload">保存照片 ✨</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" v-if="lightbox.show" @click.self="lightbox.show=false">
+    <button class="lightbox-close" @click="lightbox.show=false">✕</button>
+    <img :src="lightbox.url" :alt="lightbox.caption"/>
+    <div class="lightbox-caption" v-if="lightbox.caption">{{ lightbox.caption }}</div>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, computed, onMounted, nextTick } = Vue;
+
+const TECH_TAGS = new Set(['技术','Vue','前端','TypeScript','CSS']);
+
+const SAMPLE_ARTICLES = [
+  { id:1, title:"用 Vue 3 + Composition API 重构我的项目", excerpt:"最近把一个老项目从 Vue 2 迁移到了 Vue 3，踩了不少坑，也收获了很多，分享一下迁移过程中的关键注意事项...", tags:["技术","Vue","前端"], date:"2026-04-20", views:1024,
+    content:`<h2>为什么要迁移？</h2><p>Vue 3 带来了 <code>Composition API</code>、更好的 TypeScript 支持以及更小的打包体积。作为一个长期 Vue 2 用户，是时候拥抱新时代了！</p><h2>关键变化清单</h2><ul><li><code>this</code> 不再是你的朋友，改用 <code>setup()</code> 或 <code>&lt;script setup&gt;</code></li><li><code>Vue.prototype</code> 换成 <code>app.config.globalProperties</code></li><li>过滤器（Filters）被移除，改用计算属性或方法</li></ul><h3>script setup 真的香！</h3><p>最大的惊喜是 <code>&lt;script setup&gt;</code> 语法糖，代码量减少了将近 30%，逻辑更集中。</p><pre><code>const count = ref(0)\nconst doubled = computed(() => count.value * 2)\nfunction increment() { count.value++ }</code></pre><blockquote>从 Vue 2 迁移到 Vue 3 不只是语法升级，更是编程思维的进化。</blockquote>`,
+    comments:[{id:1,name:"小明",avatar:"🐼",date:"2026-04-21",text:"非常实用！我也正在考虑迁移，这篇文章给了我很大帮助。"},{id:2,name:"Sakura",avatar:"🌸",date:"2026-04-22",text:"script setup 真的爽，用了就回不去了哈哈"}]},
+  { id:2, title:"一个人去了京都，遇见了最美的樱花季", excerpt:"四月初，鼓起勇气一个人飞去京都。清晨的岚山，傍晚的祗园，还有藏在小巷里的那家豆腐料理，都成了难忘的记忆...", tags:["生活","旅行","日本"], date:"2026-04-10", views:2341,
+    content:`<h2>出发前的忐忑</h2><p>从来没有一个人出过国，订机票的时候手都在抖。但有时候，勇敢就是按下那个确认键的瞬间。</p><h2>岚山的清晨</h2><p>六点钟的竹林里几乎没有游客，阳光穿过竹叶洒下来，空气里有泥土和青草的味道。那一刻觉得，来了就值了。</p><blockquote>旅行的意义不在于看了多少景点，而在于那些让你安静下来的瞬间。</blockquote><h2>带回来的礼物</h2><ul><li>一罐宇治抹茶粉</li><li>两块香皂（完全用不到但就是想买）</li><li>一颗重新爱上出发的心 🌸</li></ul>`,
+    comments:[{id:1,name:"旅行达人",avatar:"✈️",date:"2026-04-12",text:"看得好想去！"},{id:2,name:"晓月",avatar:"🌙",date:"2026-04-14",text:"文字太美了，仿佛自己也去了一趟京都。"}]},
+  { id:3, title:"CSS 动画实战：打造 Linear 风格的渐变卡片", excerpt:"研究了一下 Linear 官网的视觉效果，用纯 CSS 复刻了那种流动的粉色渐变动画效果，代码量出乎意料地少...", tags:["技术","前端","CSS"], date:"2026-04-05", views:876,
+    content:`<h2>Linear 的视觉魅力</h2><p>Linear 官网的 UI 一直是我最喜欢的设计参考，那种流动的渐变光晕，简洁却充满动感。</p><h3>核心技术点</h3><ul><li>CSS <code>radial-gradient</code> + <code>filter: blur()</code></li><li><code>@keyframes</code> + <code>animation</code> 实现浮动效果</li></ul><pre><code>.glow-orb {\n  background: radial-gradient(circle, #ff4d96, transparent);\n  filter: blur(80px); opacity: 0.2;\n  animation: float 8s ease-in-out infinite;\n}</code></pre><blockquote>好的 UI 是看不见的，它让用户感觉舒适而不知道为什么。</blockquote>`,
+    comments:[]},
+  { id:4, title:"下班后的 30 天，我做了什么改变了我的状态", excerpt:"去年底陷入了严重的摸鱼状态，工作没劲、生活没趣。于是给自己定了个 30 天计划，结果比预期好多了...", tags:["生活","成长"], date:"2026-03-28", views:3189,
+    content:`<h2>问题从哪里开始</h2><p>每天下班回家就是刷手机到凌晨，睡眠越来越差，工作时精力涣散。我意识到需要主动打破这个循环。</p><h2>我的 30 天计划</h2><ul><li>📚 每天读书 20 分钟</li><li>🏃 隔天跑步 3 公里</li><li>✍️ 每天写 200 字日记</li><li>📵 晚上 10 点后手机调静音</li></ul><blockquote>改变不需要翻天覆地，先从能做到的最小一步开始。</blockquote>`,
+    comments:[{id:1,name:"努力的小鱼",avatar:"🐟",date:"2026-03-30",text:"太有共鸣了！我也在尝试这样做，一起加油！"}]},
+  { id:5, title:"TypeScript 5.0 新特性快速上手", excerpt:"TypeScript 5.0 带来了装饰器的正式标准化、const 类型参数等实用新特性，这篇文章带你快速过一遍...", tags:["技术","TypeScript"], date:"2026-03-15", views:654,
+    content:`<h2>装饰器正式标准化</h2><p>TypeScript 5.0 终于基于 TC39 Stage 3 装饰器提案实现了装饰器，告别了 <code>experimentalDecorators</code>。</p><pre><code>function logged(target: any, ctx: ClassMethodDecoratorContext) {\n  return function (...args: any[]) {\n    console.log('Calling:', ctx.name);\n    return target.call(this, ...args);\n  };\n}</code></pre><h2>const 类型参数</h2><p>新增 <code>const</code> 修饰符让类型推断更精确，推断为字面量类型而非宽泛类型。</p>`,
+    comments:[]},
+  { id:6, title:"买了一台胶片相机，开始慢下来拍照", excerpt:"冲动之下淘了一台理光 GR1，学会了放慢快门，才发现原来生活里有那么多被忽视的美好瞬间...", tags:["生活","摄影"], date:"2026-03-08", views:1567,
+    content:`<h2>为什么选择胶片</h2><p>手机随手一拍，却越来越少回看。买胶片相机是想强迫自己认真构图，因为每一张都有成本。</p><h2>第一卷的收获</h2><p>拍完第一卷去冲洗，等了三天才拿到照片。翻开的瞬间，有种久违的惊喜感，那是数码相片给不了的期待。</p><blockquote>慢下来不是浪费时间，是在时间里找到重量。</blockquote>`,
+    comments:[{id:1,name:"摄影爱好者",avatar:"📷",date:"2026-03-10",text:"理光 GR 系列真的很棒！期待看你后续的作品分享~"}]}
+];
+
+const SAMPLE_PHOTOS = [
+  {id:'s1',emoji:'🌸',caption:'京都岚山的樱花',date:'Apr 2026',url:null},
+  {id:'s2',emoji:'🍜',caption:'深夜的一碗热面',date:'Apr 2026',url:null},
+  {id:'s3',emoji:'🌅',caption:'清晨窗边的光',date:'Mar 2026',url:null},
+  {id:'s4',emoji:'📚',caption:'最近在读的书',date:'Mar 2026',url:null},
+  {id:'s5',emoji:'🎵',caption:'周末咖啡馆',date:'Mar 2026',url:null},
+  {id:'s6',emoji:'🌿',caption:'阳台上的多肉',date:'Feb 2026',url:null},
+];
+
+const STORAGE_KEY = 'luna_blog_photos_v2';
+
+createApp({
+  setup() {
+    const page = ref('home');
+    const selectedArticle = ref(null);
+    const selectedTag = ref('');
+    const searchQuery = ref('');
+    const articles = ref(SAMPLE_ARTICLES);
+    const fileInputRef = ref(null);
+    const isDragging = ref(false);
+    const uploadQueue = ref([]);
+
+    // Uploaded photos (persisted in localStorage as base64)
+    const uploadedPhotos = ref([]);
+
+    const uploadModal = ref({ show: false, preview: '', caption: '', file: null, name: '' });
+    const lightbox = ref({ show: false, url: '', caption: '' });
+    const newComment = ref({ name:'', email:'', text:'' });
+
+    // Merge sample + uploaded, uploaded go first
+    const allPhotos = computed(() => [...uploadedPhotos.value, ...SAMPLE_PHOTOS]);
+
+    onMounted(() => {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) uploadedPhotos.value = JSON.parse(saved);
+      } catch(e) {}
+    });
+
+    function savePhotos() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(uploadedPhotos.value)); } catch(e) {
+        alert('存储空间不足，请删除一些照片后再上传。');
+      }
+    }
+
+    function triggerUpload() { fileInputRef.value && fileInputRef.value.click(); }
+
+    function handleFileChange(e) { processFiles(e.target.files); e.target.value = ''; }
+
+    function handleDrop(e) {
+      isDragging.value = false;
+      processFiles(e.dataTransfer.files);
+    }
+
+    function processFiles(files) {
+      const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+      if (!imageFiles.length) return;
+      // Queue all files, open modal one-by-one via pending queue
+      pendingFiles.value = [...pendingFiles.value, ...imageFiles];
+      if (!uploadModal.value.show) loadNextPending();
+    }
+
+    const pendingFiles = ref([]);
+
+    function loadNextPending() {
+      if (!pendingFiles.value.length) return;
+      const file = pendingFiles.value.shift();
+      const name = file.name;
+      // Simulate progress
+      const qItem = { name, progress: 0 };
+      uploadQueue.value.push(qItem);
+
+      const reader = new FileReader();
+      reader.onprogress = (e) => {
+        if (e.lengthComputable) qItem.progress = Math.round(e.loaded / e.total * 80);
+      };
+      reader.onload = (e) => {
+        qItem.progress = 100;
+        setTimeout(() => {
+          uploadQueue.value = uploadQueue.value.filter(i => i.name !== name);
+          uploadModal.value = {
+            show: true,
+            preview: e.target.result,
+            caption: name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
+            dataUrl: e.target.result,
+            name
+          };
+        }, 300);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function confirmUpload() {
+      const today = new Date().toLocaleDateString('zh-CN', { year:'numeric', month:'short' });
+      uploadedPhotos.value.unshift({
+        id: 'u_' + Date.now(),
+        url: uploadModal.value.dataUrl,
+        caption: uploadModal.value.caption || '我的照片',
+        date: today,
+        emoji: null
+      });
+      savePhotos();
+      uploadModal.value.show = false;
+      // Load next if any
+      if (pendingFiles.value.length) setTimeout(loadNextPending, 200);
+    }
+
+    function deletePhoto(id) {
+      if (!confirm('确定要删除这张照片吗？')) return;
+      uploadedPhotos.value = uploadedPhotos.value.filter(p => p.id !== id);
+      savePhotos();
+    }
+
+    function openLightbox(photo) {
+      if (!photo.url) return; // emoji cards not lightboxable
+      lightbox.value = { show: true, url: photo.url, caption: photo.caption };
+    }
+
+    const allTags = computed(() => {
+      const s = new Set();
+      articles.value.forEach(a => a.tags.forEach(t => s.add(t)));
+      return [...s];
+    });
+
+    const filteredArticles = computed(() => articles.value.filter(a => {
+      const mt = !selectedTag.value || a.tags.includes(selectedTag.value);
+      const q = searchQuery.value.toLowerCase();
+      const ms = !q || a.title.toLowerCase().includes(q) || a.excerpt.toLowerCase().includes(q);
+      return mt && ms;
+    }));
+
+    function isTechTag(t) { return TECH_TAGS.has(t); }
+    function goHome() { page.value='home'; selectedArticle.value=null; searchQuery.value=''; selectedTag.value=''; }
+    function filterByTag(tag) { selectedTag.value=tag; page.value='articles'; selectedArticle.value=null; }
+
+    // ---- Twikoo ----
+    // 👇 部署好 Twikoo 后，把这里替换成你的 Vercel 部署地址
+    const TWIKOO_ENV_ID = 'https://twikoo-lqpp.vercel.app';
+
+    async function openArticle(a) {
+      selectedArticle.value = a;
+      page.value = 'articles';
+      window.scrollTo({top:0,behavior:'smooth'});
+      await nextTick();
+      const elId = 'twikoo-' + a.id;
+      const el = document.getElementById(elId);
+      if (!el) return;
+      el.innerHTML = '';
+      if (TWIKOO_ENV_ID.includes('your-twikoo')) {
+        el.innerHTML = `<div class="twikoo-tip">🌸 请将代码中的 <code>TWIKOO_ENV_ID</code> 替换为你的 Vercel 部署地址后刷新页面。<br><small style="display:block;margin-top:8px;">👉 <a href="https://twikoo.js.org/quick-start.html" target="_blank">查看部署教程</a></small></div>`;
+        return;
+      }
+      if (typeof window.twikoo === 'undefined') {
+        el.innerHTML = `<div class="twikoo-tip">⚙️ Twikoo 脚本加载失败，请检查网络后刷新重试。</div>`;
+        return;
+      }
+      window.twikoo.init({
+        envId: TWIKOO_ENV_ID,
+        el: '#' + elId,
+        path: '/post/' + a.id,
+        lang: 'zh-CN',
+      });
+    }
+
+    return {
+      page, selectedArticle, selectedTag, searchQuery, articles,
+      fileInputRef, isDragging, uploadQueue, uploadModal, lightbox,
+      newComment: ref({name:'',email:'',text:''}), allPhotos, allTags, filteredArticles, pendingFiles,
+      isTechTag, goHome, openArticle, filterByTag,
+      triggerUpload, handleFileChange, handleDrop, confirmUpload, deletePhoto, openLightbox
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>

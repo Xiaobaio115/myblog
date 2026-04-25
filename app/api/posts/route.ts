@@ -15,18 +15,15 @@ export async function GET() {
       .toArray();
 
     return NextResponse.json(
-      posts.map((post: any) => ({
+      posts.map((post) => ({
         ...post,
-        _id: post._id.toString(),
+        _id: String(post._id),
       }))
     );
   } catch (error) {
     console.error("GET /api/posts error:", error);
 
-    return NextResponse.json(
-      { error: "读取文章失败" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "读取文章失败。" }, { status: 500 });
   }
 }
 
@@ -36,58 +33,43 @@ export async function POST(request: Request) {
 
     if (!process.env.ADMIN_PASSWORD) {
       return NextResponse.json(
-        { error: "服务器未配置 ADMIN_PASSWORD" },
+        { error: "服务端尚未配置 ADMIN_PASSWORD。" },
         { status: 500 }
       );
     }
 
     if (adminPassword !== process.env.ADMIN_PASSWORD) {
-      return NextResponse.json(
-        { error: "未授权，后台密码错误" },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "后台密码错误。" }, { status: 401 });
     }
 
     const body = await request.json();
-
     const title = String(body.title || "").trim();
     const slug = String(body.slug || "").trim();
     const excerpt = String(body.excerpt || "").trim();
     const content = String(body.content || "").trim();
     const coverUrl = String(body.coverUrl || "").trim();
-
     const tags = Array.isArray(body.tags)
       ? body.tags.map((tag: unknown) => String(tag).trim()).filter(Boolean)
       : [];
 
     if (!title) {
-      return NextResponse.json(
-        { error: "文章标题不能为空" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "文章标题不能为空。" }, { status: 400 });
     }
 
     if (!slug) {
-      return NextResponse.json(
-        { error: "文章 slug 不能为空" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "文章 slug 不能为空。" }, { status: 400 });
     }
 
     if (!content) {
-      return NextResponse.json(
-        { error: "文章正文不能为空" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "文章正文不能为空。" }, { status: 400 });
     }
 
     const db = await getDb();
-
     const existingPost = await db.collection("posts").findOne({ slug });
 
     if (existingPost) {
       return NextResponse.json(
-        { error: "这个 slug 已经存在，请换一个" },
+        { error: "这个 slug 已存在，请换一个。" },
         { status: 409 }
       );
     }
@@ -117,9 +99,6 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("POST /api/posts error:", error);
 
-    return NextResponse.json(
-      { error: "发布文章失败" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "发布文章失败。" }, { status: 500 });
   }
 }

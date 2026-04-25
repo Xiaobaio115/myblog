@@ -4,6 +4,7 @@ import { useState } from "react";
 
 export default function AdminPostsPage() {
   const [password, setPassword] = useState("");
+  const [status, setStatus] = useState("");
   const [form, setForm] = useState({
     title: "",
     slug: "",
@@ -14,7 +15,9 @@ export default function AdminPostsPage() {
   });
 
   async function submitPost() {
-    const res = await fetch("/api/posts", {
+    setStatus("");
+
+    const response = await fetch("/api/posts", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -34,14 +37,14 @@ export default function AdminPostsPage() {
       }),
     });
 
-    const data = await res.json();
+    const data = await response.json();
 
-    if (!res.ok) {
-      alert(data.error || "发布失败");
+    if (!response.ok) {
+      setStatus(data.error || "发布失败。");
       return;
     }
 
-    alert("发布成功！");
+    setStatus("文章已发布。");
 
     setForm({
       title: "",
@@ -55,63 +58,73 @@ export default function AdminPostsPage() {
 
   return (
     <main className="admin-page">
-      <div className="admin-card">
-        <h1>发布文章</h1>
-        <p>填写内容后会保存到 MongoDB 的 blog.posts 集合。</p>
+      <div className="admin-panel">
+        <div className="section-head">
+          <div>
+            <h1 className="section-title">发布文章</h1>
+            <p className="section-copy">
+              会写入 MongoDB 的 `posts` 集合，首页和文章页会直接读取这些数据。
+            </p>
+          </div>
+        </div>
+
+        {status ? <div className="status-banner">{status}</div> : null}
 
         <input
           className="admin-input"
           type="password"
           placeholder="后台密码"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(event) => setPassword(event.target.value)}
         />
 
         <input
           className="admin-input"
           placeholder="文章标题"
           value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
+          onChange={(event) => setForm({ ...form, title: event.target.value })}
         />
 
         <input
           className="admin-input"
           placeholder="slug，例如 my-first-post"
           value={form.slug}
-          onChange={(e) => setForm({ ...form, slug: e.target.value })}
+          onChange={(event) => setForm({ ...form, slug: event.target.value })}
         />
 
         <input
           className="admin-input"
           placeholder="摘要"
           value={form.excerpt}
-          onChange={(e) => setForm({ ...form, excerpt: e.target.value })}
+          onChange={(event) => setForm({ ...form, excerpt: event.target.value })}
         />
 
         <input
           className="admin-input"
-          placeholder="标签，用英文逗号分隔，例如 生活,旅行,技术"
+          placeholder="标签，用英文逗号分隔"
           value={form.tags}
-          onChange={(e) => setForm({ ...form, tags: e.target.value })}
+          onChange={(event) => setForm({ ...form, tags: event.target.value })}
         />
 
         <input
           className="admin-input"
-          placeholder="封面图 URL，可先留空"
+          placeholder="封面图 URL"
           value={form.coverUrl}
-          onChange={(e) => setForm({ ...form, coverUrl: e.target.value })}
+          onChange={(event) => setForm({ ...form, coverUrl: event.target.value })}
         />
 
         <textarea
           className="admin-textarea"
-          placeholder="正文，支持 Markdown"
+          placeholder="正文内容，支持 Markdown"
           value={form.content}
-          onChange={(e) => setForm({ ...form, content: e.target.value })}
+          onChange={(event) => setForm({ ...form, content: event.target.value })}
         />
 
-        <button className="admin-button" onClick={submitPost}>
-          发布文章 ✨
-        </button>
+        <div className="admin-actions">
+          <button className="admin-button" onClick={submitPost}>
+            发布文章
+          </button>
+        </div>
       </div>
     </main>
   );
