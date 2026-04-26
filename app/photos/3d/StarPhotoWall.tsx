@@ -3,6 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import styles from "./StarPhotoWall.module.css";
+import CommentsPanel from "./CommentsPanel";
 
 type Photo = {
   _id: string;
@@ -78,16 +79,26 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       const p = "touches" in e ? e.touches[0] : e;
       if (Math.abs(p.clientX - sx) > 5 || Math.abs(p.clientY - sy) > 5)
         hasDraggedRef.current = true;
-      tgtY += (p.clientX - lx) * 0.35;
-      tgtX -= (p.clientY - ly) * 0.15;
-      tgtX = Math.max(-20, Math.min(tgtX, 20));
+      
+      // More responsive on desktop, gentler on mobile
+      const isTouch = "touches" in e;
+      const dragMultiplier = isTouch ? 0.25 : 0.35;
+      const tiltMultiplier = isTouch ? 0.08 : 0.15;
+      
+      tgtY += (p.clientX - lx) * dragMultiplier;
+      tgtX -= (p.clientY - ly) * tiltMultiplier;
+      tgtX = Math.max(-15, Math.min(tgtX, 15));
       lx = p.clientX; ly = p.clientY;
     };
     const onUp = () => { dragging = false; };
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      tgtZoom += e.deltaY * -1.2;
-      tgtZoom = Math.max(-600, Math.min(tgtZoom, 800));
+      const isTouch = e.type === "wheel" && (e.ctrlKey || e.deltaY % 1 !== 0);
+      const zoomSensitivity = isTouch ? 0.8 : 1.2;
+      const maxZoom = window.innerWidth < 700 ? 400 : 800;
+      
+      tgtZoom += e.deltaY * -zoomSensitivity;
+      tgtZoom = Math.max(-400, Math.min(tgtZoom, maxZoom));
     };
     const onEnter = (e: MouseEvent) => {
       if ((e.target as HTMLElement).tagName === "IMG") hoveringCard = true;
@@ -140,8 +151,12 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       const treeHeight = treeBottomY - treeTopY;
       parts = [];
 
+      // Reduce particle counts on mobile for better performance
+      const isMobile = window.innerWidth < 700;
+      const scaleFactor = isMobile ? 0.4 : 1;
+
       // background stars
-      const numStars = Math.floor((W * H) / 1000);
+      const numStars = Math.floor((W * H) / (1000 / scaleFactor));
       for (let i = 0; i < numStars; i++) {
         parts.push(mkBase("star",
           (Math.random() * 2 - 1) * W,
@@ -153,7 +168,8 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       }
 
       // central tree (cone of stars)
-      for (let i = 0; i < 2500; i++) {
+      const treeCount = Math.floor(2500 * scaleFactor);
+      for (let i = 0; i < treeCount; i++) {
         const depth = Math.pow(Math.random(), 0.7);
         const y = treeTopY + depth * treeHeight;
         const offsetX = (Math.random() - 0.5) * depth * 180 * Math.pow(Math.random(), 0.5) * 2;
@@ -165,7 +181,8 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       }
 
       // dense core
-      for (let i = 0; i < 800; i++) {
+      const coreCount = Math.floor(800 * scaleFactor);
+      for (let i = 0; i < coreCount; i++) {
         const y = treeTopY + Math.random() * treeHeight;
         parts.push(mkBase("core",
           (Math.random() - 0.5) * 15, y,
@@ -178,10 +195,10 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       // 3 elliptical rings synced with carousel rotation
       const r1x = Math.min(W * 0.7, 900);
       const r1y = 200;
-      const ringCfg: Array<{ count: number; rx: number; ry: number; sMin: number; sMax: number; aMin: number; aMax: number; sp: number; mult: number; elev: number; rPow: number; }> = [
-        { count: 4000, rx: r1x,        ry: r1y,        sMin: 0.2, sMax: 1.4, aMin: 0.1, aMax: 0.5, sp: 0.02, mult: 0.8,  elev: 0,   rPow: 1.5 },
-        { count: 2500, rx: r1x * 0.4,  ry: r1y * 0.4,  sMin: 0.5, sMax: 2.5, aMin: 0.3, aMax: 0.9, sp: 0.03, mult: 2.2,  elev: -30, rPow: 1.2 },
-        { count: 1000, rx: r1x * 0.15, ry: r1y * 0.15, sMin: 0.5, sMax: 3.0, aMin: 0.2, aMax: 1.0, sp: 0.04, mult: -3.5, elev: -60, rPow: 0.8 },
+      const ringCfg: Array<{ count: number; rx: number; ry: number; sMin: number; sMax: number; aMin: number; aMax: number; sp: number; mult: number; elevation: number; rPow: number; }> = [
+        { count: Math.floor(4000 * scaleFactor), rx: r1x,        ry: r1y,        sMin: 0.2, sMax: 1.4, aMin: 0.1, aMax: 0.5, sp: 0.02, mult: 0.8,  elevation: 0,   rPow: 1.5 },
+        { count: Math.floor(2500 * scaleFactor), rx: r1x * 0.4,  ry: r1y * 0.4,  sMin: 0.5, sMax: 2.5, aMin: 0.3, aMax: 0.9, sp: 0.03, mult: 2.2,  elevation: -30, rPow: 1.2 },
+        { count: Math.floor(1000 * scaleFactor), rx: r1x * 0.15, ry: r1y * 0.15, sMin: 0.5, sMax: 3.0, aMin: 0.2, aMax: 1.0, sp: 0.04, mult: -3.5, elevation: -60, rPow: 0.8 },
       ];
       for (const cfg of ringCfg) {
         for (let i = 0; i < cfg.count; i++) {
@@ -192,14 +209,15 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
             Math.random() * cfg.sp,
           );
           p.radiusX = cfg.rx; p.radiusY = cfg.ry; p.r = r;
-          p.speedMult = cfg.mult; p.elevation = cfg.elev;
+          p.speedMult = cfg.mult; p.elevation = cfg.elevation;
           p.intrinsicAngle = Math.random() * Math.PI * 2;
           parts.push(p);
         }
       }
 
       // snowflakes
-      for (let i = 0; i < 200; i++) {
+      const snowCount = Math.floor(200 * scaleFactor);
+      for (let i = 0; i < snowCount; i++) {
         const p = mkBase("snow", 0, 0, 0, Math.random() * 0.4 + 0.3, 0);
         p.size = Math.random() * 10 + 8;
         p.speedX = Math.random() * 1.0 + 0.5;
@@ -371,16 +389,26 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
 
       {lightbox && (
         <div className={styles.lightbox} onClick={() => setLightbox(null)}>
-          <button className={styles.close} type="button">
+          <button
+            className={styles.close}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setLightbox(null);
+            }}
+          >
             ×
           </button>
 
-          <img src={lightbox.url} alt={lightbox.caption} />
-
-          <div className={styles.caption}>
-            <strong>{lightbox.caption}</strong>
-            <span>{lightbox.category}</span>
+          <div className={styles.lightboxStage} onClick={(e) => e.stopPropagation()}>
+            <img src={lightbox.url} alt={lightbox.caption} />
+            <div className={styles.caption}>
+              <strong>{lightbox.caption}</strong>
+              <span>{lightbox.category}</span>
+            </div>
           </div>
+
+          <CommentsPanel photoId={lightbox._id} />
         </div>
       )}
     </section>

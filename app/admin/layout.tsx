@@ -1,5 +1,6 @@
 import AdminGate from "../photos/AdminGate";
 
+
 export default function AdminLayout({
   children,
 }: {

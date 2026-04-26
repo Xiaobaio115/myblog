@@ -59,6 +59,7 @@
     0 0 18px rgba(255, 255, 255, 0.14);
   z-index: 5;
   transform-origin: center center;
+  transition: transform 0.2s ease;
 }
 
 .photoCard:hover {
@@ -104,6 +105,9 @@
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(12px);
   pointer-events: none;
+  max-width: 90vw;
+  text-align: center;
+  line-height: 1.4;
 }
 
 .debugStrip {
@@ -157,52 +161,202 @@
   inset: 0;
   z-index: 100;
   background: rgba(0, 0, 0, 0.86);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 32px;
+  gap: 24px;
 }
 
-.lightbox img {
-  max-width: 82vw;
-  max-height: 80vh;
+.lightboxStage {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-width: 0;
+  max-height: calc(100vh - 64px);
+}
+
+.lightboxStage img {
+  max-width: 100%;
+  max-height: calc(100vh - 160px);
+  object-fit: contain;
   border-radius: 16px;
-  box-shadow: 0 0 44px rgba(255, 255, 255, 0.22);
-}
-
-.close {
-  position: fixed;
-  top: 28px;
-  right: 34px;
-  border: none;
-  background: transparent;
-  color: rgba(255, 255, 255, 0.66);
-  font-size: 44px;
-  cursor: pointer;
-}
-
-.close:hover {
-  color: #fff;
+  box-shadow: 0 0 44px rgba(255, 255, 255, 0.18);
 }
 
 .caption {
-  position: fixed;
-  left: 50%;
-  bottom: 32px;
-  transform: translateX(-50%);
   display: flex;
   gap: 14px;
   align-items: center;
   color: #fff;
-  padding: 12px 22px;
+  padding: 10px 20px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .caption span {
   color: rgba(255, 255, 255, 0.68);
+}
+
+.commentsPanel {
+  flex: 0 0 360px;
+  max-width: 360px;
+  height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  background: rgba(20, 20, 22, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 18px;
+  color: #fff;
+}
+
+.commentsTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.commentsTitle small {
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.commentList {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 4px;
+}
+
+.commentItem {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.commentItem header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+  gap: 8px;
+}
+
+.commentItem header strong {
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.commentItem header time {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.7rem;
+}
+
+.commentItem p {
+  color: rgba(255, 255, 255, 0.85);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+}
+
+.commentEmpty {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 28px 0;
+}
+
+.commentForm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.commentForm input,
+.commentForm textarea {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: #fff;
+  font-size: 0.85rem;
+  font-family: inherit;
+  outline: none;
+  resize: none;
+}
+
+.commentForm input:focus,
+.commentForm textarea:focus {
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.commentForm textarea {
+  min-height: 70px;
+}
+
+.commentForm button {
+  background: rgba(255, 255, 255, 0.92);
+  color: #111;
+  border: none;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.commentForm button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.commentError {
+  color: #ff8a8a;
+  font-size: 0.78rem;
+}
+
+.close {
+  position: fixed;
+  top: 18px;
+  right: 22px;
+  z-index: 110;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 26px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
 }
 
 @keyframes spinHeart {
@@ -225,25 +379,103 @@
   }
 }
 
+@media (max-width: 900px) {
+  .lightbox {
+    flex-direction: column;
+    padding: 12px;
+    gap: 12px;
+    overflow-y: auto;
+    align-items: stretch;
+  }
+
+  .lightboxStage {
+    flex: 0 0 auto;
+    max-height: 50vh;
+  }
+
+  .lightboxStage img {
+    max-height: 40vh;
+  }
+
+  .commentsPanel {
+    flex: 1 1 auto;
+    max-width: 100%;
+    height: auto;
+    min-height: 300px;
+  }
+
+  .commentsTitle {
+    font-size: 0.95rem;
+  }
+
+  .commentForm input,
+  .commentForm textarea {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}
+
 @media (max-width: 700px) {
-  .camera {
-    top: 48%;
+  .scene {
+    perspective: 1000px;
   }
 
   .photoCard {
-    width: 104px;
-    height: 74px;
-    left: -52px;
-    top: -37px;
+    width: 90px;
+    height: 64px;
+    margin-left: -45px;
+    margin-top: -32px;
+    border-radius: 8px;
   }
 
   .hint {
-    bottom: 18px;
+    bottom: 16px;
     font-size: 0.75rem;
+    padding: 8px 14px;
   }
 
-  .debugStrip {
-    bottom: 72px;
-    max-width: 94vw;
+  .close {
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .photoCard {
+    width: 80px;
+    height: 56px;
+    margin-left: -40px;
+    margin-top: -28px;
+  }
+
+  .hint {
+    font-size: 0.7rem;
+    padding: 6px 12px;
+    bottom: 12px;
+  }
+
+  .lightbox {
+    padding: 8px;
+  }
+
+  .lightboxStage img {
+    max-height: 35vh;
+  }
+
+  .commentsPanel {
+    padding: 14px;
+    min-height: 250px;
+  }
+
+  .commentForm input,
+  .commentForm textarea {
+    font-size: 16px;
+  }
+
+  .commentForm button {
+    padding: 10px 16px;
+    font-size: 0.9rem;
   }
 }
