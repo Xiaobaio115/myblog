@@ -6,9 +6,13 @@ import type { Post } from "@/lib/content";
 export function ArticleCard({ post }: { post: Post }) {
   return (
     <Link href={`/posts/${post.slug}`} className="article-card">
-      {post.coverUrl ? (
-        <img src={post.coverUrl} alt={post.title} className="article-cover" />
-      ) : null}
+      <div className="article-cover-wrap">
+        {post.coverUrl ? (
+          <img src={post.coverUrl} alt={post.title} className="article-cover" />
+        ) : (
+          <div className="article-cover article-cover-fallback">✦</div>
+        )}
+      </div>
 
       <div className="article-meta">
         <div className="tag-list">
