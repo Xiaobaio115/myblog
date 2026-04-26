@@ -114,7 +114,7 @@ async function callAi(message: string) {
   if (!model) throw new Error("服务器未配置 AI_MODEL");
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000);
+  const timeout = setTimeout(() => controller.abort(), 60000);
 
   try {
     const res = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
@@ -126,7 +126,7 @@ async function callAi(message: string) {
       },
       body: JSON.stringify({
         model,
-        max_tokens: 300,
+        max_tokens: 120,
         temperature: 0.7,
         stream: false,
         messages: [
