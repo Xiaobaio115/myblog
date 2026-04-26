@@ -11,12 +11,11 @@ export default function VirtualAssistant() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
-
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
       content:
-        "你好呀，我是 Luna。简单问题我会直接回答，复杂问题每天可以问我 5 次。",
+        "你好呀，我是 Luna。简单问题我会直接回答，复杂问题每天可以问我 10 次。",
     },
   ]);
 
@@ -33,7 +32,16 @@ export default function VirtualAssistant() {
       },
     ];
 
-    setMessages(nextMessages);
+    const assistantIndex = nextMessages.length;
+
+    setMessages([
+      ...nextMessages,
+      {
+        role: "assistant",
+        content: "",
+      },
+    ]);
+
     setInput("");
     setSending(true);
 
@@ -48,28 +56,64 @@ export default function VirtualAssistant() {
         }),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
-        throw new Error(data.error || "聊天失败");
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "聊天失败");
       }
 
-      setMessages([
-        ...nextMessages,
-        {
-          role: "assistant",
-          content: data.reply || "嗯嗯，我在听。",
-        },
-      ]);
+      if (!res.body) {
+        throw new Error("浏览器不支持流式响应");
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      let fullReply = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        fullReply += chunk;
+
+        setMessages((currentMessages) => {
+          const copiedMessages = [...currentMessages];
+
+          copiedMessages[assistantIndex] = {
+            role: "assistant",
+            content: fullReply || "Luna 正在回复...",
+          };
+
+          return copiedMessages;
+        });
+      }
+
+      if (!fullReply.trim()) {
+        setMessages((currentMessages) => {
+          const copiedMessages = [...currentMessages];
+
+          copiedMessages[assistantIndex] = {
+            role: "assistant",
+            content: "我刚刚没有收到有效回复，可以再问一次吗？",
+          };
+
+          return copiedMessages;
+        });
+      }
     } catch (error: any) {
-      setMessages([
-        ...nextMessages,
-        {
+      setMessages((currentMessages) => {
+        const copiedMessages = [...currentMessages];
+
+        copiedMessages[assistantIndex] = {
           role: "assistant",
           content:
             error?.message || "聊天服务暂时有点小故障，可以稍后再试。",
-        },
-      ]);
+        };
+
+        return copiedMessages;
+      });
     } finally {
       setSending(false);
     }
@@ -89,9 +133,7 @@ export default function VirtualAssistant() {
           </div>
 
           <div className="assistant-quick-actions">
-            <button onClick={() => sendMessage("相册在哪里？")}>
-              相册
-            </button>
+            <button onClick={() => sendMessage("相册在哪里？")}>相册</button>
             <button onClick={() => sendMessage("3D照片墙怎么打开？")}>
               3D照片墙
             </button>
@@ -111,12 +153,6 @@ export default function VirtualAssistant() {
                 {message.content}
               </div>
             ))}
-
-            {sending && (
-              <div className="assistant-message is-assistant">
-                Luna 正在想怎么回复你...
-              </div>
-            )}
           </div>
 
           <div className="assistant-input-row">
