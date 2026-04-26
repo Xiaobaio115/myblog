@@ -33,20 +33,22 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
   }, [photos]);
 
   const cards = useMemo(() => {
-    const count = Math.max(16, Math.min(28, displayPhotos.length * 2));
+    const count = Math.max(28, displayPhotos.length);
+    const baseRadius = 450;
 
     return Array.from({ length: count }, (_, index) => {
       const photo = displayPhotos[index % displayPhotos.length];
       const angle = (360 / count) * index;
-      const radius = 320 + ((index * 37) % 120);
-      const y = ((index * 53) % 180) - 90;
-      const tilt = ((index * 29) % 12) - 6;
+      // stable pseudo-random using index
+      const seed = index * 137.508;
+      const radius = baseRadius + ((seed % 150) - 75);
+      const y = ((seed * 3.1) % 450) - 225;
 
       return {
         key: `${photo._id}-${index}`,
         photo,
         style: {
-          transform: `rotateY(${angle}deg) translateZ(${radius}px) translateY(${y}px) rotateZ(${tilt}deg)`,
+          transform: `rotateY(${angle}deg) translateZ(${radius}px) translateY(${y}px)`,
         } as CSSProperties,
       };
     });
@@ -172,39 +174,38 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       <canvas ref={canvasRef} className={styles.canvas} />
 
       <div ref={sceneRef} className={styles.scene}>
-        <div className={styles.heart}>
-          {[0, 1, 2, 3].map((index) => (
-            <svg
-              key={index}
-              className={styles.heartLayer}
-              style={{ "--heart-z": `${index * 2 - 4}px` } as CSSProperties}
-              viewBox="0 0 24 24"
-            >
-              <defs>
-                <linearGradient
-                  id={`heartGrad-${index}`}
-                  x1="0%"
-                  y1="0%"
-                  x2="100%"
-                  y2="100%"
-                >
-                  <stop offset="0%" stopColor="#ffffff" />
-                  <stop offset="50%" stopColor="#777777" />
-                  <stop offset="100%" stopColor="#ffffff" />
-                </linearGradient>
-              </defs>
-
-              <path
-                fill="none"
-                stroke={`url(#heartGrad-${index})`}
-                strokeWidth="1.2"
-                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-              />
-            </svg>
-          ))}
-        </div>
-
         <div ref={cameraRef} className={styles.camera}>
+          <div className={styles.heart}>
+            {[0, 1, 2, 3].map((index) => (
+              <svg
+                key={index}
+                className={styles.heartLayer}
+                style={{ "--heart-z": `${index * 2 - 4}px` } as CSSProperties}
+                viewBox="0 0 24 24"
+              >
+                <defs>
+                  <linearGradient
+                    id={`heartGrad-${index}`}
+                    x1="0%"
+                    y1="0%"
+                    x2="100%"
+                    y2="100%"
+                  >
+                    <stop offset="0%" stopColor="#ffffff" />
+                    <stop offset="50%" stopColor="#777777" />
+                    <stop offset="100%" stopColor="#ffffff" />
+                  </linearGradient>
+                </defs>
+                <path
+                  fill="none"
+                  stroke={`url(#heartGrad-${index})`}
+                  strokeWidth="1.2"
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                />
+              </svg>
+            ))}
+          </div>
+
           <div ref={carouselRef} className={styles.carousel}>
             {cards.map((card) => (
               <img
@@ -222,6 +223,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
           </div>
         </div>
       </div>
+
 
       <div className={styles.hint}>自动旋转 · 点击照片放大</div>
 
