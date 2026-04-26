@@ -11,23 +11,32 @@ export default function AdminGate({
   const [password, setPassword] = useState("");
   const [authed, setAuthed] = useState(false);
   const [ready, setReady] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const savedPassword = localStorage.getItem("admin_password");
-    if (savedPassword) {
-      setAuthed(true);
+    const saved = localStorage.getItem("admin_password");
+    if (saved) {
+      fetch("/api/auth", { headers: { "x-admin-password": saved } })
+        .then((r) => { if (r.ok) setAuthed(true); else localStorage.removeItem("admin_password"); })
+        .finally(() => setReady(true));
+    } else {
+      setReady(true);
     }
-    setReady(true);
   }, []);
 
-  function login() {
-    if (!password.trim()) {
-      alert("请输入后台密码");
-      return;
+  async function login() {
+    if (!password.trim()) { alert("请输入后台密码"); return; }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth", { headers: { "x-admin-password": password } });
+      if (!res.ok) { alert("密码错误，请重试"); return; }
+      localStorage.setItem("admin_password", password);
+      setAuthed(true);
+    } catch {
+      alert("网络错误，请重试");
+    } finally {
+      setLoading(false);
     }
-
-    localStorage.setItem("admin_password", password);
-    setAuthed(true);
   }
 
   function logout() {
@@ -59,8 +68,8 @@ export default function AdminGate({
             }}
           />
 
-          <button className="admin-button" onClick={login}>
-            进入后台
+          <button className="admin-button" onClick={login} disabled={loading}>
+            {loading ? "验证中…" : "进入后台"}
           </button>
         </section>
       </main>
@@ -75,11 +84,11 @@ export default function AdminGate({
         </Link>
 
         <nav className="admin-menu">
-          <Link href="/admin">总览</Link>
-          <Link href="/admin/posts">文章管理</Link>
-          <Link href="/admin/photos">相册管理</Link>
-          <Link href="/photos">查看相册</Link>
-          <Link href="/">返回首页</Link>
+          <Link href="/admin" className="admin-menu-link">总览</Link>
+          <Link href="/admin/posts" className="admin-menu-link">文章管理</Link>
+          <Link href="/admin/photos" className="admin-menu-link">相册管理</Link>
+          <Link href="/photos" className="admin-menu-link">查看相册</Link>
+          <Link href="/" className="admin-menu-link">返回首页</Link>
         </nav>
 
         <button className="admin-logout" onClick={logout}>

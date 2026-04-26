@@ -65,6 +65,10 @@ export async function PATCH(
       updates.isPrivate = Boolean(body.isPrivate);
     }
 
+    if ("showIn3d" in body) {
+      updates.showIn3d = Boolean(body.showIn3d);
+    }
+
     const db = await getDb();
     const result = await db.collection("photos").findOneAndUpdate(
       { _id: photoId },

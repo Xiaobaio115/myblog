@@ -7,12 +7,15 @@ import StarPhotoWall from "./StarPhotoWall";
 export default async function ThreeDPhotosPage() {
   const db = await getDb();
 
-  const result = await db
+  const allPhotos = await db
     .collection("photos")
     .find({})
     .sort({ createdAt: -1 })
     .limit(80)
     .toArray();
+
+  const has3dSelected = allPhotos.some((p) => p.showIn3d);
+  const result = has3dSelected ? allPhotos.filter((p) => p.showIn3d) : allPhotos;
 
   const photos = result.map((photo: any) => ({
     _id: photo._id.toString(),
