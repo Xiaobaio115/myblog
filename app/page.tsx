@@ -17,27 +17,34 @@ export default async function HomePage() {
   return (
     <SiteFrame>
       {/* ── Hero ── */}
-      <section className="hero container" style={{ textAlign: "center" }}>
-        <div className="hero-badge">
-          <span className="hero-badge-dot" />
-          欢迎来到 Luna Notes
+      <section className="home-hero container">
+        <div className="hero-content">
+          <div className="hero-badge">
+            <span className="hero-badge-dot" />
+            欢迎来到 Luna Notes
+          </div>
+
+          <h1 className="home-title">
+            记录
+            <span className="title-gradient">生活与思考</span>
+          </h1>
+
+          <p className="home-desc">
+            在这里记录日常灵感、生活点滴与思考感悟，让每一个瞬间都值得被珍藏。
+          </p>
+
+          <div className="hero-actions">
+            <Link href="/articles" className="primary-link">
+              浏览文章
+            </Link>
+            <Link href="/photos" className="secondary-link">
+              打开相册
+            </Link>
+          </div>
         </div>
 
-        <h1 className="hero-title">
-          记录<span className="title-gradient">生活与思考</span>
-        </h1>
-
-        <p className="hero-copy">
-          在这里记录日常灵感、生活点滴与思考感悟，让每一个瞬间都值得被珍藏。
-        </p>
-
-        <div className="hero-actions">
-          <Link href="/articles" className="primary-link">
-            浏览文章
-          </Link>
-          <Link href="/photos" className="secondary-link">
-            打开相册
-          </Link>
+        <div className="hero-deco" aria-hidden="true">
+          <div className="hero-orb" />
         </div>
       </section>
 
