@@ -2878,39 +2878,179 @@ html, body {
 }
 
 /* ═══════════════════════════════════════════════════════
-   VIEW SWITCHER (Photos page tab toggle)
+   VIEW OPTION CARDS — glassmorphism photo cards
    ═══════════════════════════════════════════════════════ */
 
-.view-switcher {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  margin-bottom: 40px;
+.view-option-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 48px;
 }
 
-.view-btn {
-  padding: 10px 24px;
-  border-radius: 999px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  color: var(--text-soft);
-  font-size: 0.92rem;
-  font-weight: 700;
+.view-option-card {
+  position: relative;
+  min-height: 260px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
   cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.10);
+  text-align: left;
+  transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
 }
 
-.view-btn:hover {
-  border-color: rgba(255, 79, 163, 0.35);
-  color: var(--pink-500);
-  transform: translateY(-1px);
+.view-option-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.18);
+  border-color: rgba(255, 79, 163, 0.45);
 }
 
-.view-btn.active {
-  background: var(--pink-500);
+.view-option-card.selected {
   border-color: var(--pink-500);
+  box-shadow: 0 0 0 2px var(--pink-500), 0 20px 48px rgba(255, 79, 163, 0.22);
+}
+
+/* Background image layer */
+.view-option-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.5s ease;
+}
+
+.view-option-card:hover .view-option-bg {
+  transform: scale(1.06);
+}
+
+.view-option-bg--gradient-3d {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 79, 163, 0.75) 0%,
+    rgba(168, 85, 247, 0.65) 55%,
+    rgba(99, 102, 241, 0.60) 100%
+  );
+}
+
+.view-option-bg--gradient-static {
+  background: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.75) 0%,
+    rgba(255, 79, 163, 0.55) 55%,
+    rgba(244, 114, 182, 0.60) 100%
+  );
+}
+
+/* Glass overlay */
+.view-option-glass {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.12) 0%,
+    rgba(0, 0, 0, 0.48) 100%
+  );
+  backdrop-filter: blur(1px);
+}
+
+/* Text / icon content */
+.view-option-body {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 22px 22px 16px;
   color: #fff;
-  box-shadow: 0 4px 14px rgba(255, 79, 163, 0.30);
+  min-height: 260px;
+}
+
+.view-option-check {
+  align-self: flex-end;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--pink-500);
+  font-size: 0.88rem;
+  font-weight: 800;
+  margin-bottom: auto;
+  box-shadow: 0 2px 8px rgba(255, 79, 163, 0.45);
+}
+
+.view-option-icon {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 10px;
+  margin-top: auto;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+}
+
+.view-option-title {
+  margin: 0 0 4px;
+  font-size: 1.18rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.30);
+}
+
+.view-option-desc {
+  margin: 0 0 14px;
+  font-size: 0.84rem;
+  opacity: 0.82;
+  line-height: 1.4;
+}
+
+/* Thumbnail strip at bottom of card */
+.view-option-thumbs {
+  display: flex;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.view-thumb {
+  width: 48px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1.5px solid rgba(255, 255, 255, 0.40);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.view-option-card:hover .view-thumb {
+  transform: scale(1.04);
+}
+
+/* "Choose a view" hint */
+.view-hint {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.92rem;
+  padding: 40px 0;
+  margin: 0;
+}
+
+/* Dark theme overrides for cards */
+[data-theme="dark"] .view-option-card {
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+@media (max-width: 600px) {
+  .view-option-row {
+    grid-template-columns: 1fr;
+  }
+
+  .view-option-card {
+    min-height: 200px;
+  }
+
+  .view-option-body {
+    min-height: 200px;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
