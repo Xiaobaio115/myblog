@@ -24,13 +24,13 @@ function pickFirst(value?: string | string[]) {
 
 function formatVisitTime(value?: Date | string) {
   if (!value) {
-    return "刚刚";
+    return "Just now";
   }
 
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return "刚刚";
+    return "Just now";
   }
 
   return date.toLocaleString("zh-CN", {
@@ -74,7 +74,9 @@ export default async function AdminPostsPage({
     return search ? `/admin/posts?${search}` : "/admin/posts";
   };
 
-  const resultTitle = query ? `“${query}” 的搜索结果` : selectedTag || "全部文章";
+  const resultTitle = query
+    ? `“${query}” 的搜索结果`
+    : selectedTag || "全部文章";
 
   return (
     <main className="admin-page">
@@ -84,7 +86,7 @@ export default async function AdminPostsPage({
             <div className="admin-kicker">Posts</div>
             <h1 className="section-title">管理文章</h1>
             <p className="section-copy">
-              这里会列出后台所有文章，包括仅后台可见的私密内容。你可以直接编辑、删除或查看最近访问来源。
+              这里会列出后台所有文章，包括未发布和仅后台可见的内容。你可以直接编辑、删除，并查看最近访问来源。
             </p>
           </div>
 
@@ -161,7 +163,7 @@ export default async function AdminPostsPage({
                     <div className="post-manage-meta">
                       <span>Slug: {post.slug}</span>
                       <span>{post.date || "刚刚创建"}</span>
-                      <span>浏览 {post.views || 0}</span>
+                      <span>PV {post.views || 0}</span>
                       <span>UV {uniqueVisitors}</span>
                     </div>
 

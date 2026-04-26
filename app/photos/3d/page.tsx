@@ -4,29 +4,36 @@ import Link from "next/link";
 import { getDb } from "@/lib/mongodb";
 import StarPhotoWall from "./StarPhotoWall";
 
+type RawPhoto = {
+  _id: { toString(): string };
+  url?: unknown;
+  caption?: unknown;
+  category?: unknown;
+  showIn3d?: unknown;
+};
+
 export default async function ThreeDPhotosPage() {
   const db = await getDb();
-
-  const result = await db
+  const result = (await db
     .collection("photos")
-    .find({})
+    .find({ isPrivate: { $ne: true } })
     .sort({ createdAt: -1 })
     .limit(80)
-    .toArray();
+    .toArray()) as RawPhoto[];
 
-  const selectedCount = result.filter((photo: any) => photo.showIn3d).length;
+  const selectedCount = result.filter((photo) => Boolean(photo.showIn3d)).length;
   const selected =
     selectedCount > 0
-      ? result.filter((photo: any) => photo.showIn3d)
+      ? result.filter((photo) => Boolean(photo.showIn3d))
       : result;
 
   const photos = selected
-    .filter((photo: any) => String(photo.url || "").trim())
-    .map((photo: any) => ({
+    .filter((photo) => String(photo.url || "").trim())
+    .map((photo) => ({
       _id: photo._id.toString(),
       url: String(photo.url),
-      caption: photo.caption || "我的照片",
-      category: photo.category || "日常",
+      caption: String(photo.caption || "我的照片"),
+      category: String(photo.category || "日常"),
     }));
 
   return (

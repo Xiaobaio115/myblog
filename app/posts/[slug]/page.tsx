@@ -1,84 +1,78 @@
 export const dynamic = "force-dynamic";
 
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { marked } from "marked";
-import { getDb } from "@/lib/mongodb";
+import { SiteFrame } from "@/app/components/site-frame";
+import { TwikooComments } from "@/app/components/twikoo-comments";
+import { getPublishedPost } from "@/lib/content";
+import { PostViewTracker } from "./post-view-tracker";
+
+type PostDetailPageProps = {
+  params: Promise<{ slug: string }>;
+};
 
 export default async function PostDetailPage({
   params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+}: PostDetailPageProps) {
   const { slug } = await params;
-
-  const db = await getDb();
-
-  const post = await db.collection("posts").findOne({
-    slug,
-    published: true,
-  });
+  const post = await getPublishedPost(slug);
 
   if (!post) {
     notFound();
   }
 
-  await db.collection("posts").updateOne(
-    { slug },
-    {
-      $inc: { views: 1 },
-      $set: { updatedAt: new Date() },
-    }
-  );
-
   const html = await marked.parse(post.content || "");
 
   return (
-    <main className="site-shell">
-      <div className="bg-orbs">
-        <div className="orb orb1" />
-        <div className="orb orb2" />
-        <div className="orb orb3" />
-      </div>
+    <SiteFrame>
+      <section className="article-layout container">
+        <header className="article-header">
+          <Link href="/articles" className="back-link">
+            返回文章列表
+          </Link>
 
-      <article className="article-detail">
-        <Link href="/" className="back-link">
-          ← 返回首页
-        </Link>
+          <div className="tag-list">
+            {(post.tags || []).map((tag) => (
+              <span key={tag} className="card-tag">
+                {tag}
+              </span>
+            ))}
+          </div>
 
-        <div className="card-tags">
-          {(post.tags || []).map((tag: string) => (
-            <span key={tag} className="card-tag">
-              {tag}
-            </span>
-          ))}
-        </div>
+          <h1 className="article-title">{post.title}</h1>
 
-        <h1 className="article-title">{post.title}</h1>
+          <div className="article-meta-bar">
+            <span>{post.date || "刚刚发布"}</span>
+            <PostViewTracker slug={slug} initialViews={post.views || 0} />
+          </div>
+        </header>
 
-        <div className="article-meta">
-          <span>📅 {post.date || "刚刚"}</span>
-          <span>👁 {(post.views || 0) + 1} 次阅读</span>
-        </div>
-
-        {post.coverUrl && (
-          <img
+        {post.coverUrl ? (
+          <Image
             src={post.coverUrl}
             alt={post.title}
-            className="article-cover"
+            width={1600}
+            height={960}
+            sizes="(max-width: 960px) calc(100vw - 40px), 900px"
+            unoptimized
+            className="article-detail-cover"
           />
-        )}
+        ) : null}
 
         <div
           className="article-content"
           dangerouslySetInnerHTML={{ __html: html }}
         />
 
-        <div className="comments-placeholder">
-          <h2>💬 评论区</h2>
-          <p>下一步我们会把 Twikoo 评论接回这里。</p>
-        </div>
-      </article>
-    </main>
+        <section className="comments-section">
+          <TwikooComments
+            envId={process.env.TWIKOO_ENV_ID}
+            path={`/posts/${slug}`}
+          />
+        </section>
+      </section>
+    </SiteFrame>
   );
 }

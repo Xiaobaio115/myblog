@@ -26,14 +26,18 @@ export function DeletePostButton({ slug }: DeletePostButtonProps) {
   const [deleting, setDeleting] = useState(false);
 
   async function handleDelete() {
-    if (!confirm("确定删除这篇文章吗？文章和本地访问记录会一起删除。")) {
+    const confirmed = window.confirm(
+      "确定删除这篇文章吗？文章和本地访问记录会一起删除。"
+    );
+
+    if (!confirmed) {
       return;
     }
 
-    const password = localStorage.getItem("admin_password") || "";
+    const password = window.localStorage.getItem("admin_password") || "";
 
     if (!password) {
-      alert("后台密码已丢失，请重新进入后台。");
+      window.alert("后台密码已丢失，请重新进入后台。");
       router.push("/admin");
       return;
     }
@@ -47,7 +51,6 @@ export function DeletePostButton({ slug }: DeletePostButtonProps) {
           "x-admin-password": password,
         },
       });
-
       const data = await parseJsonSafely(response);
 
       if (!response.ok) {
@@ -58,7 +61,7 @@ export function DeletePostButton({ slug }: DeletePostButtonProps) {
 
       router.refresh();
     } catch (error) {
-      alert(error instanceof Error ? error.message : "删除文章失败。");
+      window.alert(error instanceof Error ? error.message : "删除文章失败。");
     } finally {
       setDeleting(false);
     }
@@ -68,7 +71,7 @@ export function DeletePostButton({ slug }: DeletePostButtonProps) {
     <button
       type="button"
       className="danger-btn post-row-delete"
-      onClick={handleDelete}
+      onClick={() => void handleDelete()}
       disabled={deleting}
     >
       {deleting ? "删除中..." : "删除"}
