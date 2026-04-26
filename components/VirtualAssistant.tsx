@@ -16,7 +16,7 @@ export default function VirtualAssistant() {
     {
       role: "assistant",
       content:
-        "你好呀，我是 Luna。简单问题我会直接回答，复杂问题每天可以问我 2 次。",
+        "你好呀，我是 Luna。简单问题我会直接回答，复杂问题每天可以问我 5 次。",
     },
   ]);
 

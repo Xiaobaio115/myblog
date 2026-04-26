@@ -4,8 +4,12 @@ import { getDb } from "@/lib/mongodb";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const DAILY_LIMIT = 2;
 const MAX_MESSAGE_LENGTH = 500;
+
+function getDailyLimit() {
+  const value = Number(process.env.AI_DAILY_LIMIT || 5);
+  return Number.isFinite(value) && value > 0 ? value : 5;
+}
 
 function getLocalReply(text: string) {
   const message = text.trim().toLowerCase();
@@ -62,6 +66,8 @@ function getTodayKey() {
 }
 
 async function checkLimit(request: Request) {
+  const dailyLimit = getDailyLimit();
+
   const db = await getDb();
   const ip = getClientIp(request);
   const date = getTodayKey();
@@ -93,7 +99,8 @@ async function checkLimit(request: Request) {
 
   return {
     usedToday,
-    allowed: usedToday <= DAILY_LIMIT,
+    dailyLimit,
+    allowed: usedToday <= dailyLimit,
   };
 }
 
@@ -210,7 +217,7 @@ export async function POST(request: Request) {
     if (!limit.allowed) {
       return NextResponse.json(
         {
-          error: `今天 AI 聊天次数已经用完啦，每位访客每天最多 ${DAILY_LIMIT} 次。`,
+          error: `今天 AI 聊天次数已经用完啦，每位访客每天最多 ${limit.dailyLimit} 次。`,
         },
         { status: 429 }
       );
@@ -222,7 +229,7 @@ export async function POST(request: Request) {
       reply,
       source: "ai",
       usedToday: limit.usedToday,
-      dailyLimit: DAILY_LIMIT,
+      dailyLimit: limit.dailyLimit,
     });
   } catch (error: any) {
     console.error("POST /api/chat error:", error);
