@@ -18,6 +18,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
   const cameraRef = useRef<HTMLDivElement | null>(null);
   const carouselRef = useRef<HTMLDivElement | null>(null);
   const hasDraggedRef = useRef(false);
+  const lightboxHistoryRef = useRef(false);
   const [lightbox, setLightbox] = useState<Photo | null>(null);
 
   const displayPhotos = useMemo(() => {
@@ -36,13 +37,17 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
   const cards = useMemo(() => {
     const count = displayPhotos.length;
     if (count === 0) return [];
-    const baseRadius = 450;
+    const isMobile =
+      typeof window !== "undefined" && window.matchMedia("(max-width: 700px)").matches;
+    const baseRadius = isMobile ? 260 : 520;
+    const radiusJitter = isMobile ? 70 : 110;
+    const yRange = isMobile ? 260 : 360;
 
     return displayPhotos.map((photo, index) => {
       const angle = (360 / count) * index;
       const seed = index * 137.508;
-      const radius = baseRadius + ((seed % 150) - 75);
-      const y = ((seed * 3.1) % 450) - 225;
+      const radius = baseRadius + ((seed % radiusJitter) - radiusJitter / 2);
+      const y = ((seed * 3.1) % yRange) - yRange / 2;
 
       return {
         key: photo._id,
@@ -287,7 +292,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     };
 
     const animate = () => {
-      if (!dragging && !hoveringCard) tgtY += 0.12;
+      if (!dragging && !hoveringCard) tgtY += 0.15;
       rotY += (tgtY - rotY) * 0.08;
       rotX += (tgtX - rotX) * 0.08;
       zoom += (tgtZoom - zoom) * 0.08;
@@ -328,6 +333,44 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       window.removeEventListener("resize", onResize);
     };
   }, []);
+
+  useEffect(() => {
+    if (!lightbox) return;
+
+    if (!lightboxHistoryRef.current) {
+      const currentState =
+        window.history.state && typeof window.history.state === "object"
+          ? window.history.state
+          : {};
+      window.history.pushState(
+        { ...currentState, starPhotoPreview: true },
+        "",
+        window.location.href
+      );
+      lightboxHistoryRef.current = true;
+    }
+
+    const onPopState = () => {
+      lightboxHistoryRef.current = false;
+      setLightbox(null);
+    };
+
+    window.addEventListener("popstate", onPopState);
+    return () => {
+      window.removeEventListener("popstate", onPopState);
+    };
+  }, [lightbox]);
+
+  function closeLightbox() {
+    if (lightboxHistoryRef.current) {
+      lightboxHistoryRef.current = false;
+      setLightbox(null);
+      window.history.back();
+      return;
+    }
+
+    setLightbox(null);
+  }
 
   return (
     <section className={styles.wall}>
@@ -388,13 +431,13 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       <div className={styles.hint}>拖拽旋转 · 滚轮缩放 · 点击照片放大</div>
 
       {lightbox && (
-        <div className={styles.lightbox} onClick={() => setLightbox(null)}>
+        <div className={styles.lightbox} onClick={closeLightbox}>
           <button
             className={styles.close}
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              setLightbox(null);
+              closeLightbox();
             }}
           >
             ×

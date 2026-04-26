@@ -13,6 +13,7 @@ interface Props {
 export function PhotoGallery({ photos, categories }: Props) {
   const [activeCategory, setActiveCategory] = useState("全部");
   const [visible, setVisible] = useState(true);
+  const [previewPhoto, setPreviewPhoto] = useState<Photo | null>(null);
 
   const displayed = useMemo(
     () =>
@@ -66,7 +67,11 @@ export function PhotoGallery({ photos, categories }: Props) {
             className="gallery-item"
             style={{ animationDelay: `${Math.min(index * 0.04, 0.48)}s` }}
           >
-            <div className="photo-card gallery-card">
+            <button
+              type="button"
+              className="photo-card gallery-card"
+              onClick={() => setPreviewPhoto(photo)}
+            >
               {photo.url ? (
                 <img src={photo.url} alt={photo.caption} className="photo-media" />
               ) : photo.emoji ? (
@@ -82,7 +87,7 @@ export function PhotoGallery({ photos, categories }: Props) {
                 <p className="photo-caption">{photo.caption}</p>
                 <p className="photo-date">{photo.date}</p>
               </div>
-            </div>
+            </button>
           </div>
         ))}
       </div>
@@ -91,6 +96,34 @@ export function PhotoGallery({ photos, categories }: Props) {
         <div className="empty-state">
           <div className="empty-icon">📷</div>
           <p>这个分类下还没有照片，去后台上传一张吧。</p>
+        </div>
+      ) : null}
+
+      {previewPhoto ? (
+        <div className="photo-preview-lightbox" onClick={() => setPreviewPhoto(null)}>
+          <button
+            type="button"
+            className="photo-preview-close"
+            onClick={(event) => {
+              event.stopPropagation();
+              setPreviewPhoto(null);
+            }}
+          >
+            ×
+          </button>
+          <div className="photo-preview-content" onClick={(event) => event.stopPropagation()}>
+            {previewPhoto.url ? (
+              <img src={previewPhoto.url} alt={previewPhoto.caption} />
+            ) : previewPhoto.emoji ? (
+              <div className="photo-preview-fallback">{previewPhoto.emoji}</div>
+            ) : (
+              <div className="photo-preview-fallback">📷</div>
+            )}
+            <div className="photo-preview-caption">
+              <strong>{previewPhoto.caption}</strong>
+              <span>{previewPhoto.category}</span>
+            </div>
+          </div>
         </div>
       ) : null}
     </div>

@@ -5,9 +5,17 @@ import { SiteFrame } from "@/app/components/site-frame";
 import { getLatestPhotos, getPhotoCategories } from "@/lib/content";
 import { PhotosGalleryClient } from "./PhotosGalleryClient";
 
-export default async function PhotosPage() {
+type Props = {
+  searchParams?: Promise<{
+    view?: string;
+  }>;
+};
+
+export default async function PhotosPage({ searchParams }: Props) {
+  const resolvedSearchParams = await searchParams;
   const photos = await getLatestPhotos(48);
   const categories = getPhotoCategories(photos);
+  const initialView = resolvedSearchParams?.view === "static" ? "static" : null;
 
   return (
     <SiteFrame>
@@ -29,7 +37,11 @@ export default async function PhotosPage() {
       </section>
 
       <section className="container section">
-        <PhotosGalleryClient photos={photos} categories={categories} />
+        <PhotosGalleryClient
+          photos={photos}
+          categories={categories}
+          initialView={initialView}
+        />
       </section>
     </SiteFrame>
   );

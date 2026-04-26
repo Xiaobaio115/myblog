@@ -47,7 +47,7 @@
   top: 50%;
   margin-left: -74px;
   margin-top: -53px;
-  object-fit: cover;
+  object-fit: contain;
   user-select: none;
   -webkit-user-drag: none;
   cursor: pointer;
@@ -382,10 +382,11 @@
 @media (max-width: 900px) {
   .lightbox {
     flex-direction: column;
-    padding: 12px;
+    padding: 64px 12px 12px;
     gap: 12px;
     overflow-y: auto;
     align-items: stretch;
+    justify-content: flex-start;
   }
 
   .lightboxStage {
@@ -394,7 +395,7 @@
   }
 
   .lightboxStage img {
-    max-height: 40vh;
+    max-height: 42vh;
   }
 
   .commentsPanel {
@@ -416,14 +417,14 @@
 
 @media (max-width: 700px) {
   .scene {
-    perspective: 1000px;
+    perspective: 1200px;
   }
 
   .photoCard {
-    width: 90px;
-    height: 64px;
-    margin-left: -45px;
-    margin-top: -32px;
+    width: 96px;
+    height: 72px;
+    margin-left: -48px;
+    margin-top: -36px;
     border-radius: 8px;
   }
 
@@ -444,10 +445,10 @@
 
 @media (max-width: 480px) {
   .photoCard {
-    width: 80px;
-    height: 56px;
-    margin-left: -40px;
-    margin-top: -28px;
+    width: 88px;
+    height: 66px;
+    margin-left: -44px;
+    margin-top: -33px;
   }
 
   .hint {
@@ -457,11 +458,11 @@
   }
 
   .lightbox {
-    padding: 8px;
+    padding: 58px 8px 8px;
   }
 
   .lightboxStage img {
-    max-height: 35vh;
+    max-height: 40vh;
   }
 
   .commentsPanel {

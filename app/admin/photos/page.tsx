@@ -35,8 +35,8 @@ export default function AdminPhotosPage() {
   const [caption, setCaption] = useState("");
   const [category, setCategory] = useState("日常");
   const [customCategory, setCustomCategory] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
   const [isPrivate, setIsPrivate] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -50,11 +50,9 @@ export default function AdminPhotosPage() {
 
   useEffect(() => {
     return () => {
-      if (preview) {
-        URL.revokeObjectURL(preview);
-      }
+      previews.forEach((preview) => URL.revokeObjectURL(preview));
     };
-  }, [preview]);
+  }, [previews]);
 
   async function loadPhotos() {
     const response = await fetch("/api/photos", { cache: "no-store" });
@@ -106,18 +104,15 @@ export default function AdminPhotosPage() {
     };
   }, []);
 
-  function handleFileChange(nextFile: File | null) {
-    if (preview) {
-      URL.revokeObjectURL(preview);
-    }
-
-    setFile(nextFile);
-    setPreview(nextFile ? URL.createObjectURL(nextFile) : "");
+  function handleFileChange(nextFiles: File[]) {
+    previews.forEach((preview) => URL.revokeObjectURL(preview));
+    setFiles(nextFiles);
+    setPreviews(nextFiles.map((nextFile) => URL.createObjectURL(nextFile)));
   }
 
   async function uploadPhoto() {
-    if (!file) {
-      setMessage("请先选择一张图片。");
+    if (files.length === 0) {
+      setMessage("请先选择图片。");
       return;
     }
 
@@ -141,50 +136,58 @@ export default function AdminPhotosPage() {
     setMessage("");
 
     try {
-      const uploaded = await upload(file.name, file, {
-        access: "public",
-        contentType: file.type,
-        handleUploadUrl: "/api/photos/upload",
-        headers: {
-          "x-admin-password": password,
-        },
-        multipart: file.size > 5 * 1024 * 1024,
-        onUploadProgress(event) {
-          setProgress(Math.round(event.percentage));
-        },
-      });
+      for (const [index, currentFile] of files.entries()) {
+        const uploaded = await upload(currentFile.name, currentFile, {
+          access: "public",
+          contentType: currentFile.type,
+          handleUploadUrl: "/api/photos/upload",
+          headers: {
+            "x-admin-password": password,
+          },
+          multipart: currentFile.size > 5 * 1024 * 1024,
+          onUploadProgress(event) {
+            setProgress(
+              Math.round(((index + event.percentage / 100) / files.length) * 100)
+            );
+          },
+        });
 
-      const metaResponse = await fetch("/api/photos", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-password": password,
-        },
-        body: JSON.stringify({
-          url: uploaded.url,
-          pathname: uploaded.pathname,
-          caption: caption.trim() || "我的照片",
-          category: finalCategory,
-          isPrivate,
-        }),
-      });
-      const metaData = await parseJsonSafely(metaResponse);
+        const metaResponse = await fetch("/api/photos", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-password": password,
+          },
+          body: JSON.stringify({
+            url: uploaded.url,
+            pathname: uploaded.pathname,
+            caption:
+              caption.trim() ||
+              (files.length > 1
+                ? currentFile.name.replace(/\.[^/.]+$/, "")
+                : "我的照片"),
+            category: finalCategory,
+            isPrivate,
+          }),
+        });
+        const metaData = await parseJsonSafely(metaResponse);
 
-      if (!metaResponse.ok) {
-        throw new Error(
-          typeof metaData?.error === "string"
-            ? metaData.error
-            : "保存照片信息失败。"
-        );
+        if (!metaResponse.ok) {
+          throw new Error(
+            typeof metaData?.error === "string"
+              ? metaData.error
+              : "保存照片信息失败。"
+          );
+        }
       }
 
       setCaption("");
       setCategory("日常");
       setCustomCategory("");
       setIsPrivate(false);
-      handleFileChange(null);
+      handleFileChange([]);
       setProgress(0);
-      setMessage("照片已上传。");
+      setMessage(files.length > 1 ? `${files.length} 张照片已上传。` : "照片已上传。");
       await loadPhotos();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "上传照片失败。");
@@ -352,20 +355,29 @@ export default function AdminPhotosPage() {
               <input
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={(event) =>
-                  handleFileChange(event.target.files?.[0] || null)
+                  handleFileChange(Array.from(event.target.files || []))
                 }
               />
-              {preview ? (
-                <img
-                  src={preview}
-                  alt="预览"
-                  className="photo-upload-preview"
-                />
+              {previews.length > 0 ? (
+                <div className="photo-upload-preview-grid">
+                  {previews.slice(0, 6).map((preview, index) => (
+                    <img
+                      key={preview}
+                      src={preview}
+                      alt={`预览 ${index + 1}`}
+                      className="photo-upload-preview"
+                    />
+                  ))}
+                  {previews.length > 6 ? (
+                    <span className="photo-upload-count">+{previews.length - 6}</span>
+                  ) : null}
+                </div>
               ) : (
                 <div className="photo-upload-empty">
                   <div className="photo-upload-icon">IMG</div>
-                  <strong>选择一张要上传的图片</strong>
+                  <strong>选择一张或多张要上传的图片</strong>
                   <p>支持 JPG、PNG、WebP、GIF。上传后会自动保存到相册库。</p>
                 </div>
               )}
@@ -432,7 +444,11 @@ export default function AdminPhotosPage() {
                 onClick={() => void uploadPhoto()}
                 disabled={uploading}
               >
-                {uploading ? "上传中..." : "上传到相册"}
+                {uploading
+                  ? "上传中..."
+                  : files.length > 1
+                    ? `上传 ${files.length} 张图片`
+                    : "上传到相册"}
               </button>
             </div>
           </div>

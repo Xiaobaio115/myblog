@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { PhotoGallery } from "@/app/components/photo-gallery";
+import { PhotoGallery } from "./photo-gallery";
 import type { Photo } from "@/lib/content";
 
 type View = "static";
@@ -11,12 +11,13 @@ type View = "static";
 interface Props {
   photos: Photo[];
   categories: string[];
+  initialView?: View | null;
 }
 
 const PREVIEW_COUNT = 5;
 
-export function PhotosViewSwitcher({ photos, categories }: Props) {
-  const [view, setView] = useState<View | null>(null);
+export function PhotosViewSwitcher({ photos, categories, initialView = null }: Props) {
+  const [view, setView] = useState<View | null>(initialView);
 
   /* 背景图：用已上传的照片；每张卡片各取一段不重叠的图 */
   const bg3d = photos.find((p) => p.url)?.url ?? null;
