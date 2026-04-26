@@ -33,19 +33,18 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
   }, [photos]);
 
   const cards = useMemo(() => {
-    const count = Math.max(28, displayPhotos.length);
+    const count = displayPhotos.length;
+    if (count === 0) return [];
     const baseRadius = 450;
 
-    return Array.from({ length: count }, (_, index) => {
-      const photo = displayPhotos[index % displayPhotos.length];
+    return displayPhotos.map((photo, index) => {
       const angle = (360 / count) * index;
-      // stable pseudo-random using index
       const seed = index * 137.508;
       const radius = baseRadius + ((seed % 150) - 75);
       const y = ((seed * 3.1) % 450) - 225;
 
       return {
-        key: `${photo._id}-${index}`,
+        key: photo._id,
         photo,
         style: {
           transform: `rotateY(${angle}deg) translateZ(${radius}px) translateY(${y}px)`,
@@ -107,43 +106,186 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     carousel.addEventListener("mouseover", onEnter);
     carousel.addEventListener("mouseout", onLeave);
 
-    // ── canvas particles ──
-    type Particle = { x: number; y: number; size: number; alpha: number; angle: number; speed: number; };
+    // ── canvas particle system (faithful port of 1.html) ──
+    type Particle = {
+      type: "star" | "tree" | "core" | "ring" | "snow";
+      x: number; y: number; baseX: number; baseY: number;
+      size: number; alpha: number; baseAlpha: number;
+      angle: number; speed: number; floatAngle: number;
+      speedX?: number; speedY?: number; char?: string; spinSpeed?: number;
+      radiusX?: number; radiusY?: number; r?: number;
+      speedMult?: number; elevation?: number; intrinsicAngle?: number;
+    };
+
+    const SNOW = ["❄", "❅", "❆"];
     let W = 0, H = 0, parts: Particle[] = [], rafId = 0;
+    let canvasScale = 1, treeBottomY = 250;
+
+    const mkBase = (
+      type: Particle["type"], x: number, y: number,
+      size: number, alpha: number, speed: number,
+    ): Particle => ({
+      type, x, y, baseX: x, baseY: y,
+      size, alpha, baseAlpha: alpha,
+      angle: Math.random() * Math.PI * 2,
+      speed,
+      floatAngle: Math.random() * Math.PI * 2,
+    });
 
     const initCanvas = () => {
       W = canvas.width = window.innerWidth;
       H = canvas.height = window.innerHeight;
+      const treeTopY = -180;
+      treeBottomY = 250;
+      const treeHeight = treeBottomY - treeTopY;
       parts = [];
-      const n = Math.max(120, Math.floor((W * H) / 9000));
-      for (let i = 0; i < n; i++)
-        parts.push({ x: Math.random()*W, y: Math.random()*H,
-          size: Math.random()*1.8+0.3, alpha: Math.random()*0.5+0.12,
-          angle: Math.random()*Math.PI*2, speed: Math.random()*0.025+0.005 });
+
+      // background stars
+      const numStars = Math.floor((W * H) / 1000);
+      for (let i = 0; i < numStars; i++) {
+        parts.push(mkBase("star",
+          (Math.random() * 2 - 1) * W,
+          (Math.random() * 2 - 1) * H,
+          Math.random() * 2 + 0.1,
+          Math.random() * 0.4 + 0.1,
+          Math.random() * 0.04 + 0.01,
+        ));
+      }
+
+      // central tree (cone of stars)
+      for (let i = 0; i < 2500; i++) {
+        const depth = Math.pow(Math.random(), 0.7);
+        const y = treeTopY + depth * treeHeight;
+        const offsetX = (Math.random() - 0.5) * depth * 180 * Math.pow(Math.random(), 0.5) * 2;
+        parts.push(mkBase("tree", offsetX, y,
+          Math.random() * 1.2 + 0.2,
+          Math.random() * 0.5 + 0.2,
+          Math.random() * 0.05,
+        ));
+      }
+
+      // dense core
+      for (let i = 0; i < 800; i++) {
+        const y = treeTopY + Math.random() * treeHeight;
+        parts.push(mkBase("core",
+          (Math.random() - 0.5) * 15, y,
+          Math.random() * 1.5 + 0.5,
+          Math.random() * 0.6 + 0.4,
+          Math.random() * 0.1,
+        ));
+      }
+
+      // 3 elliptical rings synced with carousel rotation
+      const r1x = Math.min(W * 0.7, 900);
+      const r1y = 200;
+      const ringCfg: Array<{ count: number; rx: number; ry: number; sMin: number; sMax: number; aMin: number; aMax: number; sp: number; mult: number; elev: number; rPow: number; }> = [
+        { count: 4000, rx: r1x,        ry: r1y,        sMin: 0.2, sMax: 1.4, aMin: 0.1, aMax: 0.5, sp: 0.02, mult: 0.8,  elev: 0,   rPow: 1.5 },
+        { count: 2500, rx: r1x * 0.4,  ry: r1y * 0.4,  sMin: 0.5, sMax: 2.5, aMin: 0.3, aMax: 0.9, sp: 0.03, mult: 2.2,  elev: -30, rPow: 1.2 },
+        { count: 1000, rx: r1x * 0.15, ry: r1y * 0.15, sMin: 0.5, sMax: 3.0, aMin: 0.2, aMax: 1.0, sp: 0.04, mult: -3.5, elev: -60, rPow: 0.8 },
+      ];
+      for (const cfg of ringCfg) {
+        for (let i = 0; i < cfg.count; i++) {
+          const r = Math.pow(Math.random(), cfg.rPow);
+          const p = mkBase("ring", 0, 0,
+            Math.random() * (cfg.sMax - cfg.sMin) + cfg.sMin,
+            (1 - r) * (Math.random() * (cfg.aMax - cfg.aMin) + cfg.aMin),
+            Math.random() * cfg.sp,
+          );
+          p.radiusX = cfg.rx; p.radiusY = cfg.ry; p.r = r;
+          p.speedMult = cfg.mult; p.elevation = cfg.elev;
+          p.intrinsicAngle = Math.random() * Math.PI * 2;
+          parts.push(p);
+        }
+      }
+
+      // snowflakes
+      for (let i = 0; i < 200; i++) {
+        const p = mkBase("snow", 0, 0, 0, Math.random() * 0.4 + 0.3, 0);
+        p.size = Math.random() * 10 + 8;
+        p.speedX = Math.random() * 1.0 + 0.5;
+        p.speedY = Math.random() * 1.5 + 1.0;
+        p.char = SNOW[Math.floor(Math.random() * SNOW.length)];
+        p.angle = Math.random() * Math.PI * 2;
+        p.spinSpeed = (Math.random() - 0.5) * 0.05;
+        p.x = (Math.random() * 2 - 1) * W;
+        p.y = (Math.random() * 2 - 1) * H;
+        parts.push(p);
+      }
+    };
+
+    const drawParticle = (p: Particle) => {
+      if (p.type === "snow") {
+        p.x += p.speedX!;
+        p.y += p.speedY!;
+        p.angle += p.spinSpeed!;
+        const boundX = (W / 2) / canvasScale + 100;
+        const boundY = (H / 2) / canvasScale + 100;
+        if (p.x > boundX || p.y > boundY) {
+          if (Math.random() > 0.3) { p.x = (Math.random() * 2 - 1) * boundX; p.y = -boundY - 20; }
+          else { p.x = -boundX - 20; p.y = (Math.random() * 2 - 1) * boundY; }
+        }
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.angle);
+        ctx.fillStyle = `rgba(255,255,255,${p.baseAlpha})`;
+        ctx.font = `${p.size}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = "rgba(255,255,255,0.4)";
+        ctx.fillText(p.char!, 0, 0);
+        ctx.restore();
+        return;
+      }
+      if (p.type === "ring") {
+        p.intrinsicAngle! -= 0.001 * p.speedMult!;
+        const sync = rotY * (Math.PI / 180);
+        const fa = p.intrinsicAngle! + sync;
+        p.x = Math.cos(fa) * p.radiusX! * p.r!;
+        p.y = treeBottomY + Math.sin(fa) * p.radiusY! * p.r! + p.elevation!;
+        p.floatAngle += 0.02;
+        p.y -= Math.sin(p.floatAngle) * 2;
+        p.angle += p.speed;
+        p.alpha = p.baseAlpha + Math.sin(p.angle) * 0.8;
+      } else {
+        p.angle += p.speed;
+        p.alpha = p.baseAlpha + Math.sin(p.angle) * 0.8;
+        if (p.type === "tree" || p.type === "core") {
+          p.floatAngle += 0.02;
+          p.y = p.baseY - Math.sin(p.floatAngle) * 3;
+          p.x = p.baseX + Math.cos(p.floatAngle) * 2;
+        }
+      }
+      ctx.fillStyle = `rgba(255,255,255,${Math.max(0, p.alpha)})`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      if (p.type === "star" && p.size > 1.8) {
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = "rgba(255,255,255,0.6)";
+      } else {
+        ctx.shadowBlur = 0;
+      }
+      ctx.fill();
     };
 
     const animate = () => {
-      // auto-rotate unless user is interacting
       if (!dragging && !hoveringCard) tgtY += 0.12;
       rotY += (tgtY - rotY) * 0.08;
       rotX += (tgtX - rotX) * 0.08;
       zoom += (tgtZoom - zoom) * 0.08;
+      canvasScale = 1200 / (1200 - zoom);
 
       camera.style.transform = `translateZ(${zoom}px) rotateX(${rotX}deg)`;
       carousel.style.transform = `rotateY(${rotY}deg)`;
 
-      // draw stars
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.fillStyle = "rgba(3,3,3,0.72)";
+      ctx.fillStyle = "rgba(3,3,3,0.7)";
       ctx.fillRect(0, 0, W, H);
-      for (const p of parts) {
-        p.angle += p.speed;
-        const tw = p.alpha + Math.sin(p.angle) * 0.22;
-        ctx.beginPath();
-        ctx.fillStyle = `rgba(255,255,255,${Math.max(0.05, tw)})`;
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
+      ctx.translate(W / 2, H / 2);
+      ctx.scale(canvasScale, canvasScale);
+      ctx.translate(0, rotX * 5);
+
+      for (const p of parts) drawParticle(p);
 
       rafId = requestAnimationFrame(animate);
     };
@@ -225,21 +367,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       </div>
 
 
-      <div className={styles.hint}>自动旋转 · 点击照片放大</div>
-
-      <div className={styles.debugStrip}>
-        {displayPhotos.slice(0, 10).map((photo) => (
-          <button
-            key={photo._id}
-            className={styles.debugThumb}
-            onClick={() => setLightbox(photo)}
-            type="button"
-          >
-            <img src={photo.url} alt={photo.caption} />
-            <span>{photo.caption}</span>
-          </button>
-        ))}
-      </div>
+      <div className={styles.hint}>拖拽旋转 · 滚轮缩放 · 点击照片放大</div>
 
       {lightbox && (
         <div className={styles.lightbox} onClick={() => setLightbox(null)}>
