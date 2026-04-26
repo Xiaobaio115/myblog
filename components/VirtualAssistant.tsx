@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -11,6 +11,7 @@ export default function VirtualAssistant() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
@@ -38,8 +39,12 @@ export default function VirtualAssistant() {
     setSending(true);
 
     try {
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       const res = await fetch("/api/chat", {
         method: "POST",
+        signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
         },
@@ -62,6 +67,17 @@ export default function VirtualAssistant() {
         },
       ]);
     } catch (error: any) {
+      if (error?.name === "AbortError") {
+        setMessages([
+          ...nextMessages,
+          {
+            role: "assistant",
+            content: "这次回复已经停止啦。",
+          },
+        ]);
+        return;
+      }
+
       setMessages([
         ...nextMessages,
         {
@@ -71,8 +87,15 @@ export default function VirtualAssistant() {
         },
       ]);
     } finally {
+      abortRef.current = null;
       setSending(false);
     }
+  }
+
+  function stopMessage() {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setSending(false);
   }
 
   return (
@@ -85,7 +108,7 @@ export default function VirtualAssistant() {
               <span>简单问题不消耗 AI 次数</span>
             </div>
 
-            <button onClick={() => setOpen(false)}></button>
+            <button onClick={() => setOpen(false)}>×</button>
           </div>
 
           <div className="assistant-quick-actions">
@@ -131,9 +154,15 @@ export default function VirtualAssistant() {
               }}
             />
 
-            <button onClick={() => sendMessage()} disabled={sending}>
-              发送
-            </button>
+            {sending ? (
+              <button onClick={stopMessage}>
+                停止
+              </button>
+            ) : (
+              <button onClick={() => sendMessage()}>
+                发送
+              </button>
+            )}
           </div>
         </div>
       )}
