@@ -15,7 +15,7 @@ export default function VirtualAssistant() {
     {
       role: "assistant",
       content:
-        "你好呀，我是 Luna。简单问题我会直接回答，复杂问题每天可以问我 10 次。",
+        "你好呀，我是甘蔗。简单问题我会直接回答，复杂问题每天可以问我 10 次。",
     },
   ]);
 
@@ -83,7 +83,7 @@ export default function VirtualAssistant() {
 
           copiedMessages[assistantIndex] = {
             role: "assistant",
-            content: fullReply || "Luna 正在回复...",
+            content: fullReply || "甘蔗正在回复...",
           };
 
           return copiedMessages;
@@ -125,7 +125,7 @@ export default function VirtualAssistant() {
         <div className="assistant-panel">
           <div className="assistant-header">
             <div>
-              <strong>Luna 助手</strong>
+              <strong>甘蔗助手</strong>
               <span>简单问题不消耗 AI 次数</span>
             </div>
 
@@ -158,7 +158,7 @@ export default function VirtualAssistant() {
           <div className="assistant-input-row">
             <input
               value={input}
-              placeholder="和 Luna 说点什么..."
+              placeholder="和甘蔗说点什么..."
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") {

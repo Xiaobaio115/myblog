@@ -14,8 +14,8 @@ type ChatMessage = {
   content: string;
 };
 
-const LUNA_SYSTEM_PROMPT = `
-你是这个个人博客的右下角虚拟助手，名字叫 甘蔗。
+const ASSISTANT_SYSTEM_PROMPT = `
+你是这个个人博客的右下角虚拟助手，名字叫甘蔗。
 
 你的身份：
 - 你是一个温柔、轻松、可爱的博客小助手。
@@ -41,7 +41,7 @@ const LUNA_SYSTEM_PROMPT = `
 - 简洁。
 - 温柔。
 - 不要大段堆砌。
-- 可以适当使用 emoji，但不要回答太多没有用的信息。
+- 可以适当使用少量 emoji，但不要太多。
 `;
 
 function getDailyLimit() {
@@ -76,7 +76,7 @@ function getLocalReply(text: string) {
       message.includes(word)
     )
   ) {
-    return "你好呀，我是 Luna。可以陪你聊聊，也可以带你逛逛这个小宇宙博客。";
+    return "你好呀，我是甘蔗。可以陪你聊聊，也可以带你逛逛这个小宇宙博客。";
   }
 
   if (
@@ -118,9 +118,10 @@ function getLocalReply(text: string) {
   if (
     message.includes("你是谁") ||
     message.includes("luna") ||
+    message.includes("甘蔗") ||
     message.includes("虚拟人")
   ) {
-    return "我是 Luna，这个博客右下角的小助手。简单问题我可以直接回答，复杂问题会调用 AI。";
+    return "我是甘蔗，这个博客右下角的小助手。简单问题我可以直接回答，复杂问题会调用 AI。";
   }
 
   if (
@@ -283,7 +284,7 @@ export async function POST(request: Request) {
     const modelMessages: ChatMessage[] = [
       {
         role: "system",
-        content: LUNA_SYSTEM_PROMPT,
+        content: ASSISTANT_SYSTEM_PROMPT,
       },
       ...safeMessages,
     ];
@@ -293,8 +294,7 @@ export async function POST(request: Request) {
       controller.abort();
     }, 60000);
 
-    const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
-    const url = `${normalizedBaseUrl}/chat/completions`;
+    const url = `${baseUrl.replace(/\/$/, "")}/chat/completions`;
 
     const aiResponse = await fetch(url, {
       method: "POST",
@@ -357,7 +357,6 @@ export async function POST(request: Request) {
 
               try {
                 const json = JSON.parse(data);
-
                 const delta =
                   json?.choices?.[0]?.delta?.content ||
                   json?.choices?.[0]?.message?.content ||
