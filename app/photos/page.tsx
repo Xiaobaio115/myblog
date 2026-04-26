@@ -1,9 +1,9 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { PhotosViewSwitcher } from "@/app/components/photos-view-switcher";
 import { SiteFrame } from "@/app/components/site-frame";
 import { getLatestPhotos, getPhotoCategories } from "@/lib/content";
+import { PhotosGalleryClient } from "./PhotosGalleryClient";
 
 export default async function PhotosPage() {
   const photos = await getLatestPhotos(48);
@@ -18,6 +18,9 @@ export default async function PhotosPage() {
           在这里欣赏精选相册内容，切换视图体验不同的浏览方式。
         </p>
         <div className="hero-actions">
+          <Link href="/photos/3d" className="primary-button">
+            打开 3D 星空相册
+          </Link>
           <Link href="/articles" className="secondary-link">
             查看文章
           </Link>
@@ -25,7 +28,7 @@ export default async function PhotosPage() {
       </section>
 
       <section className="container section">
-        <PhotosViewSwitcher photos={photos} categories={categories} />
+        <PhotosGalleryClient photos={photos} categories={categories} />
       </section>
     </SiteFrame>
   );
