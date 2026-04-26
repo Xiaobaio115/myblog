@@ -34,7 +34,16 @@ export default function VirtualAssistant() {
       },
     ];
 
-    setMessages(nextMessages);
+    const assistantIndex = nextMessages.length;
+
+    setMessages([
+      ...nextMessages,
+      {
+        role: "assistant",
+        content: "",
+      },
+    ]);
+
     setInput("");
     setSending(true);
 
@@ -53,39 +62,78 @@ export default function VirtualAssistant() {
         }),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
-        throw new Error(data.error || "聊天失败");
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "聊天失败");
       }
 
-      setMessages([
-        ...nextMessages,
-        {
-          role: "assistant",
-          content: data.reply || "嗯嗯，我在听。",
-        },
-      ]);
+      if (!res.body) {
+        throw new Error("浏览器不支持流式响应");
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      let fullReply = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        fullReply += chunk;
+
+        setMessages((currentMessages) => {
+          const copiedMessages = [...currentMessages];
+
+          copiedMessages[assistantIndex] = {
+            role: "assistant",
+            content: fullReply || "Luna 正在回复...",
+          };
+
+          return copiedMessages;
+        });
+      }
+
+      if (!fullReply.trim()) {
+        setMessages((currentMessages) => {
+          const copiedMessages = [...currentMessages];
+
+          copiedMessages[assistantIndex] = {
+            role: "assistant",
+            content: "我刚刚没有收到有效回复，可以再问一次吗？",
+          };
+
+          return copiedMessages;
+        });
+      }
     } catch (error: any) {
       if (error?.name === "AbortError") {
-        setMessages([
-          ...nextMessages,
-          {
+        setMessages((currentMessages) => {
+          const copiedMessages = [...currentMessages];
+
+          copiedMessages[assistantIndex] = {
             role: "assistant",
             content: "这次回复已经停止啦。",
-          },
-        ]);
+          };
+
+          return copiedMessages;
+        });
         return;
       }
 
-      setMessages([
-        ...nextMessages,
-        {
+      setMessages((currentMessages) => {
+        const copiedMessages = [...currentMessages];
+
+        copiedMessages[assistantIndex] = {
           role: "assistant",
           content:
             error?.message || "聊天服务暂时有点小故障，可以稍后再试。",
-        },
-      ]);
+        };
+
+        return copiedMessages;
+      });
     } finally {
       abortRef.current = null;
       setSending(false);
@@ -134,12 +182,6 @@ export default function VirtualAssistant() {
                 {message.content}
               </div>
             ))}
-
-            {sending && (
-              <div className="assistant-message is-assistant">
-                Luna 正在想怎么回复你...
-              </div>
-            )}
           </div>
 
           <div className="assistant-input-row">

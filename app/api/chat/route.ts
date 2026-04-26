@@ -14,6 +14,11 @@ type ChatMessage = {
   content: string;
 };
 
+function getDailyLimit() {
+  const value = Number(process.env.AI_DAILY_LIMIT || DEFAULT_DAILY_LIMIT);
+  return Number.isFinite(value) && value > 0 ? value : DEFAULT_DAILY_LIMIT;
+}
+
 function getClientIp(request: Request) {
   const forwardedFor = request.headers.get("x-forwarded-for");
   const realIp = request.headers.get("x-real-ip");
@@ -32,67 +37,33 @@ function getTodayKey() {
 function getLocalReply(text: string) {
   const message = text.trim().toLowerCase();
 
-  if (!message) {
-    return "你可以问我文章、相册、3D 照片墙或者后台入口在哪里。";
-  }
-
-  const greetings = ["你好", "hi", "hello", "嗨", "在吗", "哈喽"];
-  if (greetings.some((word) => message.includes(word))) {
+  if (["你好", "hi", "hello", "嗨", "在吗", "哈喽"].some((word) => message.includes(word))) {
     return "你好呀，我是 Luna。简单问题我可以直接回答，不会消耗 AI 次数。";
   }
 
-  if (
-    message.includes("文章") ||
-    message.includes("博客") ||
-    message.includes("post")
-  ) {
-    return "你可以点击导航里的文章，或者回到首页查看最新文章。文章内容由后台发布，并存储在 MongoDB 里。";
-  }
-
-  if (
-    message.includes("相册") ||
-    message.includes("照片") ||
-    message.includes("图片") ||
-    message.includes("photo")
-  ) {
+  if (message.includes("相册") || message.includes("照片") || message.includes("图片")) {
     return "你可以进入相册页面浏览图片。相册支持分类，后台上传照片后会自动显示。";
   }
 
-  if (
-    message.includes("3d") ||
-    message.includes("星空") ||
-    message.includes("照片墙")
-  ) {
+  if (message.includes("3d") || message.includes("星空") || message.includes("照片墙")) {
     return "3D 星空照片墙在相册页面可以进入，它会读取后台上传的照片并生成旋转照片墙。";
   }
 
-  if (
-    message.includes("后台") ||
-    message.includes("管理") ||
-    message.includes("上传") ||
-    message.includes("发布")
-  ) {
+  if (message.includes("后台") || message.includes("管理") || message.includes("上传") || message.includes("发布")) {
     return "后台入口是 /admin。登录后可以发布文章、上传照片、管理相册分类。";
   }
 
-  if (message.includes("评论") || message.includes("留言")) {
-    return "评论系统可以用 Twikoo 接在文章详情页，用来留言和互动。";
-  }
-
   if (
-    message.includes("你是谁") ||
-    message.includes("luna") ||
-    message.includes("虚拟人")
+    message.includes("服务") ||
+    message.includes("功能") ||
+    message.includes("能做什么") ||
+    message.includes("你会什么") ||
+    message.includes("有什么用")
   ) {
-    return "我是 Luna，这个博客右下角的小助手。简单问题我本地回答，复杂问题才调用 AI。";
+    return "我可以帮你介绍这个博客的文章、相册、3D 星空照片墙和后台入口。简单问题我会直接回答，不消耗 AI 次数；复杂问题才会调用 AI。";
   }
 
   return null;
-}
-
-function getDailyLimit() {
-  const value = Number(process.env.AI_DAILY_LIMIT || DEFAULT_DAILY_LIMIT);
-  return Number.isFinite(value) && value > 0 ? value : DEFAULT_DAILY_LIMIT;
 }
 
 async function checkDailyLimit(request: Request) {
@@ -135,65 +106,23 @@ async function checkDailyLimit(request: Request) {
   };
 }
 
-async function callAiModel(messages: ChatMessage[]) {
-  const apiKey = process.env.AI_API_KEY;
-  const baseUrl = process.env.AI_BASE_URL;
-  const model = process.env.AI_MODEL;
+function streamText(text: string) {
+  const encoder = new TextEncoder();
 
-  if (!apiKey) {
-    throw new Error("服务器未配置 AI_API_KEY");
-  }
-
-  if (!baseUrl) {
-    throw new Error("服务器未配置 AI_BASE_URL");
-  }
-
-  if (!model) {
-    throw new Error("服务器未配置 AI_MODEL");
-  }
-
-  const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
-  const url = `${normalizedBaseUrl}/chat/completions`;
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      max_tokens: MAX_OUTPUT_TOKENS,
-      temperature: 0.7,
-      stream: false,
+  return new Response(
+    new ReadableStream({
+      start(controller) {
+        controller.enqueue(encoder.encode(text));
+        controller.close();
+      },
     }),
-  });
-
-  const data = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    console.error("AI provider error:", data);
-
-    throw new Error(
-      data?.error?.message ||
-        data?.message ||
-        `模型接口请求失败：${response.status}`
-    );
-  }
-
-  const reply =
-    data?.choices?.[0]?.message?.content ||
-    data?.choices?.[0]?.text ||
-    data?.output_text ||
-    "";
-
-  if (!reply) {
-    console.error("Unexpected AI provider response:", data);
-    throw new Error("模型接口返回格式无法解析");
-  }
-
-  return reply;
+    {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache",
+      },
+    }
+  );
 }
 
 export async function POST(request: Request) {
@@ -208,10 +137,7 @@ export async function POST(request: Request) {
     const userText = String(lastUserMessage?.content || "").trim();
 
     if (!userText) {
-      return NextResponse.json(
-        { error: "消息不能为空" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "消息不能为空" }, { status: 400 });
     }
 
     if (userText.length > MAX_MESSAGE_LENGTH) {
@@ -224,14 +150,7 @@ export async function POST(request: Request) {
     const localReply = getLocalReply(userText);
 
     if (localReply) {
-      return NextResponse.json({
-        reply: localReply,
-        source: "local",
-        usage: {
-          counted: false,
-          dailyLimit: getDailyLimit(),
-        },
-      });
+      return streamText(localReply);
     }
 
     const limit = await checkDailyLimit(request);
@@ -239,10 +158,26 @@ export async function POST(request: Request) {
     if (!limit.allowed) {
       return NextResponse.json(
         {
-          error: `今天 AI 聊天次数已经用完啦。前台每位访客每天最多 ${limit.dailyLimit} 次。你还可以问我文章、相册、3D 照片墙、后台入口这些简单问题。`,
+          error: `今天 AI 聊天次数已经用完啦。每位访客每天最多 ${limit.dailyLimit} 次。你还可以问我文章、相册、3D 照片墙、后台入口这些简单问题。`,
         },
         { status: 429 }
       );
+    }
+
+    const apiKey = process.env.AI_API_KEY;
+    const baseUrl = process.env.AI_BASE_URL;
+    const model = process.env.AI_MODEL;
+
+    if (!apiKey) {
+      return NextResponse.json({ error: "服务器未配置 AI_API_KEY" }, { status: 500 });
+    }
+
+    if (!baseUrl) {
+      return NextResponse.json({ error: "服务器未配置 AI_BASE_URL" }, { status: 500 });
+    }
+
+    if (!model) {
+      return NextResponse.json({ error: "服务器未配置 AI_MODEL" }, { status: 500 });
     }
 
     const safeMessages: ChatMessage[] = rawMessages
@@ -261,15 +196,95 @@ export async function POST(request: Request) {
       ...safeMessages,
     ];
 
-    const reply = await callAiModel(modelMessages);
+    const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
+    const url = `${normalizedBaseUrl}/chat/completions`;
 
-    return NextResponse.json({
-      reply,
-      source: "ai",
-      usage: {
-        counted: true,
-        dailyLimit: limit.dailyLimit,
-        usedToday: limit.usedToday,
+    const aiResponse = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: modelMessages,
+        max_tokens: MAX_OUTPUT_TOKENS,
+        temperature: 0.7,
+        stream: true,
+      }),
+    });
+
+    if (!aiResponse.ok || !aiResponse.body) {
+      const errorText = await aiResponse.text().catch(() => "");
+      console.error("AI provider error:", errorText);
+
+      return NextResponse.json(
+        { error: `模型接口请求失败：${aiResponse.status}` },
+        { status: 500 }
+      );
+    }
+
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = aiResponse.body!.getReader();
+        let buffer = "";
+
+        try {
+          while (true) {
+            const { value, done } = await reader.read();
+
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+
+              if (!trimmed.startsWith("data:")) continue;
+
+              const data = trimmed.replace(/^data:\s*/, "");
+
+              if (data === "[DONE]") {
+                controller.close();
+                return;
+              }
+
+              try {
+                const json = JSON.parse(data);
+                const delta =
+                  json?.choices?.[0]?.delta?.content ||
+                  json?.choices?.[0]?.message?.content ||
+                  "";
+
+                if (delta) {
+                  controller.enqueue(encoder.encode(delta));
+                }
+              } catch {
+                // 忽略不完整片段
+              }
+            }
+          }
+
+          controller.close();
+        } catch (error) {
+          console.error("stream error:", error);
+          controller.enqueue(encoder.encode("\n\n回复中断了，请稍后再试。"));
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-cache",
+        "X-Accel-Buffering": "no",
       },
     });
   } catch (error: any) {
@@ -277,8 +292,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       {
-        error:
-          error?.message || "聊天服务暂时不可用，请稍后再试。",
+        error: error?.message || "聊天服务暂时不可用。",
       },
       { status: 500 }
     );
