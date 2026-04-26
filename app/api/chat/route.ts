@@ -134,7 +134,7 @@ function getLocalReply(text: string) {
       "可以这样联系我：",
       "",
       "📮 邮箱：你的邮箱3559078927@qq.com",
-      "🌐 GitHub："暂无",
+      "🌐 GitHub：暂无",
       "💬 其他方式：可以在文章评论区留言，我看到后会回复。"
     ].join("\n");
   }
