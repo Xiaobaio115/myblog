@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  type CSSProperties,
   useEffect,
   useMemo,
   useRef,
@@ -20,6 +21,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
   const sceneRef = useRef<HTMLDivElement | null>(null);
   const cameraRef = useRef<HTMLDivElement | null>(null);
   const carouselRef = useRef<HTMLDivElement | null>(null);
+  const hasDraggedRef = useRef(false);
 
   const [lightbox, setLightbox] = useState<Photo | null>(null);
 
@@ -33,6 +35,24 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       category: "示例",
     }));
   }, [photos]);
+
+  const cards = useMemo(() => {
+    const photoCount = Math.max(28, displayPhotos.length);
+    const radius = 460;
+
+    return Array.from({ length: photoCount }, (_, index) => {
+      const photo = displayPhotos[index % displayPhotos.length];
+      const angle = (360 / photoCount) * index;
+      const randomY = (((index * 73) % 430) - 215);
+      const currentRadius = radius + (((index * 41) % 150) - 75);
+
+      return {
+        key: `${photo._id}-${index}`,
+        photo,
+        transform: `rotateY(${angle}deg) translateZ(${currentRadius}px) translateY(${randomY}px)`,
+      };
+    });
+  }, [displayPhotos]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -52,8 +72,6 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
 
     const activeCtx = ctx;
 
-    activeCarousel.innerHTML = "";
-
     let currentRotY = 0;
     let targetRotY = 0;
     let currentRotX = 0;
@@ -62,54 +80,11 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     let targetZoom = 0;
 
     let isDragging = false;
-    let hasDragged = false;
     let startX = 0;
     let startY = 0;
     let lastX = 0;
     let lastY = 0;
     let isHoveringCard = false;
-
-    const photoCount = Math.max(28, displayPhotos.length);
-    const radius = 460;
-
-    const loopPhotos = Array.from({ length: photoCount }, (_, index) => {
-      return displayPhotos[index % displayPhotos.length];
-    });
-
-    loopPhotos.forEach((photo, index) => {
-      const img = document.createElement("img");
-
-      img.src = photo.url;
-      img.alt = photo.caption;
-      img.className = styles.photoCard;
-
-      const angle = (360 / photoCount) * index;
-      const randomY = (Math.random() - 0.5) * 430;
-      const currentRadius = radius + (Math.random() - 0.5) * 150;
-
-      img.style.transform = `rotateY(${angle}deg) translateZ(${currentRadius}px) translateY(${randomY}px)`;
-
-      img.addEventListener("mouseenter", () => {
-        isHoveringCard = true;
-      });
-
-      img.addEventListener("mouseleave", () => {
-        isHoveringCard = false;
-      });
-
-      img.addEventListener("click", (event) => {
-        event.stopPropagation();
-
-        if (hasDragged) {
-          event.preventDefault();
-          return;
-        }
-
-        setLightbox(photo);
-      });
-
-      carousel.appendChild(img);
-    });
 
     const getPoint = (event: MouseEvent | TouchEvent) => {
       return "touches" in event ? event.touches[0] : event;
@@ -117,7 +92,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
 
     const dragStart = (event: MouseEvent | TouchEvent) => {
       isDragging = true;
-      hasDragged = false;
+      hasDraggedRef.current = false;
 
       const point = getPoint(event);
 
@@ -136,7 +111,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
         Math.abs(point.clientX - startX) > 5 ||
         Math.abs(point.clientY - startY) > 5
       ) {
-        hasDragged = true;
+        hasDraggedRef.current = true;
       }
 
       targetRotY += (point.clientX - lastX) * 0.35;
@@ -308,9 +283,8 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       activeScene.removeEventListener("wheel", onWheel);
       window.removeEventListener("resize", onResize);
 
-      activeCarousel.innerHTML = "";
     };
-  }, [displayPhotos]);
+  }, []);
 
   return (
     <section className={styles.wall}>
@@ -350,7 +324,30 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
             ))}
           </div>
 
-          <div ref={carouselRef} className={styles.carousel} />
+          <div ref={carouselRef} className={styles.carousel}>
+            {cards.map((card) => (
+              <img
+                key={card.key}
+                src={card.photo.url}
+                alt={card.photo.caption}
+                className={styles.photoCard}
+                style={{ transform: card.transform } as CSSProperties}
+                onMouseEnter={() => {
+                  hasDraggedRef.current = false;
+                }}
+                onMouseLeave={() => {
+                  hasDraggedRef.current = false;
+                }}
+                onClick={(event) => {
+                  event.stopPropagation();
+
+                  if (!hasDraggedRef.current) {
+                    setLightbox(card.photo);
+                  }
+                }}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
@@ -358,9 +355,23 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
         拖拽旋转  滚轮缩放  点击照片放大
       </div>
 
+      <div className={styles.debugStrip}>
+        {displayPhotos.slice(0, 10).map((photo) => (
+          <button
+            key={photo._id}
+            className={styles.debugThumb}
+            onClick={() => setLightbox(photo)}
+            type="button"
+          >
+            <img src={photo.url} alt={photo.caption} />
+            <span>{photo.caption}</span>
+          </button>
+        ))}
+      </div>
+
       {lightbox && (
         <div className={styles.lightbox} onClick={() => setLightbox(null)}>
-          <button className={styles.close}></button>
+          <button className={styles.close}>×</button>
 
           <img src={lightbox.url} alt={lightbox.caption} />
 
