@@ -41,7 +41,7 @@ const LUNA_SYSTEM_PROMPT = `
 - 简洁。
 - 温柔。
 - 不要大段堆砌。
-- 可以适当使用大量 emoji，但不要太多没有用的信息回答。
+- 可以适当使用 emoji，但不要回答太多没有用的信息。
 `;
 
 function getDailyLimit() {
@@ -122,7 +122,8 @@ function getLocalReply(text: string) {
   ) {
     return "我是 Luna，这个博客右下角的小助手。简单问题我可以直接回答，复杂问题会调用 AI。";
   }
-   if (
+
+  if (
     message.includes("联系") ||
     message.includes("联系方式") ||
     message.includes("邮箱") ||
@@ -133,11 +134,12 @@ function getLocalReply(text: string) {
     return [
       "可以这样联系我：",
       "",
-      "📮 邮箱：你的邮箱3559078927@qq.com",
+      "📮 邮箱：3559078927@qq.com",
       "🌐 GitHub：暂无",
-      "💬 其他方式：可以在文章评论区留言，我看到后会回复。"
+      "💬 其他方式：可以在文章评论区留言，我看到后会回复。",
     ].join("\n");
   }
+
   return null;
 }
 
@@ -365,7 +367,7 @@ export async function POST(request: Request) {
                   controller.enqueue(encoder.encode(delta));
                 }
               } catch {
-                // Ignore incomplete chunks from SSE.
+                // Ignore incomplete SSE chunks.
               }
             }
           }
