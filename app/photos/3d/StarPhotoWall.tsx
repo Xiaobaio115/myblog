@@ -41,8 +41,9 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     const carousel = carouselRef.current;
 
     if (!canvas || !scene || !camera || !carousel) return;
+    const activeCanvas = canvas;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = activeCanvas.getContext("2d");
     if (!ctx) return;
 
     carousel.innerHTML = "";
@@ -178,8 +179,8 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     let particles: Particle[] = [];
 
     function initCanvas() {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      width = activeCanvas.width = window.innerWidth;
+      height = activeCanvas.height = window.innerHeight;
 
       particles = [];
 
@@ -217,9 +218,9 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     }
 
     function drawParticles() {
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.fillStyle = "rgba(3, 3, 3, 0.72)";
-      ctx.fillRect(0, 0, width, height);
+      ctx!.setTransform(1, 0, 0, 1, 0, 0);
+      ctx!.fillStyle = "rgba(3, 3, 3, 0.72)";
+      ctx!.fillRect(0, 0, width, height);
 
       particles.forEach((particle) => {
         if (particle.type === "snow") {
@@ -232,17 +233,17 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
             particle.y = -30;
           }
 
-          ctx.save();
-          ctx.translate(particle.x, particle.y);
-          ctx.rotate(particle.angle);
-          ctx.fillStyle = `rgba(255, 255, 255, ${particle.alpha})`;
-          ctx.font = `${particle.size}px sans-serif`;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.shadowBlur = 4;
-          ctx.shadowColor = "rgba(255, 255, 255, 0.45)";
-          ctx.fillText(particle.char || "❄", 0, 0);
-          ctx.restore();
+          ctx!.save();
+          ctx!.translate(particle.x, particle.y);
+          ctx!.rotate(particle.angle);
+          ctx!.fillStyle = `rgba(255, 255, 255, ${particle.alpha})`;
+          ctx!.font = `${particle.size}px sans-serif`;
+          ctx!.textAlign = "center";
+          ctx!.textBaseline = "middle";
+          ctx!.shadowBlur = 4;
+          ctx!.shadowColor = "rgba(255, 255, 255, 0.45)";
+          ctx!.fillText(particle.char || "❄", 0, 0);
+          ctx!.restore();
 
           return;
         }
@@ -251,10 +252,10 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
 
         const twinkle = particle.alpha + Math.sin(particle.angle) * 0.25;
 
-        ctx.beginPath();
-        ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.05, twinkle)})`;
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx.fill();
+        ctx!.beginPath();
+        ctx!.fillStyle = `rgba(255, 255, 255, ${Math.max(0.05, twinkle)})`;
+        ctx!.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        ctx!.fill();
       });
     }
 
@@ -267,8 +268,8 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       currentRotX += (targetRotX - currentRotX) * 0.08;
       currentZoom += (targetZoom - currentZoom) * 0.08;
 
-      camera.style.transform = `translateZ(${currentZoom}px) rotateX(${currentRotX}deg)`;
-      carousel.style.transform = `rotateY(${currentRotY}deg)`;
+      camera!.style.transform = `translateZ(${currentZoom}px) rotateX(${currentRotX}deg)`;
+      carousel!.style.transform = `rotateY(${currentRotY}deg)`;
 
       drawParticles();
 
@@ -289,18 +290,18 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     return () => {
       cancelAnimationFrame(animationId);
 
-      scene.removeEventListener("mousedown", dragStart);
+      scene!.removeEventListener("mousedown", dragStart);
       window.removeEventListener("mousemove", dragMove);
       window.removeEventListener("mouseup", dragEnd);
 
-      scene.removeEventListener("touchstart", dragStart);
+      scene!.removeEventListener("touchstart", dragStart);
       window.removeEventListener("touchmove", dragMove);
       window.removeEventListener("touchend", dragEnd);
 
-      scene.removeEventListener("wheel", onWheel);
+      scene!.removeEventListener("wheel", onWheel);
       window.removeEventListener("resize", onResize);
 
-      carousel.innerHTML = "";
+      carousel!.innerHTML = "";
     };
   }, [displayPhotos]);
 
