@@ -1,0 +1,184 @@
+.wall {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #030303;
+  color: #fff;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  perspective: 1200px;
+  overflow: hidden;
+  cursor: grab;
+}
+
+.scene:active {
+  cursor: grabbing;
+}
+
+.camera {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.carousel {
+  position: relative;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  top: 60px;
+}
+
+.photoCard {
+  position: absolute;
+  width: 82px;
+  height: 62px;
+  left: -41px;
+  top: -31px;
+  object-fit: cover;
+  user-select: none;
+  -webkit-user-drag: none;
+  cursor: pointer;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.12);
+  transition:
+    border-color 0.35s,
+    box-shadow 0.35s;
+}
+
+.photoCard:hover {
+  border-color: #fff;
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.82);
+}
+
+.heart {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 62px;
+  height: 62px;
+  margin-left: -31px;
+  margin-top: -250px;
+  z-index: 20;
+  transform-style: preserve-3d;
+  animation: spinHeart 6s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes spinHeart {
+  0% {
+    transform: rotateY(0deg) rotateX(15deg);
+  }
+
+  100% {
+    transform: rotateY(360deg) rotateX(15deg);
+  }
+}
+
+.heartLayer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: translateZ(var(--heart-z));
+}
+
+.hint {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translateX(-50%);
+  z-index: 30;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.86rem;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.86);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+}
+
+.lightbox img {
+  max-width: 82vw;
+  max-height: 80vh;
+  border-radius: 16px;
+  box-shadow: 0 0 44px rgba(255, 255, 255, 0.22);
+}
+
+.close {
+  position: fixed;
+  top: 28px;
+  right: 34px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 44px;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: #fff;
+}
+
+.caption {
+  position: fixed;
+  left: 50%;
+  bottom: 32px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  color: #fff;
+  padding: 12px 22px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(12px);
+}
+
+.caption span {
+  color: rgba(255, 255, 255, 0.68);
+}
+
+@media (max-width: 700px) {
+  .photoCard {
+    width: 68px;
+    height: 51px;
+    left: -34px;
+    top: -25.5px;
+  }
+
+  .hint {
+    bottom: 18px;
+    font-size: 0.75rem;
+  }
+}

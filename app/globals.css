@@ -3693,3 +3693,83 @@ html, body {
   .photos-grid { grid-template-columns: repeat(2, 1fr); }
   .admin-stats-grid { grid-template-columns: 1fr 1fr; }
 }
+
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 22px;
+  border: none;
+  border-radius: 999px;
+  font-weight: 800;
+  cursor: pointer;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.84);
+  box-shadow: inset 0 0 0 1px var(--border);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.secondary-button:hover {
+  transform: translateY(-2px);
+}
+
+.three-d-page-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 72px;
+  z-index: 60;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(
+    to bottom,
+    rgba(3, 3, 3, 0.82),
+    rgba(3, 3, 3, 0)
+  );
+  color: rgba(255, 255, 255, 0.86);
+  pointer-events: none;
+}
+
+.three-d-page-nav a,
+.three-d-page-nav span {
+  pointer-events: auto;
+}
+
+.three-d-page-nav a {
+  color: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 9px 16px;
+  border-radius: 999px;
+  backdrop-filter: blur(10px);
+}
+
+.three-d-page-nav a:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.42);
+}
+
+.three-d-page-nav span {
+  font-weight: 900;
+  letter-spacing: 0.18em;
+}
+
+@media (max-width: 700px) {
+  .three-d-page-nav {
+    height: auto;
+    padding: 18px;
+    gap: 12px;
+    flex-direction: column;
+  }
+
+  .three-d-page-nav span {
+    order: -1;
+    font-size: 0.8rem;
+  }
+}

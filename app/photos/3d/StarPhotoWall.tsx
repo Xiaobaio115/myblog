@@ -5,8 +5,8 @@ import {
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
 } from "react";
+import styles from "./StarPhotoWall.module.css";
 
 type Photo = {
   _id: string;
@@ -41,12 +41,18 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     const carousel = carouselRef.current;
 
     if (!canvas || !scene || !camera || !carousel) return;
+
     const activeCanvas = canvas;
+    const activeScene = scene;
+    const activeCamera = camera;
+    const activeCarousel = carousel;
 
     const ctx = activeCanvas.getContext("2d");
     if (!ctx) return;
 
-    carousel.innerHTML = "";
+    const activeCtx = ctx;
+
+    activeCarousel.innerHTML = "";
 
     let currentRotY = 0;
     let targetRotY = 0;
@@ -75,7 +81,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
 
       img.src = photo.url;
       img.alt = photo.caption;
-      img.className = "three-d-photo-card";
+      img.className = styles.photoCard;
 
       const angle = (360 / photoCount) * index;
       const randomY = (Math.random() - 0.5) * 430;
@@ -105,11 +111,15 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       carousel.appendChild(img);
     });
 
+    const getPoint = (event: MouseEvent | TouchEvent) => {
+      return "touches" in event ? event.touches[0] : event;
+    };
+
     const dragStart = (event: MouseEvent | TouchEvent) => {
       isDragging = true;
       hasDragged = false;
 
-      const point = "touches" in event ? event.touches[0] : event;
+      const point = getPoint(event);
 
       startX = point.clientX;
       startY = point.clientY;
@@ -120,7 +130,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     const dragMove = (event: MouseEvent | TouchEvent) => {
       if (!isDragging) return;
 
-      const point = "touches" in event ? event.touches[0] : event;
+      const point = getPoint(event);
 
       if (
         Math.abs(point.clientX - startX) > 5 ||
@@ -143,20 +153,19 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
 
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
-
       targetZoom += event.deltaY * -1.2;
       targetZoom = Math.max(-600, Math.min(targetZoom, 800));
     };
 
-    scene.addEventListener("mousedown", dragStart);
+    activeScene.addEventListener("mousedown", dragStart);
     window.addEventListener("mousemove", dragMove);
     window.addEventListener("mouseup", dragEnd);
 
-    scene.addEventListener("touchstart", dragStart, { passive: true });
+    activeScene.addEventListener("touchstart", dragStart, { passive: true });
     window.addEventListener("touchmove", dragMove, { passive: true });
     window.addEventListener("touchend", dragEnd);
 
-    scene.addEventListener("wheel", onWheel, { passive: false });
+    activeScene.addEventListener("wheel", onWheel, { passive: false });
 
     let width = 0;
     let height = 0;
@@ -181,7 +190,6 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     function initCanvas() {
       width = activeCanvas.width = window.innerWidth;
       height = activeCanvas.height = window.innerHeight;
-
       particles = [];
 
       const starCount = Math.floor((width * height) / 900);
@@ -198,7 +206,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
         });
       }
 
-      const snowChars = ["❄", "❅", "❆"];
+      const snowChars = ["", "", ""];
 
       for (let i = 0; i < 120; i++) {
         particles.push({
@@ -218,9 +226,9 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     }
 
     function drawParticles() {
-      ctx!.setTransform(1, 0, 0, 1, 0, 0);
-      ctx!.fillStyle = "rgba(3, 3, 3, 0.72)";
-      ctx!.fillRect(0, 0, width, height);
+      activeCtx.setTransform(1, 0, 0, 1, 0, 0);
+      activeCtx.fillStyle = "rgba(3, 3, 3, 0.72)";
+      activeCtx.fillRect(0, 0, width, height);
 
       particles.forEach((particle) => {
         if (particle.type === "snow") {
@@ -233,29 +241,28 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
             particle.y = -30;
           }
 
-          ctx!.save();
-          ctx!.translate(particle.x, particle.y);
-          ctx!.rotate(particle.angle);
-          ctx!.fillStyle = `rgba(255, 255, 255, ${particle.alpha})`;
-          ctx!.font = `${particle.size}px sans-serif`;
-          ctx!.textAlign = "center";
-          ctx!.textBaseline = "middle";
-          ctx!.shadowBlur = 4;
-          ctx!.shadowColor = "rgba(255, 255, 255, 0.45)";
-          ctx!.fillText(particle.char || "❄", 0, 0);
-          ctx!.restore();
+          activeCtx.save();
+          activeCtx.translate(particle.x, particle.y);
+          activeCtx.rotate(particle.angle);
+          activeCtx.fillStyle = `rgba(255, 255, 255, ${particle.alpha})`;
+          activeCtx.font = `${particle.size}px sans-serif`;
+          activeCtx.textAlign = "center";
+          activeCtx.textBaseline = "middle";
+          activeCtx.shadowBlur = 4;
+          activeCtx.shadowColor = "rgba(255, 255, 255, 0.45)";
+          activeCtx.fillText(particle.char || "", 0, 0);
+          activeCtx.restore();
 
           return;
         }
 
         particle.angle += particle.speed;
-
         const twinkle = particle.alpha + Math.sin(particle.angle) * 0.25;
 
-        ctx!.beginPath();
-        ctx!.fillStyle = `rgba(255, 255, 255, ${Math.max(0.05, twinkle)})`;
-        ctx!.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-        ctx!.fill();
+        activeCtx.beginPath();
+        activeCtx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.05, twinkle)})`;
+        activeCtx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        activeCtx.fill();
       });
     }
 
@@ -268,8 +275,8 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       currentRotX += (targetRotX - currentRotX) * 0.08;
       currentZoom += (targetZoom - currentZoom) * 0.08;
 
-      camera!.style.transform = `translateZ(${currentZoom}px) rotateX(${currentRotX}deg)`;
-      carousel!.style.transform = `rotateY(${currentRotY}deg)`;
+      activeCamera.style.transform = `translateZ(${currentZoom}px) rotateX(${currentRotX}deg)`;
+      activeCarousel.style.transform = `rotateY(${currentRotY}deg)`;
 
       drawParticles();
 
@@ -290,49 +297,38 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     return () => {
       cancelAnimationFrame(animationId);
 
-      scene!.removeEventListener("mousedown", dragStart);
+      activeScene.removeEventListener("mousedown", dragStart);
       window.removeEventListener("mousemove", dragMove);
       window.removeEventListener("mouseup", dragEnd);
 
-      scene!.removeEventListener("touchstart", dragStart);
+      activeScene.removeEventListener("touchstart", dragStart);
       window.removeEventListener("touchmove", dragMove);
       window.removeEventListener("touchend", dragEnd);
 
-      scene!.removeEventListener("wheel", onWheel);
+      activeScene.removeEventListener("wheel", onWheel);
       window.removeEventListener("resize", onResize);
 
-      carousel!.innerHTML = "";
+      activeCarousel.innerHTML = "";
     };
   }, [displayPhotos]);
 
   return (
-    <section className="three-d-wall">
-      <canvas ref={canvasRef} className="three-d-star-canvas" />
+    <section className={styles.wall}>
+      <canvas ref={canvasRef} className={styles.canvas} />
 
-      <div ref={sceneRef} className="three-d-scene">
-        <div ref={cameraRef} className="three-d-camera">
-          <div className="three-d-heart">
+      <div ref={sceneRef} className={styles.scene}>
+        <div ref={cameraRef} className={styles.camera}>
+          <div className={styles.heart}>
             {[0, 1, 2, 3].map((index) => (
               <svg
                 key={index}
-                className="three-d-heart-layer"
-                style={
-                  {
-                    "--heart-z": `${index * 2 - 4}px`,
-                  } as CSSProperties
-                }
+                className={styles.heartLayer}
+                style={{ "--heart-z": `${index * 2 - 4}px` } as React.CSSProperties}
                 viewBox="0 0 24 24"
               >
-                <path
-                  fill="none"
-                  stroke="url(#heartGrad)"
-                  strokeWidth="1.2"
-                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-                />
-
                 <defs>
                   <linearGradient
-                    id="heartGrad"
+                    id={`heartGrad-${index}`}
                     x1="0%"
                     y1="0%"
                     x2="100%"
@@ -343,25 +339,32 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
                     <stop offset="100%" stopColor="#ffffff" />
                   </linearGradient>
                 </defs>
+
+                <path
+                  fill="none"
+                  stroke={`url(#heartGrad-${index})`}
+                  strokeWidth="1.2"
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                />
               </svg>
             ))}
           </div>
 
-          <div ref={carouselRef} className="three-d-carousel" />
+          <div ref={carouselRef} className={styles.carousel} />
         </div>
       </div>
 
-      <div className="three-d-hint">
-        拖拽旋转 · 滚轮缩放 · 点击照片放大
+      <div className={styles.hint}>
+        拖拽旋转  滚轮缩放  点击照片放大
       </div>
 
       {lightbox && (
-        <div className="three-d-lightbox" onClick={() => setLightbox(null)}>
-          <button className="three-d-close">×</button>
+        <div className={styles.lightbox} onClick={() => setLightbox(null)}>
+          <button className={styles.close}></button>
 
           <img src={lightbox.url} alt={lightbox.caption} />
 
-          <div className="three-d-caption">
+          <div className={styles.caption}>
             <strong>{lightbox.caption}</strong>
             <span>{lightbox.category}</span>
           </div>

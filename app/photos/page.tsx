@@ -21,8 +21,9 @@ export default async function PhotosPage() {
           <Link href="/photos/3d" className="primary-button">
             打开 3D 星空相册
           </Link>
-          <Link href="/articles" className="secondary-link">
-            查看文章
+
+          <Link href="/admin/photos" className="secondary-button">
+            上传照片
           </Link>
         </div>
       </section>
