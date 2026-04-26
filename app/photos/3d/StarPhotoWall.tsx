@@ -13,6 +13,10 @@ type Photo = {
 
 export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const sceneRef = useRef<HTMLDivElement | null>(null);
+  const cameraRef = useRef<HTMLDivElement | null>(null);
+  const carouselRef = useRef<HTMLDivElement | null>(null);
+  const hasDraggedRef = useRef(false);
   const [lightbox, setLightbox] = useState<Photo | null>(null);
 
   const displayPhotos = useMemo(() => {
@@ -50,81 +54,115 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    const scene = sceneRef.current;
+    const camera = cameraRef.current;
+    const carousel = carouselRef.current;
+    if (!canvas || !scene || !camera || !carousel) return;
 
-    if (!canvas) {
-      return;
-    }
+    const ctx = canvas.getContext("2d")!;
 
-    const ctx = canvas.getContext("2d");
+    // ── rotation state ──
+    let rotY = 0, tgtY = 0, rotX = 0, tgtX = 0, zoom = 0, tgtZoom = 0;
+    let dragging = false, sx = 0, sy = 0, lx = 0, ly = 0;
+    let hoveringCard = false;
 
-    if (!ctx) {
-      return;
-    }
-
-    type Particle = {
-      x: number;
-      y: number;
-      size: number;
-      alpha: number;
-      angle: number;
-      speed: number;
+    const onDown = (e: MouseEvent | TouchEvent) => {
+      dragging = true;
+      hasDraggedRef.current = false;
+      const p = "touches" in e ? e.touches[0] : e;
+      sx = lx = p.clientX; sy = ly = p.clientY;
+    };
+    const onMove = (e: MouseEvent | TouchEvent) => {
+      if (!dragging) return;
+      const p = "touches" in e ? e.touches[0] : e;
+      if (Math.abs(p.clientX - sx) > 5 || Math.abs(p.clientY - sy) > 5)
+        hasDraggedRef.current = true;
+      tgtY += (p.clientX - lx) * 0.35;
+      tgtX -= (p.clientY - ly) * 0.15;
+      tgtX = Math.max(-20, Math.min(tgtX, 20));
+      lx = p.clientX; ly = p.clientY;
+    };
+    const onUp = () => { dragging = false; };
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      tgtZoom += e.deltaY * -1.2;
+      tgtZoom = Math.max(-600, Math.min(tgtZoom, 800));
+    };
+    const onEnter = (e: MouseEvent) => {
+      if ((e.target as HTMLElement).tagName === "IMG") hoveringCard = true;
+    };
+    const onLeave = (e: MouseEvent) => {
+      if ((e.target as HTMLElement).tagName === "IMG") hoveringCard = false;
     };
 
-    let width = 0;
-    let height = 0;
-    let animationId = 0;
-    let particles: Particle[] = [];
+    scene.addEventListener("mousedown", onDown);
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    scene.addEventListener("touchstart", onDown, { passive: true });
+    window.addEventListener("touchmove", onMove, { passive: true });
+    window.addEventListener("touchend", onUp);
+    scene.addEventListener("wheel", onWheel, { passive: false });
+    carousel.addEventListener("mouseover", onEnter);
+    carousel.addEventListener("mouseout", onLeave);
+
+    // ── canvas particles ──
+    type Particle = { x: number; y: number; size: number; alpha: number; angle: number; speed: number; };
+    let W = 0, H = 0, parts: Particle[] = [], rafId = 0;
 
     const initCanvas = () => {
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
-      particles = [];
-
-      const count = Math.max(120, Math.floor((width * height) / 9000));
-
-      for (let i = 0; i < count; i += 1) {
-        particles.push({
-          x: Math.random() * width,
-          y: Math.random() * height,
-          size: Math.random() * 1.8 + 0.3,
-          alpha: Math.random() * 0.5 + 0.12,
-          angle: Math.random() * Math.PI * 2,
-          speed: Math.random() * 0.025 + 0.005,
-        });
-      }
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      parts = [];
+      const n = Math.max(120, Math.floor((W * H) / 9000));
+      for (let i = 0; i < n; i++)
+        parts.push({ x: Math.random()*W, y: Math.random()*H,
+          size: Math.random()*1.8+0.3, alpha: Math.random()*0.5+0.12,
+          angle: Math.random()*Math.PI*2, speed: Math.random()*0.025+0.005 });
     };
 
-    const draw = () => {
+    const animate = () => {
+      // auto-rotate unless user is interacting
+      if (!dragging && !hoveringCard) tgtY += 0.12;
+      rotY += (tgtY - rotY) * 0.08;
+      rotX += (tgtX - rotX) * 0.08;
+      zoom += (tgtZoom - zoom) * 0.08;
+
+      camera.style.transform = `translateZ(${zoom}px) rotateX(${rotX}deg)`;
+      carousel.style.transform = `rotateY(${rotY}deg)`;
+
+      // draw stars
       ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.fillStyle = "rgba(3, 3, 3, 0.92)";
-      ctx.fillRect(0, 0, width, height);
-
-      for (const particle of particles) {
-        particle.angle += particle.speed;
-        const twinkle = particle.alpha + Math.sin(particle.angle) * 0.22;
-
+      ctx.fillStyle = "rgba(3,3,3,0.72)";
+      ctx.fillRect(0, 0, W, H);
+      for (const p of parts) {
+        p.angle += p.speed;
+        const tw = p.alpha + Math.sin(p.angle) * 0.22;
         ctx.beginPath();
-        ctx.fillStyle = `rgba(255,255,255,${Math.max(0.05, twinkle)})`;
-        ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${Math.max(0.05, tw)})`;
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      animationId = requestAnimationFrame(draw);
+      rafId = requestAnimationFrame(animate);
     };
 
     initCanvas();
-    draw();
+    animate();
 
-    const onResize = () => {
-      cancelAnimationFrame(animationId);
-      initCanvas();
-      draw();
-    };
-
+    const onResize = () => { cancelAnimationFrame(rafId); initCanvas(); animate(); };
     window.addEventListener("resize", onResize);
 
     return () => {
-      cancelAnimationFrame(animationId);
+      cancelAnimationFrame(rafId);
+      scene.removeEventListener("mousedown", onDown);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      scene.removeEventListener("touchstart", onDown);
+      window.removeEventListener("touchmove", onMove);
+      window.removeEventListener("touchend", onUp);
+      scene.removeEventListener("wheel", onWheel);
+      carousel.removeEventListener("mouseover", onEnter);
+      carousel.removeEventListener("mouseout", onLeave);
       window.removeEventListener("resize", onResize);
     };
   }, []);
@@ -133,7 +171,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     <section className={styles.wall}>
       <canvas ref={canvasRef} className={styles.canvas} />
 
-      <div className={styles.scene}>
+      <div ref={sceneRef} className={styles.scene}>
         <div className={styles.heart}>
           {[0, 1, 2, 3].map((index) => (
             <svg
@@ -166,8 +204,8 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
           ))}
         </div>
 
-        <div className={styles.camera}>
-          <div className={styles.carousel}>
+        <div ref={cameraRef} className={styles.camera}>
+          <div ref={carouselRef} className={styles.carousel}>
             {cards.map((card) => (
               <img
                 key={card.key}
@@ -175,7 +213,10 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
                 alt={card.photo.caption}
                 className={styles.photoCard}
                 style={card.style}
-                onClick={() => setLightbox(card.photo)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!hasDraggedRef.current) setLightbox(card.photo);
+                }}
               />
             ))}
           </div>
