@@ -24,6 +24,12 @@ export default function AdminPage() {
           <p>按分类上传照片，并同步展示到相册页。</p>
         </Link>
 
+        <Link href="/admin/settings" className="admin-stat-card">
+          <span>⚙️</span>
+          <strong>站点设置</strong>
+          <p>修改个人信息、技能、项目、旅行目的地等内容。</p>
+        </Link>
+
         <Link href="/" className="admin-stat-card">
           <span>🌸</span>
           <strong>站点预览</strong>

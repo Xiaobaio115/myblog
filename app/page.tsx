@@ -5,12 +5,15 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { ArticleCard } from "@/app/components/article-card";
 import { SiteFrame } from "@/app/components/site-frame";
-import { profile } from "@/data/profile";
 import { getLatestPhotos, getPublishedPosts } from "@/lib/content";
+import { getProfileSetting } from "@/lib/settings";
 
 export default async function HomePage() {
-  const posts = await getPublishedPosts(100);
-  const photos = await getLatestPhotos(48);
+  const [posts, photos, profile] = await Promise.all([
+    getPublishedPosts(100),
+    getLatestPhotos(48),
+    getProfileSetting(),
+  ]);
   const latestPosts = posts.slice(0, 4);
   const featuredPhotos = photos.slice(0, 8);
 
@@ -25,14 +28,10 @@ export default async function HomePage() {
       <section className="home-hero-v2 container">
         <div className="home-hero-left">
           <h1 className="home-hi-title">
-            Hi, 我是 LQPP <span className="wave-emoji">👋</span>
+            Hi, 我是 {profile.name} <span className="wave-emoji">👋</span>
           </h1>
-          <p className="home-hi-sub">记录生活 · 分享技术 · 探索世界</p>
-          <p className="home-hi-desc">
-            热爱探索与设计，喜欢探索新技术，享受创造的过程。
-            这里记录我的一切有趣的东西。
-            希望通过这小小的地方，记录生活、分享见知、让更多志趣相投的朋友相遇。
-          </p>
+          <p className="home-hi-sub">{profile.status}</p>
+          <p className="home-hi-desc">{profile.intro}</p>
           <div className="hero-actions left">
             <Link href="/world" className="primary-link">探索我的世界</Link>
             <Link href="/articles" className="secondary-link">查看文章</Link>
@@ -46,7 +45,7 @@ export default async function HomePage() {
               : <span>LQPP</span>}
           </div>
           <strong className="home-profile-name">{profile.name}</strong>
-          <span className="home-profile-tagline">Stay hungry, stay foolish.</span>
+          <span className="home-profile-tagline">{profile.tagline}</span>
           <div className="home-profile-stats">
             {stats.map((s) => (
               <div key={s.label} className="home-stat">
@@ -56,9 +55,9 @@ export default async function HomePage() {
             ))}
           </div>
           <div className="home-profile-meta">
-            <span>📍 {profile.location}</span>
-            <span>✉️ {profile.email}</span>
-            <span>🐙 GitHub</span>
+            {profile.location && <span>📍 {profile.location}</span>}
+            {profile.email && <span>✉️ {profile.email}</span>}
+            {profile.githubUrl && <span>🐙 <a href={profile.githubUrl} target="_blank" rel="noopener noreferrer">GitHub</a></span>}
           </div>
           <Link href="/about" className="profile-card-link">查看完整档案 →</Link>
         </aside>

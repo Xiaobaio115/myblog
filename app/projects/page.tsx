@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFrame } from "@/app/components/site-frame";
-import { projects } from "@/data/projects";
+import { getProjectsSetting } from "@/lib/settings";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "项目｜LQPP 正在做的东西",
 };
 
-export default function ProjectsPage() {
+export default async function ProjectsPage() {
+  const projects = await getProjectsSetting();
   return (
     <SiteFrame>
       <section className="hero container">

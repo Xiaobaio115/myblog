@@ -151,6 +151,9 @@ export default function AdminGate({
           <Link href="/admin/photos" className="admin-menu-link">
             相册管理
           </Link>
+          <Link href="/admin/settings" className="admin-menu-link">
+            站点设置
+          </Link>
           <Link href="/photos" className="admin-menu-link">
             查看相册
           </Link>

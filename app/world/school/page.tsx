@@ -3,11 +3,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFrame } from "@/app/components/site-frame";
 import { schoolContent } from "@/data/world";
-import { education } from "@/data/profile";
+import { getEducationSetting } from "@/lib/settings";
 
+export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "我的学校｜LQPP World" };
 
-export default function SchoolPage() {
+export default async function SchoolPage() {
+  const education = await getEducationSetting();
   const { title, subtitle, desc, details, photos } = schoolContent;
 
   return (

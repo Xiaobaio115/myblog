@@ -1,14 +1,27 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFrame } from "@/app/components/site-frame";
-import { education, profile, skills, socials } from "@/data/profile";
 import { personality } from "@/data/world";
+import {
+  getProfileSetting,
+  getSkillsSetting,
+  getEducationSetting,
+  getSocialsSetting,
+} from "@/lib/settings";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "关于我｜LQPP Profile",
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const [profile, skills, education, socials] = await Promise.all([
+    getProfileSetting(),
+    getSkillsSetting(),
+    getEducationSetting(),
+    getSocialsSetting(),
+  ]);
   return (
     <SiteFrame>
       <section className="hero container">
@@ -25,11 +38,6 @@ export default function AboutPage() {
           <strong>{profile.name}</strong>
           <span>{profile.status}</span>
           <p>{profile.location}</p>
-          <div className="profile-tag-cloud">
-            {profile.tags.map((tag) => (
-              <span key={tag}>{tag}</span>
-            ))}
-          </div>
           <div className="hero-actions">
             <Link href="/guestbook" className="primary-link">联系我</Link>
             <Link href="/world" className="secondary-link">查看我的世界</Link>
