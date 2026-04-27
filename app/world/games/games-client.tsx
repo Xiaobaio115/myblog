@@ -3,9 +3,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { GameItem } from "@/lib/settings";
+import type { GameItem, ProfileSetting } from "@/lib/settings";
 
-export function GamesClient({ games }: { games: GameItem[] }) {
+type Props = {
+  games: GameItem[];
+  profile: ProfileSetting;
+  postCount: number;
+  photoCount: number;
+};
+
+export function GamesClient({ games, profile, postCount, photoCount }: Props) {
   const [selected, setSelected] = useState(games[0] ?? null);
 
   if (!selected) {
@@ -21,6 +28,21 @@ export function GamesClient({ games }: { games: GameItem[] }) {
   return (
     <div className="world-sub-shell container">
       <aside className="world-sub-sidebar">
+        <div className="sidebar-profile-card">
+          <div className="sidebar-profile-avatar">
+            {profile.avatarUrl
+              ? <img src={profile.avatarUrl} alt={profile.name} />
+              : <span>{profile.name.slice(0, 2)}</span>}
+          </div>
+          <strong className="sidebar-profile-name">{profile.name}</strong>
+          <span className="sidebar-profile-tagline">{profile.tagline}</span>
+          <div className="sidebar-profile-stats">
+            <div><strong>{postCount}</strong><span>文章</span></div>
+            <div><strong>{photoCount}</strong><span>照片</span></div>
+          </div>
+          {profile.location && <p className="sidebar-profile-location">📍 {profile.location}</p>}
+          <Link href="/about" className="sidebar-profile-link">查看完整档案 →</Link>
+        </div>
         {games.map((game) => (
           <button
             key={game.id}

@@ -3,9 +3,16 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { TravelItem } from "@/lib/settings";
+import type { TravelItem, ProfileSetting } from "@/lib/settings";
 
-export function TravelClient({ destinations }: { destinations: TravelItem[] }) {
+type Props = {
+  destinations: TravelItem[];
+  profile: ProfileSetting;
+  postCount: number;
+  photoCount: number;
+};
+
+export function TravelClient({ destinations, profile, postCount, photoCount }: Props) {
   const [selected, setSelected] = useState(destinations[0] ?? null);
 
   if (!selected) {
@@ -21,6 +28,21 @@ export function TravelClient({ destinations }: { destinations: TravelItem[] }) {
   return (
     <div className="world-sub-shell container">
       <aside className="world-sub-sidebar">
+        <div className="sidebar-profile-card">
+          <div className="sidebar-profile-avatar">
+            {profile.avatarUrl
+              ? <img src={profile.avatarUrl} alt={profile.name} />
+              : <span>{profile.name.slice(0, 2)}</span>}
+          </div>
+          <strong className="sidebar-profile-name">{profile.name}</strong>
+          <span className="sidebar-profile-tagline">{profile.tagline}</span>
+          <div className="sidebar-profile-stats">
+            <div><strong>{postCount}</strong><span>文章</span></div>
+            <div><strong>{photoCount}</strong><span>照片</span></div>
+          </div>
+          {profile.location && <p className="sidebar-profile-location">📍 {profile.location}</p>}
+          <Link href="/about" className="sidebar-profile-link">查看完整档案 →</Link>
+        </div>
         {destinations.map((dest) => (
           <button
             key={dest.id}
