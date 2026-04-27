@@ -342,8 +342,13 @@ function WorldSectionsForm({ value, saving, onChange, onSave }: {
         修改「我的世界」页面四个分区的封面图、标题、描述、标签。ID 和跳转链接固定不可改。
       </p>
       {value.map((section, i) => (
-        <div key={section.id} className="settings-list-item">
+        <div key={section.id} className="settings-list-item" style={{ border: "2px solid var(--border)", borderRadius: 20, padding: 20, marginBottom: 8 }}>
           <div className="settings-col">
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+              <span style={{ fontSize: "1.4rem" }}>{section.icon}</span>
+              <strong style={{ fontSize: "1rem" }}>{section.title}</strong>
+              <span style={{ marginLeft: "auto", fontSize: "0.72rem", color: "var(--text-soft)", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: "2px 8px" }}>ID: {section.id}</span>
+            </div>
             <div className="settings-row3">
               <div>
                 <label>图标 Emoji</label>
@@ -376,7 +381,13 @@ function WorldSectionsForm({ value, saving, onChange, onSave }: {
               <input className="admin-input" placeholder="家乡,小城,美食" value={section.tags.join(",")}
                 onChange={(e) => { const n = [...value]; n[i] = { ...section, tags: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) }; onChange(n); }} />
             </div>
-            <p style={{ fontSize: "0.75rem", color: "var(--muted)" }}>ID: {section.id}</p>
+            <div>
+              <label>页面照片（从相册选择）</label>
+              <PhotoPicker
+                selected={section.photos ?? []}
+                onChange={(photos) => { const n = [...value]; n[i] = { ...section, photos }; onChange(n); }}
+              />
+            </div>
           </div>
         </div>
       ))}
