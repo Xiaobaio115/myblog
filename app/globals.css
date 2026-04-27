@@ -3254,6 +3254,122 @@ html, body {
   color: #93c5fd;
 }
 
+/* ── 搜索 / 筛选面板 ── */
+[data-theme="dark"] .filter-panel {
+  background: rgba(15, 20, 36, 0.88);
+}
+[data-theme="blue"] .filter-panel {
+  background: rgba(10, 14, 30, 0.88);
+}
+
+/* ── 搜索框 / admin input（light 模式白色背景） ── */
+[data-theme="dark"] .search-input {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+  border-color: var(--border);
+}
+[data-theme="blue"] .search-input {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+/* ── 上传面板 / admin 卡片 ── */
+[data-theme="dark"] .admin-card-link,
+[data-theme="dark"] .upload-panel,
+[data-theme="dark"] .upload-photo {
+  background: rgba(17, 24, 39, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+[data-theme="blue"] .admin-card-link,
+[data-theme="blue"] .upload-panel,
+[data-theme="blue"] .upload-photo {
+  background: rgba(11, 17, 33, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.10);
+}
+
+/* ── 图片库卡片 ── */
+[data-theme="dark"] .photo-library-card {
+  background: rgba(17, 24, 39, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+[data-theme="blue"] .photo-library-card {
+  background: rgba(11, 17, 33, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.10);
+}
+
+/* ── 图片管理单项 ── */
+[data-theme="dark"] .photo-admin-item {
+  background: rgba(17, 24, 39, 0.88);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+[data-theme="blue"] .photo-admin-item {
+  background: rgba(11, 17, 33, 0.88);
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.10);
+}
+
+/* ── 图片筛选按钮 ── */
+[data-theme="dark"] .photo-library-filter {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--text-soft);
+}
+[data-theme="blue"] .photo-library-filter {
+  background: rgba(59, 130, 246, 0.06);
+  border-color: rgba(59, 130, 246, 0.18);
+  color: var(--text-soft);
+}
+
+/* ── 仪表盘统计卡 ── */
+[data-theme="dark"] .dash-stat {
+  background: rgba(17, 24, 39, 0.82);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+[data-theme="blue"] .dash-stat {
+  background: rgba(11, 17, 33, 0.82);
+  border-color: rgba(59, 130, 246, 0.10);
+}
+
+/* ── 流量图表 / 近期内容 ── */
+[data-theme="dark"] .traffic-chart-card,
+[data-theme="dark"] .dash-recent-box {
+  background: rgba(17, 24, 39, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+[data-theme="blue"] .traffic-chart-card,
+[data-theme="blue"] .dash-recent-box {
+  background: rgba(11, 17, 33, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.10);
+}
+
+/* ── 流量图表背景 ── */
+[data-theme="dark"] .traffic-chart {
+  background: rgba(15, 20, 36, 0.70);
+}
+[data-theme="blue"] .traffic-chart {
+  background: rgba(8, 12, 28, 0.70);
+}
+
+/* ── 空状态 ── */
+[data-theme="dark"] .empty-state {
+  background: rgba(17, 24, 39, 0.72);
+}
+[data-theme="blue"] .empty-state {
+  background: rgba(11, 17, 33, 0.72);
+}
+
+/* ── Markdown 编辑器预览区 ── */
+[data-theme="dark"] .markdown-editor-shell .markdown-preview,
+[data-theme="dark"] .cover-field-shell {
+  background: rgba(17, 24, 39, 0.88);
+  border-color: var(--border);
+}
+[data-theme="blue"] .markdown-editor-shell .markdown-preview,
+[data-theme="blue"] .cover-field-shell {
+  background: rgba(11, 17, 33, 0.88);
+  border-color: var(--border);
+}
+
 /* ═══════════════════════════════════════════════════════
    NAV ACTIONS + THEME TOGGLE
    ═══════════════════════════════════════════════════════ */
