@@ -64,6 +64,9 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
+  /* ── 浅色主题背景图：把图片放到 public/ 下，取消下面注释即可 ── */
+  /* background-image: url('/bg-light.jpg'); */
+  /* background-size: cover; background-position: center; background-attachment: fixed; */
   background:
     radial-gradient(circle at 70% 0%, rgba(255, 79, 163, 0.10), transparent 30%),
     radial-gradient(circle at 30% 0%, rgba(255, 124, 200, 0.08), transparent 28%),
@@ -646,12 +649,19 @@ img {
   padding: 0 16px;
   border: 1px solid var(--border);
   border-radius: 16px;
-  background: rgba(255, 255, 255, 0.88);
-  color: var(--text);
+  background: rgba(255, 255, 255, 0.92);
+  color: #1e293b;
   outline: none;
+  font-size: 0.95rem;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease;
+}
+
+.search-input::placeholder,
+.admin-input::placeholder,
+.admin-textarea::placeholder {
+  color: #94a3b8;
 }
 
 .search-input:focus,
@@ -2810,6 +2820,9 @@ img {
 }
 
 [data-theme="blue"] body {
+  /* ── 蓝色主题背景图：把图片放到 public/ 下，取消下面注释即可 ── */
+  /* background-image: url('/bg-blue.jpg'); */
+  /* background-size: cover; background-position: center; background-attachment: fixed; */
   background:
     radial-gradient(circle at 50% -8%, rgba(59, 130, 246, 0.32), transparent 38%),
     radial-gradient(circle at 14% 14%, rgba(99, 102, 241, 0.22), transparent 30%),
@@ -3018,6 +3031,9 @@ html, body {
 }
 
 [data-theme="dark"] body {
+  /* ── 深色主题背景图：把图片放到 public/ 下，取消下面注释即可 ── */
+  /* background-image: url('/bg-dark.jpg'); */
+  /* background-size: cover; background-position: center; background-attachment: fixed; */
   background:
     radial-gradient(circle at 50% -10%, rgba(56, 189, 248, 0.18), transparent 32%),
     radial-gradient(circle at 12% 12%, rgba(139, 92, 246, 0.20), transparent 28%),
