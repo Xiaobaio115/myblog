@@ -106,7 +106,8 @@ export function SiteHeader({
               aria-label="打开导航菜单"
               onClick={() => setMenuOpen(true)}
             >
-              ☰
+              <span style={{ fontSize: "14px", lineHeight: 1 }}>☰</span>
+              <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.04em" }}>菜单</span>
             </button>
           </div>
         </div>

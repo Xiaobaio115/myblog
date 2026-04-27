@@ -35,6 +35,9 @@ export default async function HomePage() {
           <div className="hero-actions left">
             <Link href="/world" className="primary-link">探索我的世界</Link>
             <Link href="/articles" className="secondary-link">查看文章</Link>
+            <Link href="/photos/3d" className="secondary-link star-wall-btn">
+              <span style={{ marginRight: "5px" }}>✨</span>星空照片墙
+            </Link>
           </div>
         </div>
 

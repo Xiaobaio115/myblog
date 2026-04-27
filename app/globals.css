@@ -3402,19 +3402,23 @@ html, body {
 
 .mobile-menu-button {
   display: none;
-  place-items: center;
-  width: 38px;
-  height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-direction: row;
+  height: 36px;
+  padding: 0 12px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.06);
   color: var(--text);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 @media (max-width: 960px) {
   .mobile-menu-button {
-    display: grid;
+    display: flex;
   }
 
   .nav-links {
@@ -3860,6 +3864,55 @@ html, body {
 .article-list-stack {
   display: grid;
   gap: 12px;
+}
+
+/* ── 覆盖：必须放在 .article-shell 定义之后，修复 CSS 级联顺序 ── */
+@media (max-width: 960px) {
+  .article-shell {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .article-sidebar {
+    position: static;
+    padding: 12px 14px;
+    border-radius: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .article-sidebar > strong {
+    display: none;
+  }
+
+  .article-sidebar-links {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .article-sidebar-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .article-sidebar-link {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    font-size: 0.85rem;
+  }
+
+  .article-sidebar-link.active {
+    background: var(--pink-500);
+    color: #fff;
+    border-color: transparent;
+  }
 }
 
 .article-sidebar-link {
