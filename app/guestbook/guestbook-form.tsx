@@ -85,7 +85,7 @@ export function GuestbookForm() {
       )}
 
       {status === "success" ? (
-        <p className="guestbook-success">留言已提交，感谢！博主审核通过后即可显示。</p>
+        <p className="guestbook-success">留言已提交，感谢！刷新即可看到你的留言。</p>
       ) : (
         <button
           type="submit"

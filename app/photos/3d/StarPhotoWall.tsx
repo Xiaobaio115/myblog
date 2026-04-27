@@ -39,9 +39,9 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     if (count === 0) return [];
     const isMobile =
       typeof window !== "undefined" && window.matchMedia("(max-width: 700px)").matches;
-    const baseRadius = isMobile ? 260 : 520;
-    const radiusJitter = isMobile ? 70 : 110;
-    const yRange = isMobile ? 260 : 360;
+    const baseRadius = isMobile ? 150 : 520;
+    const radiusJitter = isMobile ? 40 : 110;
+    const yRange = isMobile ? 180 : 360;
 
     return displayPhotos.map((photo, index) => {
       const angle = (360 / count) * index;
@@ -292,7 +292,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     };
 
     const animate = () => {
-      if (!dragging && !hoveringCard) tgtY += 0.15;
+      if (!dragging && !hoveringCard) tgtY += 0.1875;
       rotY += (tgtY - rotY) * 0.08;
       rotX += (tgtX - rotX) * 0.08;
       zoom += (tgtZoom - zoom) * 0.08;

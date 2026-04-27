@@ -96,7 +96,7 @@ export async function POST(request: Request) {
       ip,
       device,
       userAgent,
-      approved: false,
+      approved: true,
       createdAt: now,
     });
 
