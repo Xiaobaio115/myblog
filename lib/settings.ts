@@ -1,7 +1,7 @@
 import { getDb } from "@/lib/mongodb";
 import { profile as defaultProfile, socials as defaultSocials, skills as defaultSkills, education as defaultEducation } from "@/data/profile";
 import { projects as defaultProjects } from "@/data/projects";
-import { travelDestinations as defaultTravel, gamesList as defaultGames } from "@/data/world";
+import { travelDestinations as defaultTravel, gamesList as defaultGames, worldSections as defaultWorldSections } from "@/data/world";
 
 export type ProfileSetting = {
   name: string;
@@ -20,6 +20,7 @@ export type EducationItem = { time: string; title: string; desc: string; tags: s
 export type ProjectItem = { title: string; status: string; desc: string; stack: string[]; href: string };
 export type TravelItem = { id: string; name: string; date: string; desc: string; cover: string; photos: string[]; tags: string[] };
 export type GameItem = { id: string; name: string; type: string; date: string; desc: string; cover: string; tags: string[] };
+export type WorldSectionSetting = { id: string; eyebrow: string; title: string; desc: string; cover: string; icon: string; tags: string[] };
 
 export type AllSettings = {
   profile: ProfileSetting;
@@ -29,6 +30,7 @@ export type AllSettings = {
   projects: ProjectItem[];
   travel: TravelItem[];
   games: GameItem[];
+  world: WorldSectionSetting[];
 };
 
 async function get<T>(key: string, fallback: T): Promise<T> {
@@ -77,6 +79,19 @@ export async function getTravelSetting(): Promise<TravelItem[]> {
 
 export async function getGamesSetting(): Promise<GameItem[]> {
   return get("games", defaultGames);
+}
+
+export async function getWorldSectionsSetting(): Promise<WorldSectionSetting[]> {
+  const fallback: WorldSectionSetting[] = defaultWorldSections.map((s) => ({
+    id: s.id,
+    eyebrow: s.eyebrow,
+    title: s.title,
+    desc: s.desc,
+    cover: s.cover,
+    icon: s.icon,
+    tags: s.tags,
+  }));
+  return get("world", fallback);
 }
 
 export async function saveSetting(key: string, value: unknown): Promise<void> {

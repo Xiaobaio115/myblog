@@ -9,10 +9,11 @@ import type {
   ProjectItem,
   TravelItem,
   GameItem,
+  WorldSectionSetting,
   AllSettings,
 } from "@/lib/settings";
 
-type Tab = "profile" | "socials" | "skills" | "education" | "projects" | "travel" | "games";
+type Tab = "profile" | "socials" | "skills" | "education" | "projects" | "travel" | "games" | "world";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "profile", label: "👤 个人信息" },
@@ -22,6 +23,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "projects", label: "🚀 项目列表" },
   { key: "travel", label: "✈️ 旅行目的地" },
   { key: "games", label: "🎮 游戏列表" },
+  { key: "world", label: "🌍 世界分区" },
 ];
 
 export default function AdminSettingsPage() {
@@ -223,6 +225,14 @@ export default function AdminSettingsPage() {
                   onSave={(v) => saveSection("games", v)}
                 />
               )}
+              {tab === "world" && (
+                <WorldSectionsForm
+                  value={settings.world ?? []}
+                  saving={saving}
+                  onChange={(v) => setSettings({ ...settings, world: v })}
+                  onSave={(v) => saveSection("world", v)}
+                />
+              )}
             </>
           )}
         </div>
@@ -305,12 +315,69 @@ function SkillsForm({ value, saving, onChange, onSave }: {
       ))}
       <button
         type="button"
-        className="admin-button"
-        style={{ background: "rgba(255,255,255,0.08)" }}
+        className="settings-add-btn"
         onClick={() => onChange([...value, { group: "新分组", items: [] }])}
       >+ 添加分组</button>
       <button className="admin-button" disabled={saving} onClick={() => onSave(value)}>
         {saving ? "保存中…" : "保存技能栈"}
+      </button>
+    </div>
+  );
+}
+
+function WorldSectionsForm({ value, saving, onChange, onSave }: {
+  value: WorldSectionSetting[];
+  saving: boolean;
+  onChange: (v: WorldSectionSetting[]) => void;
+  onSave: (v: WorldSectionSetting[]) => void;
+}) {
+  return (
+    <div className="settings-col">
+      <h2>世界分区</h2>
+      <p style={{ color: "var(--text-soft)", fontSize: "0.85rem" }}>
+        修改「我的世界」页面四个分区的封面图、标题、描述、标签。ID 和跳转链接固定不可改。
+      </p>
+      {value.map((section, i) => (
+        <div key={section.id} className="settings-list-item">
+          <div className="settings-col">
+            <div className="settings-row3">
+              <div>
+                <label>图标 Emoji</label>
+                <input className="admin-input" placeholder="如 🏡" value={section.icon}
+                  onChange={(e) => { const n = [...value]; n[i] = { ...section, icon: e.target.value }; onChange(n); }} />
+              </div>
+              <div>
+                <label>眉题 (Eyebrow)</label>
+                <input className="admin-input" placeholder="如 Hometown" value={section.eyebrow}
+                  onChange={(e) => { const n = [...value]; n[i] = { ...section, eyebrow: e.target.value }; onChange(n); }} />
+              </div>
+              <div>
+                <label>标题</label>
+                <input className="admin-input" value={section.title}
+                  onChange={(e) => { const n = [...value]; n[i] = { ...section, title: e.target.value }; onChange(n); }} />
+              </div>
+            </div>
+            <div>
+              <label>封面图 URL（留空使用图标）</label>
+              <input className="admin-input" placeholder="https://..." value={section.cover}
+                onChange={(e) => { const n = [...value]; n[i] = { ...section, cover: e.target.value }; onChange(n); }} />
+            </div>
+            <div>
+              <label>描述</label>
+              <textarea className="admin-input" rows={2} value={section.desc}
+                onChange={(e) => { const n = [...value]; n[i] = { ...section, desc: e.target.value }; onChange(n); }} />
+            </div>
+            <div>
+              <label>标签（逗号分隔）</label>
+              <input className="admin-input" placeholder="家乡,小城,美食" value={section.tags.join(",")}
+                onChange={(e) => { const n = [...value]; n[i] = { ...section, tags: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) }; onChange(n); }} />
+            </div>
+            <p style={{ fontSize: "0.75rem", color: "var(--muted)" }}>ID: {section.id}</p>
+          </div>
+        </div>
+      ))}
+      <button className="admin-button" disabled={saving} onClick={() => onSave(value)}>
+        {saving ? "保存中…" : "保存世界分区"}
       </button>
     </div>
   );
@@ -344,8 +411,7 @@ function ListForm<T>({ label, items, saving, empty, renderItem, onChange, onSave
       ))}
       <button
         type="button"
-        className="admin-button"
-        style={{ background: "rgba(255,255,255,0.08)" }}
+        className="settings-add-btn"
         onClick={() => onChange([...items, { ...empty }])}
       >+ 添加{label}</button>
       <button className="admin-button" disabled={saving} onClick={() => onSave(items)}>

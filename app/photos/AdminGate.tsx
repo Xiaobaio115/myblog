@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { startTransition, useEffect, useState } from "react";
+import { ThemeToggle } from "@/app/components/theme-toggle";
 
 export default function AdminGate({
   children,
@@ -162,9 +163,15 @@ export default function AdminGate({
           </Link>
         </nav>
 
-        <button type="button" className="admin-logout" onClick={logout}>
-          退出后台
-        </button>
+        <div className="admin-sidebar-bottom">
+          <div className="admin-theme-row">
+            <span>主题</span>
+            <ThemeToggle />
+          </div>
+          <button type="button" className="admin-logout" onClick={logout}>
+            退出后台
+          </button>
+        </div>
       </aside>
 
       <section className="admin-main">{children}</section>
