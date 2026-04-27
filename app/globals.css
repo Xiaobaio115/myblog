@@ -5995,7 +5995,24 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding: 6px 10px;
+  border-radius: 10px;
   font-size: 0.82rem;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+  cursor: pointer;
+}
+
+.world-sub-info-row:hover {
+  background: rgba(240, 50, 141, 0.07);
+}
+
+.world-sub-info-row.active {
+  background: rgba(240, 50, 141, 0.12);
+}
+
+.world-sub-info-row.active strong {
+  color: var(--pink-500);
 }
 
 .world-sub-info-row span {

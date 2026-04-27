@@ -5,16 +5,25 @@ import { useState } from "react";
 import Link from "next/link";
 import type { WorldSectionSetting } from "@/lib/settings";
 
-const hasSectionTags = (s: WorldSectionSetting) =>
-  (s.sections ?? []).some((b) => b.tag);
+function matchBlock(caption: string, blockTag: string | undefined, activeTag: string) {
+  if (blockTag === activeTag) return true;
+  return caption.includes(activeTag);
+}
 
-export function WorldSectionPhotoClient({ section }: { section: WorldSectionSetting }) {
+export function WorldSectionPhotoClient({
+  section,
+  initialTag,
+}: {
+  section: WorldSectionSetting;
+  initialTag?: string;
+}) {
   const [lightbox, setLightbox] = useState<string | null>(null);
-  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [activeTag, setActiveTag] = useState<string | null>(initialTag ?? null);
 
   const allBlocks = section.sections ?? [];
+  const hasBlocks = allBlocks.length > 0;
   const filteredBlocks = activeTag
-    ? allBlocks.filter((b) => b.tag === activeTag)
+    ? allBlocks.filter((b) => matchBlock(b.caption, b.tag, activeTag))
     : allBlocks;
 
   return (
@@ -47,15 +56,13 @@ export function WorldSectionPhotoClient({ section }: { section: WorldSectionSett
             : <span className="world-sub-cover-placeholder">{section.icon} 封面图待上传</span>}
         </div>
 
-{/* tag filter row */}
         {section.tags.length > 0 && (
-          <div className={`world-tag-row${hasSectionTags(section) ? " is-filter" : ""}`}>
+          <div className={`world-tag-row${hasBlocks ? " is-filter" : ""}`}>
             {section.tags.map((tag) => (
               <span
                 key={tag}
-                style={hasSectionTags(section) ? { cursor: "pointer" } : undefined}
                 className={activeTag === tag ? "active" : undefined}
-                onClick={hasSectionTags(section) ? () => setActiveTag(activeTag === tag ? null : tag) : undefined}
+                onClick={hasBlocks ? () => setActiveTag(activeTag === tag ? null : tag) : undefined}
               >{tag}</span>
             ))}
           </div>

@@ -9,7 +9,10 @@ import { WorldSectionPhotoClient } from "@/app/world/world-section-photo-client"
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "我的家乡｜LQPP World" };
 
-export default async function HometownPage() {
+type Props = { searchParams: Promise<{ tag?: string }> };
+
+export default async function HometownPage({ searchParams }: Props) {
+  const { tag: initialTag } = await searchParams;
   const [profile, posts, photosAll, sections] = await Promise.all([
     getProfileSetting(),
     getPublishedPosts(100),
@@ -48,16 +51,20 @@ export default async function HometownPage() {
           {section.tags.length > 0 && (
             <div className="world-sub-nav-info">
               {section.tags.map((tag) => (
-                <div key={tag} className="world-sub-info-row">
+                <Link
+                  key={tag}
+                  href={initialTag === tag ? "/world/hometown" : `?tag=${tag}`}
+                  className={`world-sub-info-row${initialTag === tag ? " active" : ""}`}
+                >
                   <strong>{tag}</strong>
-                </div>
+                </Link>
               ))}
             </div>
           )}
         </aside>
 
         <main className="world-sub-main">
-          <WorldSectionPhotoClient section={section} />
+          <WorldSectionPhotoClient section={section} initialTag={initialTag} />
         </main>
       </div>
     </SiteFrame>

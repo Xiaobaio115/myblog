@@ -18,9 +18,11 @@ export function TravelClient({ destinations, profile, postCount, photoCount }: P
   const [activeTag, setActiveTag] = useState<string | null>(null);
 
   const selected = destinations[selectedIdx] ?? null;
-  const hasSectionTags = (selected?.sections ?? []).some((b) => b.tag);
   const allBlocks = selected?.sections ?? [];
-  const filteredBlocks = activeTag ? allBlocks.filter((b) => b.tag === activeTag) : allBlocks;
+  const hasBlocks = allBlocks.length > 0;
+  const filteredBlocks = activeTag
+    ? allBlocks.filter((b) => b.tag === activeTag || b.caption.includes(activeTag))
+    : allBlocks;
 
   if (!selected) {
     return (
@@ -63,7 +65,7 @@ export function TravelClient({ destinations, profile, postCount, photoCount }: P
               key={idx}
               type="button"
               className={`world-sub-nav-item ${selectedIdx === idx ? "active" : ""}`}
-              onClick={() => setSelectedIdx(idx)}
+              onClick={() => { setSelectedIdx(idx); setActiveTag(null); }}
             >
               {dest.name}
             </button>
@@ -84,13 +86,12 @@ export function TravelClient({ destinations, profile, postCount, photoCount }: P
                 : <span className="world-sub-cover-placeholder">✈️ 照片待上传</span>}
             </div>
 
-            <div className={`world-tag-row${hasSectionTags ? " is-filter" : ""}`}>
+            <div className={`world-tag-row${hasBlocks ? " is-filter" : ""}`}>
               {selected.tags.map((tag) => (
                 <span
                   key={tag}
                   className={activeTag === tag ? "active" : undefined}
-                  style={hasSectionTags ? { cursor: "pointer" } : undefined}
-                  onClick={hasSectionTags ? () => setActiveTag(activeTag === tag ? null : tag) : undefined}
+                  onClick={hasBlocks ? () => setActiveTag(activeTag === tag ? null : tag) : undefined}
                 >{tag}</span>
               ))}
             </div>
