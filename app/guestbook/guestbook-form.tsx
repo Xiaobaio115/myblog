@@ -51,14 +51,18 @@ export function GuestbookForm() {
         onChange={(e) => setName(e.target.value)}
         required
       />
-      <input
-        className="admin-input"
-        name="email"
-        type="email"
-        placeholder="邮箱（可选，不会公开）"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
+      <div style={{ position: "relative" }}>
+        <input
+          className="admin-input"
+          name="email"
+          type="email"
+          placeholder="邮箱 * （必填，不会公开，仅博主可见）"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          style={{ width: "100%" }}
+        />
+      </div>
       <input
         className="admin-input"
         name="website"
@@ -81,7 +85,7 @@ export function GuestbookForm() {
       )}
 
       {status === "success" ? (
-        <p className="guestbook-success">留言已提交，感谢！刷新页面即可看到。</p>
+        <p className="guestbook-success">留言已提交，感谢！博主审核通过后即可显示。</p>
       ) : (
         <button
           type="submit"

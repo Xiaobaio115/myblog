@@ -9,6 +9,8 @@ const navItems = [
   { href: "/admin/posts", label: "文章管理" },
   { href: "/admin/posts/new", label: "新建文章" },
   { href: "/admin/photos", label: "相册管理" },
+  { href: "/admin/guestbook", label: "💬 留言管理" },
+  { href: "/admin/settings", label: "⚙️ 站点设置" },
   { href: "/articles", label: "查看文章" },
   { href: "/photos", label: "查看相册" },
 ];

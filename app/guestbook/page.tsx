@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { SiteFrame } from "@/app/components/site-frame";
-import { socials } from "@/data/profile";
 import { getDb } from "@/lib/mongodb";
+import { getSocialsSetting } from "@/lib/settings";
 import { GuestbookForm } from "./guestbook-form";
 
 export const dynamic = "force-dynamic";
@@ -32,7 +32,7 @@ async function getMessages() {
 }
 
 export default async function GuestbookPage() {
-  const messages = await getMessages();
+  const [messages, socials] = await Promise.all([getMessages(), getSocialsSetting()]);
 
   return (
     <SiteFrame>
