@@ -2782,6 +2782,221 @@ img {
 }
 
 /* ═══════════════════════════════════════════════════════
+   BLUE THEME  ── 深海星空蓝，对应参考图配色
+   ═══════════════════════════════════════════════════════ */
+
+[data-theme="blue"] {
+  --bg: #06091a;
+  --bg-soft: #0b1121;
+  --bg-elevated: #0f1628;
+  --text: #e2e8f0;
+  --text-soft: #94a3b8;
+  --muted: #64748b;
+  --border: rgba(59, 130, 246, 0.18);
+  --border-strong: rgba(59, 130, 246, 0.38);
+  --shadow-sm: 0 4px 20px rgba(0, 0, 0, 0.32);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.48);
+  --pink-50: #eff6ff;
+  --pink-100: #dbeafe;
+  --pink-200: #bfdbfe;
+  --pink-300: #93c5fd;
+  --pink-400: #60a5fa;
+  --pink-500: #3b82f6;
+  --pink-600: #2563eb;
+  --purple-300: #c7d2fe;
+  --purple-400: #818cf8;
+  --purple-500: #6366f1;
+  transition: background-color 0.3s ease, color 0.2s ease;
+}
+
+[data-theme="blue"] body {
+  background:
+    radial-gradient(circle at 50% -8%, rgba(59, 130, 246, 0.32), transparent 38%),
+    radial-gradient(circle at 14% 14%, rgba(99, 102, 241, 0.22), transparent 30%),
+    radial-gradient(circle at 86% 80%, rgba(14, 165, 233, 0.16), transparent 28%),
+    var(--bg);
+}
+
+[data-theme="blue"] .nav {
+  background: rgba(6, 9, 26, 0.82);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.22);
+  box-shadow: 0 1px 0 rgba(59, 130, 246, 0.1), 0 4px 24px rgba(6, 9, 26, 0.6);
+}
+
+[data-theme="blue"] .nav-logo {
+  background: linear-gradient(135deg, #60a5fa, #818cf8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+[data-theme="blue"] .nav-btn:hover,
+[data-theme="blue"] .nav-btn.active {
+  background: rgba(59, 130, 246, 0.14);
+  color: #60a5fa;
+  box-shadow: none;
+}
+
+[data-theme="blue"] .eyebrow {
+  color: #60a5fa;
+}
+
+[data-theme="blue"] .primary-link {
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: #fff;
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.38);
+}
+
+[data-theme="blue"] .secondary-link,
+[data-theme="blue"] .section-link {
+  background: rgba(59, 130, 246, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.22);
+  color: #93c5fd;
+}
+
+[data-theme="blue"] .secondary-link:hover,
+[data-theme="blue"] .section-link:hover {
+  background: rgba(59, 130, 246, 0.18);
+}
+
+[data-theme="blue"] .tag-chip {
+  background: rgba(59, 130, 246, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.24);
+  color: #93c5fd;
+}
+
+[data-theme="blue"] .tag-chip:hover,
+[data-theme="blue"] .tag-chip.selected {
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: #fff;
+}
+
+[data-theme="blue"] .card-tag {
+  background: rgba(59, 130, 246, 0.14);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+}
+
+[data-theme="blue"] .article-card {
+  background: rgba(11, 17, 33, 0.82);
+  border-color: rgba(59, 130, 246, 0.16);
+}
+
+[data-theme="blue"] .article-card:hover {
+  border-color: rgba(59, 130, 246, 0.48);
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.14);
+}
+
+[data-theme="blue"] .profile-orbit-card,
+[data-theme="blue"] .glass-panel,
+[data-theme="blue"] .portal-card,
+[data-theme="blue"] .skill-preview-card,
+[data-theme="blue"] .memory-map-panel,
+[data-theme="blue"] .world-node-card,
+[data-theme="blue"] .profile-side-card,
+[data-theme="blue"] .contact-panel,
+[data-theme="blue"] .home-profile-card,
+[data-theme="blue"] .world-big-card,
+[data-theme="blue"] .guestbook-item,
+[data-theme="blue"] .article-sidebar {
+  border-color: rgba(59, 130, 246, 0.18);
+  background: rgba(11, 17, 33, 0.78);
+}
+
+[data-theme="blue"] .about-highlight-card,
+[data-theme="blue"] .project-card {
+  border-color: rgba(59, 130, 246, 0.18);
+  background: rgba(10, 16, 30, 0.72);
+}
+
+[data-theme="blue"] .home-hero-left {
+  border-color: rgba(59, 130, 246, 0.22);
+  background:
+    linear-gradient(rgba(6, 9, 26, 0.46), rgba(6, 9, 26, 0.72)),
+    radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.36), transparent 44%),
+    linear-gradient(135deg, rgba(6, 10, 24, 0.96), rgba(11, 17, 38, 0.88));
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(59, 130, 246, 0.14) inset;
+}
+
+[data-theme="blue"] .world-sub-nav-item.active {
+  background: rgba(59, 130, 246, 0.18);
+  color: #60a5fa;
+  border-right-color: #3b82f6;
+}
+
+[data-theme="blue"] .world-sub-nav-item:hover {
+  background: rgba(59, 130, 246, 0.1);
+  color: #93c5fd;
+}
+
+[data-theme="blue"] .site-footer {
+  background: rgba(6, 9, 26, 0.84);
+  border-color: rgba(59, 130, 246, 0.14);
+}
+
+[data-theme="blue"] .orb1 {
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.6), transparent 68%);
+  opacity: 0.16;
+}
+
+[data-theme="blue"] .orb2 {
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.6), transparent 70%);
+  opacity: 0.14;
+}
+
+[data-theme="blue"] .orb3 {
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.7), transparent 66%);
+  opacity: 0.12;
+}
+
+[data-theme="blue"] .mobile-nav-drawer {
+  background: rgba(6, 9, 26, 0.98);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+[data-theme="blue"] .mobile-nav-link.active,
+[data-theme="blue"] .mobile-nav-link:hover {
+  background: rgba(59, 130, 246, 0.14);
+  color: #60a5fa;
+}
+
+[data-theme="blue"] .article-content code {
+  background: rgba(59, 130, 246, 0.14);
+  color: #93c5fd;
+}
+
+[data-theme="blue"] .article-content pre {
+  background: rgba(6, 9, 26, 0.9);
+  border: 1px solid rgba(59, 130, 246, 0.16);
+}
+
+[data-theme="blue"] .article-content blockquote {
+  border-left-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.08);
+}
+
+[data-theme="blue"] .home-stat {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+[data-theme="blue"] .tech-icon-card {
+  border-color: rgba(59, 130, 246, 0.18);
+  background: rgba(59, 130, 246, 0.06);
+}
+
+[data-theme="blue"] .tech-icon-card b {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(99, 102, 241, 0.26));
+  color: #60a5fa;
+}
+
+[data-theme="blue"] .guestbook-social-link:hover,
+[data-theme="blue"] .article-sidebar-link.active,
+[data-theme="blue"] .article-sidebar-link:hover {
+  background: rgba(59, 130, 246, 0.14);
+  color: #93c5fd;
+}
+
+/* ═══════════════════════════════════════════════════════
    DARK THEME
    ═══════════════════════════════════════════════════════ */
 
