@@ -194,6 +194,10 @@ export default function AdminSettingsPage() {
                         <input className="admin-input" placeholder="封面图 URL" value={item.cover} onChange={(e) => onChange({ ...item, cover: e.target.value })} />
                         <input className="admin-input" placeholder="标签，逗号分隔" value={item.tags.join(",")} onChange={(e) => onChange({ ...item, tags: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} />
                       </div>
+                      <PhotoPicker
+                        selected={item.photos ?? []}
+                        onChange={(photos) => onChange({ ...item, photos })}
+                      />
                     </div>
                   )}
                   onChange={(v) => setSettings({ ...settings, travel: v })}
@@ -417,6 +421,89 @@ function ListForm<T>({ label, items, saving, empty, renderItem, onChange, onSave
       <button className="admin-button" disabled={saving} onClick={() => onSave(items)}>
         {saving ? "保存中…" : `保存${label}`}
       </button>
+    </div>
+  );
+}
+
+type ApiPhoto = { _id: string; url?: string; caption?: string };
+
+function PhotoPicker({ selected, onChange }: {
+  selected: string[];
+  onChange: (photos: string[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [photos, setPhotos] = useState<ApiPhoto[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  async function load() {
+    if (photos.length) return;
+    setLoading(true);
+    try {
+      const res = await fetch("/api/photos?limit=200");
+      const data = await res.json() as ApiPhoto[];
+      setPhotos(Array.isArray(data) ? data : []);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }
+
+  function toggle(url: string) {
+    if (selected.includes(url)) {
+      onChange(selected.filter((u) => u !== url));
+    } else {
+      onChange([...selected, url]);
+    }
+  }
+
+  return (
+    <div className="settings-col" style={{ gap: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ fontSize: "0.85rem", color: "var(--text-soft)", fontWeight: 700 }}>
+          已选照片 {selected.length} 张
+        </span>
+        <button
+          type="button"
+          className="settings-add-btn"
+          onClick={() => { setOpen((v) => !v); if (!open) load(); }}
+          style={{ minHeight: 36, padding: "0 14px", fontSize: "0.82rem" }}
+        >
+          {open ? "收起" : "从相册选择照片"}
+        </button>
+      </div>
+
+      {selected.length > 0 && (
+        <div className="photo-picker-selected">
+          {selected.map((url) => (
+            <div key={url} className="photo-picker-thumb" onClick={() => toggle(url)}>
+              <img src={url} alt="" />
+              <span className="photo-picker-remove">✕</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {open && (
+        <div className="photo-picker-grid">
+          {loading && <p style={{ color: "var(--text-soft)", gridColumn: "1/-1" }}>加载中…</p>}
+          {!loading && photos.length === 0 && (
+            <p style={{ color: "var(--text-soft)", gridColumn: "1/-1" }}>暂无上传的照片</p>
+          )}
+          {photos.map((photo) => {
+            const url = photo.url ?? "";
+            const isSelected = selected.includes(url);
+            return (
+              <div
+                key={photo._id}
+                className={`photo-picker-thumb ${isSelected ? "selected" : ""}`}
+                onClick={() => toggle(url)}
+                title={photo.caption ?? ""}
+              >
+                <img src={url} alt={photo.caption ?? ""} />
+                {isSelected && <span className="photo-picker-check">✓</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

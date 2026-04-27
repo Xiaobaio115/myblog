@@ -150,8 +150,22 @@ export async function DELETE(request: Request, { params }: RouteProps) {
     }
 
     const { slug } = await params;
+    const { ObjectId } = await import("mongodb");
     const db = await getDb();
-    const result = await db.collection("posts").deleteOne({ slug });
+
+    let result = await db.collection("posts").deleteOne({ slug });
+
+    if (!result.deletedCount) {
+      const url = new URL(request.url);
+      const postId = url.searchParams.get("_id");
+      if (postId) {
+        try {
+          result = await db.collection("posts").deleteOne({ _id: new ObjectId(postId) });
+        } catch {
+          // invalid ObjectId format, ignore
+        }
+      }
+    }
 
     if (!result.deletedCount) {
       return NextResponse.json({ error: "文章不存在。" }, { status: 404 });

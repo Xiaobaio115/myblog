@@ -5481,10 +5481,20 @@ html, body {
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 24px;
-  background: rgba(15, 23, 42, 0.72);
+  background: var(--surface, rgba(255, 255, 255, 0.72));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   transition: transform 0.22s ease, box-shadow 0.22s ease;
   opacity: 0;
   animation: world-card-in 0.52s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+[data-theme="dark"] .world-big-card {
+  background: rgba(15, 23, 42, 0.82);
+}
+
+[data-theme="blue"] .world-big-card {
+  background: rgba(10, 22, 58, 0.82);
 }
 
 .world-big-card:nth-child(1) { animation-delay: 0.05s; }
@@ -5502,23 +5512,29 @@ html, body {
   place-items: center;
   height: 156px;
   overflow: hidden;
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
+
+.world-big-card:nth-child(1) .world-big-card-cover { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+.world-big-card:nth-child(2) .world-big-card-cover { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+.world-big-card:nth-child(3) .world-big-card-cover { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+.world-big-card:nth-child(4) .world-big-card-cover { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
 
 .world-big-card-cover img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   transition: transform 0.4s ease;
 }
 
 .world-big-card:hover .world-big-card-cover img {
-  transform: scale(1.06);
+  transform: scale(1.04);
 }
 
 .world-big-card-icon {
-  font-size: 3.2rem;
-  opacity: 0.9;
+  font-size: 3.6rem;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.18));
 }
 
 .world-big-card-body {
@@ -6217,3 +6233,134 @@ html, body {
   font-size: 0.82rem;
   font-weight: 600;
 }
+
+/* ─── Photo Picker ─── */
+.photo-picker-selected,
+.photo-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+}
+
+.photo-picker-grid {
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.photo-picker-thumb {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.18s ease, transform 0.18s ease;
+  aspect-ratio: 1;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.photo-picker-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-picker-thumb:hover {
+  border-color: var(--pink-400, #f0328d);
+  transform: scale(1.04);
+}
+
+.photo-picker-thumb.selected {
+  border-color: #3b82f6;
+}
+
+.photo-picker-check,
+.photo-picker-remove {
+  position: absolute;
+  top: 3px;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.photo-picker-check {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.photo-picker-remove {
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.photo-picker-thumb:hover .photo-picker-remove {
+  opacity: 1;
+}
+
+/* ─── World card inner-text stagger animation ─── */
+@keyframes world-text-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.world-big-card .world-kicker {
+  opacity: 0;
+  animation: world-text-in 0.38s ease both;
+}
+
+.world-big-card h2 {
+  opacity: 0;
+  animation: world-text-in 0.38s ease both;
+}
+
+.world-big-card p {
+  opacity: 0;
+  animation: world-text-in 0.38s ease both;
+}
+
+.world-big-card .world-tag-row {
+  opacity: 0;
+  animation: world-text-in 0.36s ease both;
+}
+
+.world-big-card .section-link {
+  opacity: 0;
+  animation: world-text-in 0.34s ease both;
+}
+
+.world-big-card:nth-child(1) .world-kicker  { animation-delay: 0.30s; }
+.world-big-card:nth-child(1) h2             { animation-delay: 0.36s; }
+.world-big-card:nth-child(1) p              { animation-delay: 0.42s; }
+.world-big-card:nth-child(1) .world-tag-row { animation-delay: 0.48s; }
+.world-big-card:nth-child(1) .section-link  { animation-delay: 0.54s; }
+
+.world-big-card:nth-child(2) .world-kicker  { animation-delay: 0.40s; }
+.world-big-card:nth-child(2) h2             { animation-delay: 0.46s; }
+.world-big-card:nth-child(2) p              { animation-delay: 0.52s; }
+.world-big-card:nth-child(2) .world-tag-row { animation-delay: 0.58s; }
+.world-big-card:nth-child(2) .section-link  { animation-delay: 0.64s; }
+
+.world-big-card:nth-child(3) .world-kicker  { animation-delay: 0.50s; }
+.world-big-card:nth-child(3) h2             { animation-delay: 0.56s; }
+.world-big-card:nth-child(3) p              { animation-delay: 0.62s; }
+.world-big-card:nth-child(3) .world-tag-row { animation-delay: 0.68s; }
+.world-big-card:nth-child(3) .section-link  { animation-delay: 0.74s; }
+
+.world-big-card:nth-child(4) .world-kicker  { animation-delay: 0.60s; }
+.world-big-card:nth-child(4) h2             { animation-delay: 0.66s; }
+.world-big-card:nth-child(4) p              { animation-delay: 0.72s; }
+.world-big-card:nth-child(4) .world-tag-row { animation-delay: 0.78s; }
+.world-big-card:nth-child(4) .section-link  { animation-delay: 0.84s; }

@@ -7,6 +7,7 @@ import {
   getProjectsSetting,
   getTravelSetting,
   getGamesSetting,
+  getWorldSectionsSetting,
   saveSetting,
 } from "@/lib/settings";
 
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const [profile, socials, skills, education, projects, travel, games] = await Promise.all([
+    const [profile, socials, skills, education, projects, travel, games, world] = await Promise.all([
       getProfileSetting(),
       getSocialsSetting(),
       getSkillsSetting(),
@@ -23,9 +24,10 @@ export async function GET() {
       getProjectsSetting(),
       getTravelSetting(),
       getGamesSetting(),
+      getWorldSectionsSetting(),
     ]);
 
-    return NextResponse.json({ profile, socials, skills, education, projects, travel, games });
+    return NextResponse.json({ profile, socials, skills, education, projects, travel, games, world });
   } catch (error) {
     console.error("GET /api/settings error:", error);
     return NextResponse.json({ error: "读取设置失败。" }, { status: 500 });
@@ -47,7 +49,7 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const { key, value } = body as { key: string; value: unknown };
 
-    const allowed = ["profile", "socials", "skills", "education", "projects", "travel", "games"];
+    const allowed = ["profile", "socials", "skills", "education", "projects", "travel", "games", "world"];
     if (!allowed.includes(key)) {
       return NextResponse.json({ error: "不支持的设置 key。" }, { status: 400 });
     }

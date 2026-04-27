@@ -5,6 +5,7 @@ import { useState } from "react";
 
 type DeletePostButtonProps = {
   slug: string;
+  postId: string;
 };
 
 async function parseJsonSafely(response: Response) {
@@ -21,7 +22,7 @@ async function parseJsonSafely(response: Response) {
   }
 }
 
-export function DeletePostButton({ slug }: DeletePostButtonProps) {
+export function DeletePostButton({ slug, postId }: DeletePostButtonProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
 
@@ -45,7 +46,9 @@ export function DeletePostButton({ slug }: DeletePostButtonProps) {
     setDeleting(true);
 
     try {
-      const response = await fetch(`/api/posts/${encodeURIComponent(slug)}`, {
+      const slugPart = slug || "__no_slug__";
+      const idParam = postId ? `?_id=${encodeURIComponent(postId)}` : "";
+      const response = await fetch(`/api/posts/${encodeURIComponent(slugPart)}${idParam}`, {
         method: "DELETE",
         headers: {
           "x-admin-password": password,

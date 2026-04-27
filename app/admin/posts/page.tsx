@@ -209,7 +209,7 @@ export default async function AdminPostsPage({
                         查看文章
                       </Link>
                     ) : null}
-                    <DeletePostButton slug={post.slug} />
+                    <DeletePostButton slug={post.slug} postId={post._id} />
                   </div>
                 </article>
               );
