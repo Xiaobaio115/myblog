@@ -15,8 +15,12 @@ type Props = {
 export function TravelClient({ destinations, profile, postCount, photoCount }: Props) {
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
 
   const selected = destinations[selectedIdx] ?? null;
+  const hasSectionTags = (selected?.sections ?? []).some((b) => b.tag);
+  const allBlocks = selected?.sections ?? [];
+  const filteredBlocks = activeTag ? allBlocks.filter((b) => b.tag === activeTag) : allBlocks;
 
   if (!selected) {
     return (
@@ -80,13 +84,22 @@ export function TravelClient({ destinations, profile, postCount, photoCount }: P
                 : <span className="world-sub-cover-placeholder">✈️ 照片待上传</span>}
             </div>
 
-            <div className="world-tag-row">
-              {selected.tags.map((tag) => <span key={tag}>{tag}</span>)}
+            <div className={`world-tag-row${hasSectionTags ? " is-filter" : ""}`}>
+              {selected.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className={activeTag === tag ? "active" : undefined}
+                  style={hasSectionTags ? { cursor: "pointer" } : undefined}
+                  onClick={hasSectionTags ? () => setActiveTag(activeTag === tag ? null : tag) : undefined}
+                >{tag}</span>
+              ))}
             </div>
 
-            {(selected.sections ?? []).length > 0 ? (
+            {allBlocks.length > 0 ? (
               <div className="world-content-blocks">
-                {(selected.sections ?? []).map((block, bi) => (
+                {filteredBlocks.length === 0 && activeTag ? (
+                  <p className="world-sub-desc" style={{ opacity: 0.6 }}>暂无「{activeTag}」相关内容</p>
+                ) : filteredBlocks.map((block, bi) => (
                   <div key={bi} className="world-content-block">
                     {block.caption && <p className="world-sub-desc">{block.caption}</p>}
                     {block.photos.length > 0 && (

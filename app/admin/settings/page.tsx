@@ -402,10 +402,17 @@ function WorldSectionsForm({ value, saving, onChange, onSave }: {
                     <button type="button" style={{ marginLeft: "auto", fontSize: "0.75rem", color: "#ef4444", background: "none", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "2px 10px", cursor: "pointer" }}
                       onClick={() => { const n = [...value]; const blocks = [...(section.sections ?? [])]; blocks.splice(bi, 1); n[i] = { ...section, sections: blocks }; onChange(n); }}>删除段落</button>
                   </div>
-                  <div>
-                    <label>文字描述（可留空）</label>
-                    <textarea className="admin-input" rows={2} placeholder="这一段的描述文字…" value={block.caption}
-                      onChange={(e) => { const n = [...value]; const blocks = [...(section.sections ?? [])]; blocks[bi] = { ...block, caption: e.target.value }; n[i] = { ...section, sections: blocks }; onChange(n); }} />
+                  <div className="settings-row2">
+                    <div>
+                      <label>文字描述（可留空）</label>
+                      <textarea className="admin-input" rows={2} placeholder="这一段的描述文字…" value={block.caption}
+                        onChange={(e) => { const n = [...value]; const blocks = [...(section.sections ?? [])]; blocks[bi] = { ...block, caption: e.target.value }; n[i] = { ...section, sections: blocks }; onChange(n); }} />
+                    </div>
+                    <div>
+                      <label>关联标签（可留空，用于标签筛选）</label>
+                      <input className="admin-input" placeholder="如 家乡" value={block.tag ?? ""}
+                        onChange={(e) => { const n = [...value]; const blocks = [...(section.sections ?? [])]; blocks[bi] = { ...block, tag: e.target.value || undefined }; n[i] = { ...section, sections: blocks }; onChange(n); }} />
+                    </div>
                   </div>
                   <div>
                     <label>照片（可不选）</label>

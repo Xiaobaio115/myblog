@@ -284,6 +284,42 @@ export function MarkdownEditor({
         <button
           type="button"
           className="secondary-link markdown-tool"
+          onClick={() =>
+            insertBlock(
+              '<div class="img-row-2">\n\n![图1描述](url1)\n\n![图2描述](url2)\n\n</div>\n\n'
+            )
+          }
+          disabled={disabled || uploading}
+        >
+          图片双栏
+        </button>
+        <button
+          type="button"
+          className="secondary-link markdown-tool"
+          onClick={() =>
+            insertBlock(
+              '<div class="img-row-3">\n\n![图1描述](url1)\n\n![图2描述](url2)\n\n![图3描述](url3)\n\n</div>\n\n'
+            )
+          }
+          disabled={disabled || uploading}
+        >
+          图片三栏
+        </button>
+        <button
+          type="button"
+          className="secondary-link markdown-tool"
+          onClick={() =>
+            insertBlock(
+              '<figure class="img-float-right">\n\n![图片描述](url)\n\n<figcaption>图片说明</figcaption>\n\n</figure>\n\n'
+            )
+          }
+          disabled={disabled || uploading}
+        >
+          图片右浮
+        </button>
+        <button
+          type="button"
+          className="secondary-link markdown-tool"
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || uploading}
         >

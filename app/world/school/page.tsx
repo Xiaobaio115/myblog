@@ -4,8 +4,6 @@ import Link from "next/link";
 import { SiteFrame } from "@/app/components/site-frame";
 import { getEducationSetting, getProfileSetting, getWorldSectionsSetting } from "@/lib/settings";
 import { getPublishedPosts, getLatestPhotos } from "@/lib/content";
-import { WorldSectionPhotoClient } from "@/app/world/world-section-photo-client";
-
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "我的学校｜LQPP World" };
 
@@ -47,32 +45,60 @@ export default async function SchoolPage() {
             )}
             <Link href="/about" className="sidebar-profile-link">查看完整档案 →</Link>
           </div>
-
           <div className="world-sub-nav-item active">{section.title}</div>
         </aside>
 
         <main className="world-sub-main">
+          {/* 封面 + 简介 */}
           <div className="world-sub-detail">
-            <WorldSectionPhotoClient section={section} />
+            <div className="world-sub-detail-header">
+              <div>
+                <h1>{section.title}</h1>
+                <p className="world-sub-type">{section.eyebrow}</p>
+              </div>
+            </div>
 
-            {education.length > 0 && (
-              <div className="glass-panel" style={{ marginTop: 24 }}>
-                <h2>教育经历</h2>
-                <div className="profile-timeline">
-                  {education.map((item) => (
-                    <div key={item.time} className="timeline-item">
-                      <span className="timeline-time">{item.time}</span>
-                      <strong>{item.title}</strong>
-                      <p>{item.desc}</p>
-                      <div className="world-tag-row">
-                        {item.tags.map((tag) => <span key={tag}>{tag}</span>)}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            {section.cover && (
+              <div className="world-sub-cover">
+                <img src={section.cover} alt={section.title} />
+              </div>
+            )}
+
+            {section.desc && <p className="world-sub-desc">{section.desc}</p>}
+
+            {section.tags.length > 0 && (
+              <div className="world-tag-row">
+                {section.tags.map((tag) => <span key={tag}>{tag}</span>)}
               </div>
             )}
           </div>
+
+          {/* 教育时间轴 */}
+          {education.length > 0 && (
+            <div className="edu-timeline-section">
+              <div className="edu-timeline-heading">
+                <h2>教育背景</h2>
+                <span className="edu-timeline-en">EDUCATION</span>
+              </div>
+              <div className="edu-timeline">
+                {education.map((item, idx) => (
+                  <div key={idx} className="edu-timeline-card">
+                    <div className="edu-timeline-dot" />
+                    <div className="edu-timeline-body">
+                      <span className="edu-timeline-time">{item.time}</span>
+                      <h3 className="edu-timeline-title">{item.title}</h3>
+                      {item.desc && <p className="edu-timeline-desc">{item.desc}</p>}
+                      {item.tags.length > 0 && (
+                        <div className="world-tag-row" style={{ justifyContent: "flex-start" }}>
+                          {item.tags.map((tag) => <span key={tag}>{tag}</span>)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </SiteFrame>

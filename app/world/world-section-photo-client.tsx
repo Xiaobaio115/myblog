@@ -5,8 +5,17 @@ import { useState } from "react";
 import Link from "next/link";
 import type { WorldSectionSetting } from "@/lib/settings";
 
+const hasSectionTags = (s: WorldSectionSetting) =>
+  (s.sections ?? []).some((b) => b.tag);
+
 export function WorldSectionPhotoClient({ section }: { section: WorldSectionSetting }) {
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+
+  const allBlocks = section.sections ?? [];
+  const filteredBlocks = activeTag
+    ? allBlocks.filter((b) => b.tag === activeTag)
+    : allBlocks;
 
   return (
     <>
@@ -38,16 +47,26 @@ export function WorldSectionPhotoClient({ section }: { section: WorldSectionSett
             : <span className="world-sub-cover-placeholder">{section.icon} 封面图待上传</span>}
         </div>
 
+{/* tag filter row */}
         {section.tags.length > 0 && (
-          <div className="world-tag-row">
-            {section.tags.map((tag) => <span key={tag}>{tag}</span>)}
+          <div className={`world-tag-row${hasSectionTags(section) ? " is-filter" : ""}`}>
+            {section.tags.map((tag) => (
+              <span
+                key={tag}
+                style={hasSectionTags(section) ? { cursor: "pointer" } : undefined}
+                className={activeTag === tag ? "active" : undefined}
+                onClick={hasSectionTags(section) ? () => setActiveTag(activeTag === tag ? null : tag) : undefined}
+              >{tag}</span>
+            ))}
           </div>
         )}
 
-        {/* 段落块渲染：支持文字+照片交替 */}
-        {(section.sections ?? []).length > 0 ? (
+        {/* 段落块渲染：支持文字+照片交替，可按 tag 过滤 */}
+        {allBlocks.length > 0 ? (
           <div className="world-content-blocks">
-            {(section.sections ?? []).map((block, bi) => (
+            {filteredBlocks.length === 0 && activeTag ? (
+              <p className="world-sub-desc" style={{ opacity: 0.6 }}>暂无「{activeTag}」相关内容</p>
+            ) : filteredBlocks.map((block, bi) => (
               <div key={bi} className="world-content-block">
                 {block.caption && <p className="world-sub-desc">{block.caption}</p>}
                 {block.photos.length > 0 && (
