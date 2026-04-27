@@ -2451,13 +2451,12 @@ img {
   display: grid;
   grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
   gap: 26px;
-  align-items: stretch;
+  align-items: start;
 }
 
 .profile-side-card {
   position: sticky;
   top: calc(var(--header-height) + 24px);
-  align-self: stretch;
   display: grid;
   gap: 16px;
   justify-items: center;
@@ -6051,6 +6050,16 @@ html, body {
   object-fit: cover;
   border-radius: 16px;
   border: 1px solid var(--border);
+}
+
+.world-content-blocks {
+  display: grid;
+  gap: 24px;
+}
+
+.world-content-block {
+  display: grid;
+  gap: 14px;
 }
 
 .world-sub-photo-placeholder {

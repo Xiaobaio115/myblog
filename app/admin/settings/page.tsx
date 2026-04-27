@@ -10,6 +10,7 @@ import type {
   TravelItem,
   GameItem,
   WorldSectionSetting,
+  ContentSection,
   AllSettings,
 } from "@/lib/settings";
 
@@ -372,21 +373,36 @@ function WorldSectionsForm({ value, saving, onChange, onSave }: {
                 onChange={(e) => { const n = [...value]; n[i] = { ...section, cover: e.target.value }; onChange(n); }} />
             </div>
             <div>
-              <label>描述</label>
-              <textarea className="admin-input" rows={2} value={section.desc}
-                onChange={(e) => { const n = [...value]; n[i] = { ...section, desc: e.target.value }; onChange(n); }} />
-            </div>
-            <div>
               <label>标签（逗号分隔）</label>
               <input className="admin-input" placeholder="家乡,小城,美食" value={section.tags.join(",")}
                 onChange={(e) => { const n = [...value]; n[i] = { ...section, tags: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) }; onChange(n); }} />
             </div>
+
             <div>
-              <label>页面照片（从相册选择）</label>
-              <PhotoPicker
-                selected={section.photos ?? []}
-                onChange={(photos) => { const n = [...value]; n[i] = { ...section, photos }; onChange(n); }}
-              />
+              <label style={{ marginBottom: 10 }}>页面内容（文字 + 照片段落，按顺序展示）</label>
+              {(section.sections ?? []).map((block, bi) => (
+                <div key={bi} style={{ border: "1px solid var(--border)", borderRadius: 14, padding: 14, marginBottom: 10, display: "grid", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: "0.78rem", color: "var(--text-soft)", fontWeight: 700 }}>段落 {bi + 1}</span>
+                    <button type="button" style={{ marginLeft: "auto", fontSize: "0.75rem", color: "#ef4444", background: "none", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "2px 10px", cursor: "pointer" }}
+                      onClick={() => { const n = [...value]; const blocks = [...(section.sections ?? [])]; blocks.splice(bi, 1); n[i] = { ...section, sections: blocks }; onChange(n); }}>删除段落</button>
+                  </div>
+                  <div>
+                    <label>文字描述（可留空）</label>
+                    <textarea className="admin-input" rows={2} placeholder="这一段的描述文字…" value={block.caption}
+                      onChange={(e) => { const n = [...value]; const blocks = [...(section.sections ?? [])]; blocks[bi] = { ...block, caption: e.target.value }; n[i] = { ...section, sections: blocks }; onChange(n); }} />
+                  </div>
+                  <div>
+                    <label>照片（可不选）</label>
+                    <PhotoPicker
+                      selected={block.photos}
+                      onChange={(photos) => { const n = [...value]; const blocks = [...(section.sections ?? [])]; blocks[bi] = { ...block, photos }; n[i] = { ...section, sections: blocks }; onChange(n); }}
+                    />
+                  </div>
+                </div>
+              ))}
+              <button type="button" style={{ width: "100%", padding: "10px", border: "1px dashed var(--border)", borderRadius: 12, background: "transparent", color: "var(--text-soft)", cursor: "pointer", fontSize: "0.88rem", fontWeight: 600 }}
+                onClick={() => { const n = [...value]; const blocks = [...(section.sections ?? [])]; blocks.push({ caption: "", photos: [] } as ContentSection); n[i] = { ...section, sections: blocks }; onChange(n); }}>+ 添加段落</button>
             </div>
           </div>
         </div>

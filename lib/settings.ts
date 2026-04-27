@@ -20,7 +20,8 @@ export type EducationItem = { time: string; title: string; desc: string; tags: s
 export type ProjectItem = { title: string; status: string; desc: string; stack: string[]; href: string };
 export type TravelItem = { id: string; name: string; date: string; desc: string; cover: string; photos: string[]; tags: string[] };
 export type GameItem = { id: string; name: string; type: string; date: string; desc: string; cover: string; tags: string[] };
-export type WorldSectionSetting = { id: string; eyebrow: string; title: string; desc: string; cover: string; icon: string; tags: string[]; photos: string[] };
+export type ContentSection = { caption: string; photos: string[] };
+export type WorldSectionSetting = { id: string; eyebrow: string; title: string; desc: string; cover: string; icon: string; tags: string[]; photos: string[]; sections: ContentSection[] };
 
 export type AllSettings = {
   profile: ProfileSetting;
@@ -91,6 +92,7 @@ export async function getWorldSectionsSetting(): Promise<WorldSectionSetting[]> 
     icon: s.icon,
     tags: s.tags,
     photos: [],
+    sections: [],
   }));
   return get("world", fallback);
 }
