@@ -3164,6 +3164,16 @@ html, body {
   cursor: pointer;
 }
 
+@media (max-width: 960px) {
+  .mobile-menu-button {
+    display: grid;
+  }
+
+  .nav-links {
+    display: none;
+  }
+}
+
 .mobile-nav-overlay {
   position: fixed;
   inset: 0;
@@ -3542,6 +3552,50 @@ html, body {
   min-height: 220px;
   border: 1px dashed var(--border);
   border-radius: 24px;
+}
+
+/* ─── HOME MOBILE RESPONSIVE ─── */
+@media (max-width: 960px) {
+  .home-hero-v2 {
+    grid-template-columns: 1fr !important;
+    min-height: unset;
+    padding: 48px 0 32px;
+    gap: 20px;
+  }
+
+  .home-hero-left {
+    min-height: unset;
+    padding: clamp(20px, 5vw, 36px);
+  }
+
+  .home-hi-title {
+    font-size: clamp(1.8rem, 7vw, 2.6rem);
+  }
+
+  .home-profile-card {
+    max-width: 420px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  .home-photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .home-hero-v2 {
+    padding: 32px 0 24px;
+  }
+
+  .home-photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .home-profile-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .article-shell {
