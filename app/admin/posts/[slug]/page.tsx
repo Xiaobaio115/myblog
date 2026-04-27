@@ -13,7 +13,14 @@ type PageProps = {
 };
 
 export default async function AdminPostEditPage({ params }: PageProps) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  let slug: string;
+  try {
+    slug = decodeURIComponent(rawSlug);
+  } catch {
+    slug = rawSlug;
+  }
+
   const db = await getDb();
   const [post, recentVisits, uniqueVisitorCounts] = await Promise.all([
     db.collection("posts").findOne({ slug }),

@@ -8,14 +8,16 @@ export type PostFormShape = {
 };
 
 export function buildSlug(input: string) {
-  return input
+  const ascii = input
     .normalize("NFKC")
     .trim()
     .toLowerCase()
     .replace(/[_\s]+/g, "-")
-    .replace(/[^\p{Letter}\p{Number}-]+/gu, "")
+    .replace(/[^a-z0-9-]+/g, "")
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
+  // 纯中文/无 ASCII 可用字符时，用时间戳生成唯一 slug
+  return ascii || `post-${Date.now().toString(36)}`;
 }
 
 export function loadDraft<T>(key: string, fallback: T): T {

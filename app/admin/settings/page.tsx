@@ -194,6 +194,19 @@ export default function AdminSettingsPage() {
                         <input className="admin-input" placeholder="封面图 URL" value={item.cover} onChange={(e) => onChange({ ...item, cover: e.target.value })} />
                         <input className="admin-input" placeholder="标签，逗号分隔" value={item.tags.join(",")} onChange={(e) => onChange({ ...item, tags: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} />
                       </div>
+                      <div className="settings-row2">
+                        <div>
+                          <label>封面对齐（影响海报裁剪位置）</label>
+                          <select className="admin-input" value={item.coverPosition ?? "center"} onChange={(e) => onChange({ ...item, coverPosition: e.target.value })}>
+                            <option value="center">居中（默认）</option>
+                            <option value="top">顶部对齐（海报显示上半）</option>
+                            <option value="bottom">底部对齐（海报显示下半）</option>
+                            <option value="left">左对齐</option>
+                            <option value="right">右对齐</option>
+                          </select>
+                        </div>
+                        <div />
+                      </div>
                       <div>
                         <label style={{ marginBottom: 10 }}>页面内容（文字 + 照片段落，按顺序展示）</label>
                         {(item.sections ?? []).map((block, bi) => (
@@ -203,8 +216,18 @@ export default function AdminSettingsPage() {
                               <button type="button" style={{ marginLeft: "auto", fontSize: "0.75rem", color: "#ef4444", background: "none", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "2px 10px", cursor: "pointer" }}
                                 onClick={() => { const blocks = [...(item.sections ?? [])]; blocks.splice(bi, 1); onChange({ ...item, sections: blocks }); }}>删除段落</button>
                             </div>
-                            <textarea className="admin-input" rows={2} placeholder="这一段的描述文字…（可留空）" value={block.caption}
-                              onChange={(e) => { const blocks = [...(item.sections ?? [])]; blocks[bi] = { ...block, caption: e.target.value }; onChange({ ...item, sections: blocks }); }} />
+                            <div className="settings-row2">
+                              <div>
+                                <label>描述文字（可留空）</label>
+                                <textarea className="admin-input" rows={2} placeholder="这一段的描述文字…（可留空）" value={block.caption}
+                                  onChange={(e) => { const blocks = [...(item.sections ?? [])]; blocks[bi] = { ...block, caption: e.target.value }; onChange({ ...item, sections: blocks }); }} />
+                              </div>
+                              <div>
+                                <label>关联标签（可留空，用于标签筛选）</label>
+                                <input className="admin-input" placeholder="如 火锅" value={block.tag ?? ""}
+                                  onChange={(e) => { const blocks = [...(item.sections ?? [])]; blocks[bi] = { ...block, tag: e.target.value || undefined }; onChange({ ...item, sections: blocks }); }} />
+                              </div>
+                            </div>
                             <PhotoPicker
                               selected={block.photos}
                               onChange={(photos) => { const blocks = [...(item.sections ?? [])]; blocks[bi] = { ...block, photos }; onChange({ ...item, sections: blocks }); }}

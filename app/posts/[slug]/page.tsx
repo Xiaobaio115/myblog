@@ -16,7 +16,9 @@ type PostDetailPageProps = {
 export default async function PostDetailPage({
   params,
 }: PostDetailPageProps) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  let slug: string;
+  try { slug = decodeURIComponent(rawSlug); } catch { slug = rawSlug; }
   const post = await getPublishedPost(slug);
 
   if (!post) {

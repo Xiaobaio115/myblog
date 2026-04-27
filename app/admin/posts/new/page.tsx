@@ -172,7 +172,7 @@ export default function AdminNewPostPage() {
           <div className="slug-field">
             <input
               className="admin-input"
-              placeholder="Slug，例如 my-first-post"
+              placeholder="Slug，例如 my-first-post（建议英文小写+连字符）"
               value={form.slug}
               onChange={(event) => {
                 setSlugTouched(true);
@@ -187,6 +187,11 @@ export default function AdminNewPostPage() {
               重新生成
             </button>
           </div>
+          {/[^\x20-\x7E]/.test(form.slug) && (
+            <p style={{ fontSize: "0.82rem", color: "#f59e0b", margin: "-4px 0 8px" }}>
+              ⚠️ Slug 包含非英文字符，建议改为英文小写+数字，否则 URL 可能出现问题
+            </p>
+          )}
 
           <input
             className="admin-input"

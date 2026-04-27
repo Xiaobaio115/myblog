@@ -3212,6 +3212,48 @@ html, body {
   background: rgba(11, 12, 16, 0.78);
 }
 
+[data-theme="dark"] .admin-panel,
+[data-theme="dark"] .admin-panel.narrow {
+  background: rgba(15, 20, 36, 0.94);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.38);
+}
+
+[data-theme="dark"] .post-manage-item {
+  background: rgba(17, 24, 39, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+
+[data-theme="dark"] .visitor-item {
+  background: rgba(17, 24, 39, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07), 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+[data-theme="dark"] .status-banner {
+  background: rgba(240, 50, 141, 0.14);
+  color: var(--pink-400);
+}
+
+[data-theme="blue"] .admin-panel,
+[data-theme="blue"] .admin-panel.narrow {
+  background: rgba(10, 14, 30, 0.94);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
+}
+
+[data-theme="blue"] .post-manage-item {
+  background: rgba(11, 17, 33, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.10);
+}
+
+[data-theme="blue"] .visitor-item {
+  background: rgba(11, 17, 33, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.10), 0 4px 16px rgba(0, 0, 0, 0.22);
+}
+
+[data-theme="blue"] .status-banner {
+  background: rgba(59, 130, 246, 0.14);
+  color: #93c5fd;
+}
+
 /* ═══════════════════════════════════════════════════════
    NAV ACTIONS + THEME TOGGLE
    ═══════════════════════════════════════════════════════ */

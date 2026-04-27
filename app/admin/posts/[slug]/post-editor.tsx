@@ -91,9 +91,11 @@ export function PostEditor({
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [form, setForm] = useState<PostFormShape>(() =>
-    loadDraft(draftKey, baseForm)
-  );
+  const [form, setForm] = useState<PostFormShape>(() => {
+    const draft = loadDraft(draftKey, baseForm);
+    // 始终用服务端 slug，防止旧草稿静默改 slug 导致文章断链
+    return { ...draft, slug: baseForm.slug };
+  });
   const [published, setPublished] = useState(post.published !== false);
   const [isPrivate, setIsPrivate] = useState(Boolean(post.isPrivate));
 
@@ -108,6 +110,14 @@ export function PostEditor({
       setStatus("后台密码已丢失，请重新进入后台。");
       router.push("/admin");
       return;
+    }
+
+    // 若 slug 即将改变，弹确认对话框
+    if (form.slug.trim() !== sourceSlug) {
+      const ok = confirm(
+        `⚠️ Slug 即将从\n「${sourceSlug}」\n改为\n「${form.slug.trim()}」\n\n已有的文章链接将失效，确认继续？`
+      );
+      if (!ok) return;
     }
 
     setSaving(true);
@@ -261,7 +271,7 @@ export function PostEditor({
         <div className="slug-field">
           <input
             className="admin-input"
-            placeholder="Slug，例如 my-first-post"
+            placeholder="Slug，例如 my-first-post（建议英文小写+连字符）"
             value={form.slug}
             onChange={(event) => setForm({ ...form, slug: event.target.value })}
           />
@@ -273,6 +283,11 @@ export function PostEditor({
             根据标题生成
           </button>
         </div>
+        {/[^\x20-\x7E]/.test(form.slug) && (
+          <p style={{ fontSize: "0.82rem", color: "#f59e0b", margin: "-4px 0 8px" }}>
+            ⚠️ Slug 包含非英文字符，建议改为英文小写+数字，否则 URL 可能出现问题
+          </p>
+        )}
 
         <input
           className="admin-input"

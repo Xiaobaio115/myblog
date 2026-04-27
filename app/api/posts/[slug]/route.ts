@@ -64,29 +64,6 @@ export async function PATCH(request: Request, { params }: RouteProps) {
     const { slug: currentSlug } = await params;
     const body = await request.json();
 
-    const title = String(body.title || "").trim();
-    const nextSlug = String(body.slug || "").trim();
-    const excerpt = String(body.excerpt || "").trim();
-    const content = String(body.content || "").trim();
-    const coverUrl = String(body.coverUrl || "").trim();
-    const tags = Array.isArray(body.tags)
-      ? body.tags.map((tag: unknown) => String(tag).trim()).filter(Boolean)
-      : [];
-    const published = body.published !== false;
-    const isPrivate = Boolean(body.isPrivate);
-
-    if (!title) {
-      return NextResponse.json({ error: "文章标题不能为空。" }, { status: 400 });
-    }
-
-    if (!nextSlug) {
-      return NextResponse.json({ error: "文章 slug 不能为空。" }, { status: 400 });
-    }
-
-    if (!content) {
-      return NextResponse.json({ error: "文章正文不能为空。" }, { status: 400 });
-    }
-
     const db = await getDb();
     const existingPost = await db.collection("posts").findOne({ slug: currentSlug });
 
@@ -94,46 +71,59 @@ export async function PATCH(request: Request, { params }: RouteProps) {
       return NextResponse.json({ error: "文章不存在。" }, { status: 404 });
     }
 
-    if (nextSlug !== currentSlug) {
-      const duplicated = await db.collection("posts").findOne({ slug: nextSlug });
+    // 仅更新请求中实际提供且非空的字段，防止空值意外覆盖数据库内容
+    const patch: Record<string, unknown> = {};
 
-      if (duplicated) {
-        return NextResponse.json(
-          { error: "新的 slug 已存在，请换一个。" },
-          { status: 409 }
-        );
-      }
+    const title = body.title !== undefined ? String(body.title).trim() : undefined;
+    const nextSlug = body.slug !== undefined ? String(body.slug).trim() : undefined;
+    const content = body.content !== undefined ? String(body.content).trim() : undefined;
+
+    if (title !== undefined) {
+      if (!title) return NextResponse.json({ error: "文章标题不能为空。" }, { status: 400 });
+      patch.title = title;
     }
+    if (nextSlug !== undefined) {
+      if (!nextSlug) return NextResponse.json({ error: "文章 slug 不能为空。" }, { status: 400 });
+      if (nextSlug !== currentSlug) {
+        const duplicated = await db.collection("posts").findOne({ slug: nextSlug });
+        if (duplicated) {
+          return NextResponse.json({ error: "新的 slug 已存在，请换一个。" }, { status: 409 });
+        }
+      }
+      patch.slug = nextSlug;
+    }
+    if (content !== undefined) {
+      if (!content) return NextResponse.json({ error: "文章正文不能为空。" }, { status: 400 });
+      patch.content = content;
+    }
+    if (body.excerpt !== undefined) patch.excerpt = String(body.excerpt).trim();
+    if (body.coverUrl !== undefined) patch.coverUrl = String(body.coverUrl).trim();
+    if (body.tags !== undefined) {
+      patch.tags = Array.isArray(body.tags)
+        ? body.tags.map((tag: unknown) => String(tag).trim()).filter(Boolean)
+        : [];
+    }
+    if (body.published !== undefined) patch.published = body.published !== false;
+    if (body.isPrivate !== undefined) patch.isPrivate = Boolean(body.isPrivate);
 
-    const now = new Date();
+    const resolvedNextSlug = (patch.slug as string | undefined) ?? currentSlug;
+    patch.updatedAt = new Date();
 
     await db.collection("posts").updateOne(
       { slug: currentSlug },
-      {
-        $set: {
-          title,
-          slug: nextSlug,
-          excerpt,
-          content,
-          coverUrl,
-          tags,
-          published,
-          isPrivate,
-          updatedAt: now,
-        },
-      }
+      { $set: patch }
     );
 
-    if (nextSlug !== currentSlug) {
+    if (resolvedNextSlug !== currentSlug) {
       await db.collection("post_visits").updateMany(
         { slug: currentSlug },
-        { $set: { slug: nextSlug } }
+        { $set: { slug: resolvedNextSlug } }
       );
     }
 
     return NextResponse.json({
       success: true,
-      slug: nextSlug,
+      slug: resolvedNextSlug,
     });
   } catch (error) {
     console.error("PATCH /api/posts/[slug] error:", error);

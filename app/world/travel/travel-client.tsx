@@ -82,7 +82,12 @@ export function TravelClient({ destinations, profile, postCount, photoCount }: P
 
             <div className="world-sub-cover">
               {selected.cover
-                ? <img src={selected.cover} alt={selected.name} style={{ cursor: "zoom-in" }} onClick={() => setLightbox(selected.cover)} />
+                ? <img
+                    src={selected.cover}
+                    alt={selected.name}
+                    style={{ cursor: "zoom-in", objectPosition: selected.coverPosition ?? "center" }}
+                    onClick={() => setLightbox(selected.cover)}
+                  />
                 : <span className="world-sub-cover-placeholder">✈️ 照片待上传</span>}
             </div>
 

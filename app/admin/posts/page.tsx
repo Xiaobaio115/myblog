@@ -201,11 +201,11 @@ export default async function AdminPostsPage({
                   </div>
 
                   <div className="post-manage-actions">
-                    <Link href={`/admin/posts/${post.slug}`} className="secondary-link">
+                    <Link href={`/admin/posts/${encodeURIComponent(post.slug)}`} className="secondary-link">
                       编辑
                     </Link>
                     {isVisibleOnSite ? (
-                      <Link href={`/posts/${post.slug}`} className="secondary-link">
+                      <Link href={`/posts/${encodeURIComponent(post.slug)}`} className="secondary-link">
                         查看文章
                       </Link>
                     ) : null}
