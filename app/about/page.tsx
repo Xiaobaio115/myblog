@@ -31,6 +31,7 @@ export default async function AboutPage() {
       </section>
 
       <section className="container section profile-layout">
+        <div className="profile-side-wrapper">
         <aside className="profile-side-card">
           <div className="profile-avatar">
             {profile.avatarUrl ? <img src={profile.avatarUrl} alt={profile.name} /> : "LQPP"}
@@ -43,6 +44,7 @@ export default async function AboutPage() {
             <Link href="/world" className="secondary-link">查看我的世界</Link>
           </div>
         </aside>
+        </div>
 
         <div className="profile-content-stack">
           <section className="glass-panel">

@@ -182,7 +182,7 @@ export default function AdminSettingsPage() {
                   label="旅行目的地"
                   items={settings.travel}
                   saving={saving}
-                  empty={{ id: "", name: "", date: "", desc: "", cover: "", photos: [], tags: [] }}
+                  empty={{ id: "", name: "", date: "", desc: "", cover: "", photos: [], tags: [], sections: [] }}
                   renderItem={(item, onChange) => (
                     <div className="settings-col">
                       <div className="settings-row3">
@@ -190,15 +190,30 @@ export default function AdminSettingsPage() {
                         <input className="admin-input" placeholder="名称（如 云南·大理）" value={item.name} onChange={(e) => onChange({ ...item, name: e.target.value })} />
                         <input className="admin-input" placeholder="日期（如 2025.08）" value={item.date} onChange={(e) => onChange({ ...item, date: e.target.value })} />
                       </div>
-                      <textarea className="admin-input" placeholder="描述" rows={2} value={item.desc} onChange={(e) => onChange({ ...item, desc: e.target.value })} />
                       <div className="settings-row2">
                         <input className="admin-input" placeholder="封面图 URL" value={item.cover} onChange={(e) => onChange({ ...item, cover: e.target.value })} />
                         <input className="admin-input" placeholder="标签，逗号分隔" value={item.tags.join(",")} onChange={(e) => onChange({ ...item, tags: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} />
                       </div>
-                      <PhotoPicker
-                        selected={item.photos ?? []}
-                        onChange={(photos) => onChange({ ...item, photos })}
-                      />
+                      <div>
+                        <label style={{ marginBottom: 10 }}>页面内容（文字 + 照片段落，按顺序展示）</label>
+                        {(item.sections ?? []).map((block, bi) => (
+                          <div key={bi} style={{ border: "1px solid var(--border)", borderRadius: 14, padding: 14, marginBottom: 10, display: "grid", gap: 10 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                              <span style={{ fontSize: "0.78rem", color: "var(--text-soft)", fontWeight: 700 }}>段落 {bi + 1}</span>
+                              <button type="button" style={{ marginLeft: "auto", fontSize: "0.75rem", color: "#ef4444", background: "none", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "2px 10px", cursor: "pointer" }}
+                                onClick={() => { const blocks = [...(item.sections ?? [])]; blocks.splice(bi, 1); onChange({ ...item, sections: blocks }); }}>删除段落</button>
+                            </div>
+                            <textarea className="admin-input" rows={2} placeholder="这一段的描述文字…（可留空）" value={block.caption}
+                              onChange={(e) => { const blocks = [...(item.sections ?? [])]; blocks[bi] = { ...block, caption: e.target.value }; onChange({ ...item, sections: blocks }); }} />
+                            <PhotoPicker
+                              selected={block.photos}
+                              onChange={(photos) => { const blocks = [...(item.sections ?? [])]; blocks[bi] = { ...block, photos }; onChange({ ...item, sections: blocks }); }}
+                            />
+                          </div>
+                        ))}
+                        <button type="button" style={{ width: "100%", padding: "10px", border: "1px dashed var(--border)", borderRadius: 12, background: "transparent", color: "var(--text-soft)", cursor: "pointer", fontSize: "0.88rem", fontWeight: 600 }}
+                          onClick={() => { const blocks = [...(item.sections ?? [])]; blocks.push({ caption: "", photos: [] } as ContentSection); onChange({ ...item, sections: blocks }); }}>+ 添加段落</button>
+                      </div>
                     </div>
                   )}
                   onChange={(v) => setSettings({ ...settings, travel: v })}

@@ -73,6 +73,7 @@ export const travelDestinations = [
     cover: "",
     photos: [] as string[],
     tags: ["古城", "洱海", "苍山", "白族文化"],
+    sections: [] as { caption: string; photos: string[] }[],
   },
   {
     id: "sichuan-chengdu",
@@ -82,6 +83,7 @@ export const travelDestinations = [
     cover: "",
     photos: [] as string[],
     tags: ["火锅", "宽窄巷子", "熊猫", "慢生活"],
+    sections: [] as { caption: string; photos: string[] }[],
   },
   {
     id: "tibet-lhasa",
@@ -91,6 +93,7 @@ export const travelDestinations = [
     cover: "",
     photos: [] as string[],
     tags: ["布达拉宫", "高原", "藏族文化", "纳木错"],
+    sections: [] as { caption: string; photos: string[] }[],
   },
   {
     id: "zhejiang-hangzhou",
@@ -100,6 +103,7 @@ export const travelDestinations = [
     cover: "",
     photos: [] as string[],
     tags: ["西湖", "龙井", "灵隐寺", "江南"],
+    sections: [] as { caption: string; photos: string[] }[],
   },
   {
     id: "guangdong-zhuhai",
@@ -109,6 +113,7 @@ export const travelDestinations = [
     cover: "",
     photos: [] as string[],
     tags: ["海滨", "情侣路", "港珠澳", "海鲜"],
+    sections: [] as { caption: string; photos: string[] }[],
   },
 ];
 

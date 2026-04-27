@@ -80,28 +80,42 @@ export function TravelClient({ destinations, profile, postCount, photoCount }: P
                 : <span className="world-sub-cover-placeholder">✈️ 照片待上传</span>}
             </div>
 
-            <p className="world-sub-desc">{selected.desc}</p>
-
             <div className="world-tag-row">
               {selected.tags.map((tag) => <span key={tag}>{tag}</span>)}
             </div>
 
-            {selected.photos.length > 0 ? (
-              <div className="world-sub-photo-grid">
-                {selected.photos.map((url, i) => (
-                  <img
-                    key={i}
-                    src={url}
-                    alt={`${selected.name} ${i + 1}`}
-                    style={{ cursor: "zoom-in" }}
-                    onClick={() => setLightbox(url)}
-                  />
+            {(selected.sections ?? []).length > 0 ? (
+              <div className="world-content-blocks">
+                {(selected.sections ?? []).map((block, bi) => (
+                  <div key={bi} className="world-content-block">
+                    {block.caption && <p className="world-sub-desc">{block.caption}</p>}
+                    {block.photos.length > 0 && (
+                      <div className="world-sub-photo-grid">
+                        {block.photos.map((url, pi) => (
+                          <img key={pi} src={url} alt={`${selected.name} ${bi + 1}-${pi + 1}`}
+                            style={{ cursor: "zoom-in" }} onClick={() => setLightbox(url)} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
             ) : (
-              <div className="world-sub-photo-placeholder">
-                <p>照片待上传，可在 <Link href="/admin/settings">后台设置</Link> 编辑</p>
-              </div>
+              <>
+                {selected.desc && <p className="world-sub-desc">{selected.desc}</p>}
+                {selected.photos.length > 0 ? (
+                  <div className="world-sub-photo-grid">
+                    {selected.photos.map((url, i) => (
+                      <img key={i} src={url} alt={`${selected.name} ${i + 1}`}
+                        style={{ cursor: "zoom-in" }} onClick={() => setLightbox(url)} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="world-sub-photo-placeholder">
+                    <p>照片待上传，可在 <Link href="/admin/settings">后台设置</Link> 添加段落</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </main>
