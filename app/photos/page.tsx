@@ -20,18 +20,18 @@ export default async function PhotosPage({ searchParams }: Props) {
   return (
     <SiteFrame>
       <section className="hero container">
-        <p className="eyebrow">PHOTO GALLERY</p>
-        <h1 className="hero-title">把生活片段放进一个可以浏览的画廊。</h1>
+        <p className="eyebrow">Memory Atlas</p>
+        <h1 className="hero-title">记忆星图</h1>
         <p className="hero-copy">
-          在这里欣赏精选相册内容，切换视图体验不同的浏览方式。
+          把生活片段放进一个可以浏览的星空里，保留普通相册和 3D 星空相册两种体验。
         </p>
         <div className="hero-actions">
           <Link href="/photos/3d" className="primary-button">
             打开 3D 星空相册
           </Link>
 
-          <Link href="/admin/photos" className="secondary-button">
-            上传照片
+          <Link href="/photos?view=static" className="secondary-button">
+            分类浏览照片
           </Link>
         </div>
       </section>

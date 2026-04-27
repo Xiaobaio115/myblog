@@ -10,7 +10,9 @@ const NAV_ITEMS = [
   { href: "/", label: "首页" },
   { href: "/articles", label: "文章" },
   { href: "/photos", label: "相册" },
-  { href: "/admin", label: "后台" },
+  { href: "/world", label: "我的世界" },
+  { href: "/about", label: "关于我" },
+  { href: "/guestbook", label: "留言" },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -30,6 +32,7 @@ export function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -39,7 +42,7 @@ export function SiteHeader() {
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { setSearchOpen(false); setQuery(""); }
+      if (e.key === "Escape") { setSearchOpen(false); setMenuOpen(false); setQuery(""); }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
@@ -58,7 +61,7 @@ export function SiteHeader() {
     <>
       <nav className="nav">
         <div className="container nav-inner">
-          <Link href="/" className="nav-logo">Luna Notes</Link>
+          <Link href="/" className="nav-logo">LQPP World</Link>
 
           <div className="nav-links">
             {NAV_ITEMS.map((item) => (
@@ -81,9 +84,49 @@ export function SiteHeader() {
               <SearchIcon />
             </button>
             <ThemeToggle />
+            <button
+              type="button"
+              className="mobile-menu-button"
+              aria-label="打开导航菜单"
+              onClick={() => setMenuOpen(true)}
+            >
+              ☰
+            </button>
           </div>
         </div>
       </nav>
+
+      {menuOpen && (
+        <div className="mobile-nav-overlay" onClick={() => setMenuOpen(false)}>
+          <aside className="mobile-nav-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="mobile-nav-brand">
+              <span>LQPP</span>
+              <button type="button" onClick={() => setMenuOpen(false)} aria-label="关闭导航菜单">
+                ✕
+              </button>
+            </div>
+            <div className="mobile-nav-avatar">LQPP</div>
+            <strong className="mobile-nav-name">LQPP World</strong>
+            <div className="mobile-nav-links">
+              {NAV_ITEMS.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`mobile-nav-link ${isActive(pathname, item.href) ? "active" : ""}`}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+            <div className="mobile-nav-socials">
+              <span>GitHub</span>
+              <span>Mail</span>
+              <span>RSS</span>
+            </div>
+          </aside>
+        </div>
+      )}
 
       {searchOpen && (
         <div

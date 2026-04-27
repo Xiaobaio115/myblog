@@ -5,19 +5,16 @@ import { createContext, useContext, useEffect, useState } from "react";
 type Theme = "light" | "dark";
 
 const ThemeContext = createContext<{ theme: Theme; toggle: () => void }>({
-  theme: "light",
+  theme: "dark",
   toggle: () => {},
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
     const stored = localStorage.getItem("luna-theme") as Theme | null;
-    const preferred = window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-    apply(stored ?? preferred);
+    apply(stored ?? "dark");
   }, []);
 
   function apply(t: Theme) {

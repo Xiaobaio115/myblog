@@ -25,13 +25,19 @@ export default async function PostDetailPage({
 
   const html = await marked.parse(post.content || "");
 
+  const wordCount = (post.content || "").replace(/[\u4e00-\u9fa5]/g, "aa").split(/\s+/).filter(Boolean).length;
+  const readingMinutes = Math.max(1, Math.ceil(wordCount / 250));
+
   return (
     <SiteFrame>
       <section className="article-layout container">
         <header className="article-header">
-          <Link href="/articles" className="back-link">
-            返回文章列表
-          </Link>
+          <div className="article-nav-bar">
+            <Link href="/articles" className="back-link">
+              ← 返回文章列表
+            </Link>
+            <span className="article-reading-time">约 {readingMinutes} 分钟阅读</span>
+          </div>
 
           <div className="tag-list">
             {(post.tags || []).map((tag) => (
@@ -65,6 +71,12 @@ export default async function PostDetailPage({
           className="article-content"
           dangerouslySetInnerHTML={{ __html: html }}
         />
+
+        <footer className="article-footer">
+          <Link href="/articles" className="back-link">
+            ← 返回文章列表
+          </Link>
+        </footer>
 
         <section className="comments-section">
           <TwikooComments

@@ -40,7 +40,7 @@ export default async function ThreeDPhotosPage() {
     <main>
       <div className="three-d-page-nav">
         <Link href="/photos?view=static">返回分类浏览</Link>
-        <span>3D 星空照片墙</span>
+        <span>我的星空相册 · 3D 星空照片墙</span>
         <Link href="/admin/photos">上传照片</Link>
       </div>
 

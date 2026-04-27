@@ -5,9 +5,9 @@ export function SiteFooter() {
     <footer className="site-footer">
       <div className="container footer-inner">
         <div className="footer-brand">
-          <span className="footer-logo">Luna Notes</span>
+          <span className="footer-logo">LQPP World</span>
           <p className="footer-tagline">
-            记录生活与思考，珍藏每一个美好瞬间。
+            生活、技术、旅行与游戏构成的个人宇宙。
           </p>
         </div>
 
@@ -17,13 +17,16 @@ export function SiteFooter() {
             <Link href="/">首页</Link>
             <Link href="/articles">文章</Link>
             <Link href="/photos">相册</Link>
-            <Link href="/admin">后台</Link>
+            <Link href="/world">我的世界</Link>
+            <Link href="/about">关于我</Link>
+            <Link href="/guestbook">留言</Link>
           </div>
           <div className="footer-col">
             <strong>更多</strong>
-            <Link href="/articles">归档</Link>
-            <Link href="/articles">标签</Link>
-            <Link href="/photos">相册</Link>
+            <Link href="/photos/3d">3D 星空相册</Link>
+            <Link href="/projects">项目</Link>
+            <Link href="/articles">思考碎片</Link>
+            <Link href="/admin">后台入口</Link>
           </div>
           <div className="footer-col">
             <strong>联系</strong>
@@ -35,7 +38,7 @@ export function SiteFooter() {
       </div>
 
       <div className="container footer-bottom">
-        <p>© {new Date().getFullYear()} Luna Notes. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} LQPP World. Built with curiosity and code.</p>
       </div>
     </footer>
   );

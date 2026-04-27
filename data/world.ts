@@ -1,0 +1,65 @@
+export const worldSections = [
+  {
+    id: "hometown",
+    eyebrow: "Hometown",
+    title: "我的家乡",
+    subtitle: "家乡是我世界地图上的第一个坐标。",
+    desc: "这里是我出发的地方。它保存着很多普通但珍贵的记忆：熟悉的街道、吃过的味道、见过很多次的天空，还有每次离开后仍然会想起的生活感。",
+    tags: ["家乡", "小城", "美食", "记忆", "天空"],
+    cta: "查看家乡相册",
+    href: "/photos?view=static",
+    cover: "",
+    icon: "🏡",
+  },
+  {
+    id: "school",
+    eyebrow: "School",
+    title: "我的学校",
+    subtitle: "学校记录了我学习、变化和慢慢确定方向的过程。",
+    desc: "这一阶段让我开始认真学习技术，也让我想把自己的想法做成真实可访问的网站。",
+    tags: ["课程", "编程", "朋友", "成长", "项目"],
+    cta: "查看我的档案",
+    href: "/about",
+    cover: "",
+    icon: "🏫",
+  },
+  {
+    id: "travel",
+    eyebrow: "Travel",
+    title: "旅行探索",
+    subtitle: "每一次出发，都会在我的地图上点亮一个新的坐标。",
+    desc: "旅行对我来说不只是到达一个地点，更像是给自己的生活增加一个新坐标。",
+    tags: ["风景", "城市", "照片", "计划外", "路上"],
+    cta: "打开记忆星图",
+    href: "/photos",
+    cover: "",
+    icon: "✈️",
+  },
+  {
+    id: "games",
+    eyebrow: "Games",
+    title: "游戏世界",
+    subtitle: "游戏也是一种探索世界的方式。",
+    desc: "在游戏里建造、冒险、和朋友一起完成目标，也会成为个人世界的一部分。",
+    tags: ["Minecraft", "Steam", "建造", "冒险", "朋友"],
+    cta: "阅读游戏随笔",
+    href: "/articles?tag=游戏随笔",
+    cover: "",
+    icon: "🎮",
+  },
+];
+
+export const personality = [
+  { title: "喜欢记录", desc: "会把生活碎片变成文字、照片或网页。" },
+  { title: "喜欢探索", desc: "对新的城市、工具、游戏和技术都感兴趣。" },
+  { title: "喜欢折腾", desc: "会不断改网站、试组件、搭建自己的系统。" },
+  { title: "游戏玩家", desc: "游戏是另一种世界探索方式。" },
+  { title: "慢慢成长", desc: "网站和我都会持续更新。" },
+];
+
+export const worldLogs = [
+  "2026.04：开始重构个人博客",
+  "2026.04：加入 3D 星空相册",
+  "2026.05：计划继续完善我的世界页面",
+  "未来：加入旅行地图、留言板、项目页",
+];

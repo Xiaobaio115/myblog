@@ -43,33 +43,20 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
   return (
     <SiteFrame>
       <section className="hero container">
-        <p className="eyebrow">文章目录</p>
-        <h1 className="hero-title">全部文章</h1>
+        <p className="eyebrow">Thinking Fragments</p>
+        <h1 className="hero-title">思考碎片</h1>
         <p className="hero-copy">
-          按标签和关键词筛选，找到你感兴趣的内容。
+          这里放着我的技术笔记、生活随笔、旅行记录和一些突然出现的想法。
         </p>
       </section>
 
-      <section className="container section">
-        <div className="filter-panel">
-          <form action="/articles" method="get" className="search-form">
-            {selectedTag ? <input type="hidden" name="tag" value={selectedTag} /> : null}
-            <input
-              type="search"
-              name="q"
-              defaultValue={query}
-              placeholder="搜索标题、摘要或标签"
-              className="search-input"
-            />
-            <button type="submit" className="search-button">
-              搜索
-            </button>
-          </form>
-
-          <div className="tag-row">
+      <section className="container section article-shell">
+        <aside className="article-sidebar">
+          <strong>文章分类</strong>
+          <div className="article-sidebar-links">
             <Link
               href={query ? `/articles?q=${encodeURIComponent(query)}` : "/articles"}
-              className={`tag-chip ${selectedTag ? "" : "selected"}`}
+              className={`article-sidebar-link ${selectedTag ? "" : "active"}`}
             >
               全部
             </Link>
@@ -77,35 +64,53 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
               <Link
                 key={tag}
                 href={makeFilterHref(tag)}
-                className={`tag-chip ${selectedTag === tag ? "selected" : ""}`}
+                className={`article-sidebar-link ${selectedTag === tag ? "active" : ""}`}
               >
                 {tag}
               </Link>
             ))}
           </div>
-        </div>
+        </aside>
 
-        <div className="section-head">
-          <div>
-            <h2 className="section-title">
-              {query ? `“${query}” 的搜索结果` : selectedTag || "全部文章"}
-            </h2>
-            <p className="section-copy">共找到 {filteredPosts.length} 篇内容。</p>
+        <div className="article-main">
+          <div className="filter-panel">
+            <form action="/articles" method="get" className="search-form">
+              {selectedTag ? <input type="hidden" name="tag" value={selectedTag} /> : null}
+              <input
+                type="search"
+                name="q"
+                defaultValue={query}
+                placeholder="搜索标题、摘要或标签"
+                className="search-input"
+              />
+              <button type="submit" className="search-button">
+                搜索
+              </button>
+            </form>
           </div>
-        </div>
 
-        {filteredPosts.length > 0 ? (
-          <div className="cards-grid">
-            {filteredPosts.map((post) => (
-              <ArticleCard key={post._id} post={post} />
-            ))}
+          <div className="section-head">
+            <div>
+              <h2 className="section-title">
+                {query ? `“${query}” 的搜索结果` : selectedTag || "全部文章"}
+              </h2>
+              <p className="section-copy">共找到 {filteredPosts.length} 篇内容。</p>
+            </div>
           </div>
-        ) : (
-          <div className="empty-state">
-            <div className="empty-icon">🔎</div>
-            <p>没有找到符合条件的文章，你可以换个关键词或者回到全部文章。</p>
-          </div>
-        )}
+
+          {filteredPosts.length > 0 ? (
+            <div className="article-list-stack">
+              {filteredPosts.map((post) => (
+                <ArticleCard key={post._id} post={post} />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <div className="empty-icon">🔎</div>
+              <p>没有找到符合条件的文章，你可以换个关键词或者回到全部文章。</p>
+            </div>
+          )}
+        </div>
       </section>
     </SiteFrame>
   );

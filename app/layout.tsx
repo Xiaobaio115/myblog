@@ -16,8 +16,8 @@ const mono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Luna Notes",
-  description: "文章、相册和个人记录组成的多页博客。",
+  title: "LQPP World｜个人博客与数字花园",
+  description: "LQPP 的个人世界，记录生活、技术、旅行、游戏、家乡、学校和成长经历。",
 };
 
 export default function RootLayout({
@@ -34,7 +34,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('luna-theme')||((window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light');document.documentElement.setAttribute('data-theme',t);}catch(e){}`,
+            __html: `try{var t=localStorage.getItem('luna-theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}`,
           }}
         />
       </head>

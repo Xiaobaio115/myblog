@@ -42,11 +42,35 @@ export default function AdminPhotosPage() {
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState("");
   const [busyPhotoId, setBusyPhotoId] = useState("");
+  const [activeFilter, setActiveFilter] = useState<string>("全部");
 
   const categories = useMemo(() => {
     const fromPhotos = photos.map((photo) => photo.category).filter(Boolean);
     return Array.from(new Set([...DEFAULT_CATEGORIES, ...fromPhotos]));
   }, [photos]);
+
+  const filterTabs = useMemo(() => {
+    const cats = Array.from(new Set(photos.map((p) => p.category || "未分类")));
+    return ["全部", ...cats, "3D展示", "私密"];
+  }, [photos]);
+
+  const filteredPhotos = useMemo(() => {
+    if (activeFilter === "全部") return photos;
+    if (activeFilter === "3D展示") return photos.filter((p) => p.showIn3d);
+    if (activeFilter === "私密") return photos.filter((p) => p.isPrivate);
+    return photos.filter((p) => (p.category || "未分类") === activeFilter);
+  }, [photos, activeFilter]);
+
+  const groupedByCategory = useMemo(() => {
+    if (activeFilter !== "全部") return null;
+    const map = new Map<string, Photo[]>();
+    for (const p of photos) {
+      const cat = p.category || "未分类";
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(p);
+    }
+    return map;
+  }, [photos, activeFilter]);
 
   useEffect(() => {
     return () => {
@@ -327,6 +351,53 @@ export default function AdminPhotosPage() {
 
   const selectedCount = photos.filter((photo) => photo.showIn3d).length;
 
+  function renderPhotoCard(photo: Photo) {
+    const busy = busyPhotoId === photo._id;
+    return (
+      <article key={photo._id} className="photo-admin-item">
+        <img src={photo.url} alt={photo.caption} className="photo-admin-media" />
+        <div className="photo-admin-body">
+          <div className="photo-admin-meta">
+            <strong>{photo.caption || "未命名图片"}</strong>
+            <span>{photo.category || "未分类"}</span>
+          </div>
+          <div className="photo-admin-tags">
+            <span className={`post-visit-chip ${photo.isPrivate ? "post-visit-chip-muted" : ""}`}>
+              {photo.isPrivate ? "仅后台可见" : "前台可见"}
+            </span>
+            {photo.showIn3d ? <span className="post-visit-chip">3D 展示中</span> : null}
+          </div>
+          <div className="photo-admin-actions">
+            <button
+              type="button"
+              className="secondary-link photo-admin-action"
+              onClick={() => void togglePrivate(photo)}
+              disabled={busy || uploading}
+            >
+              {photo.isPrivate ? "设为公开" : "设为私密"}
+            </button>
+            <button
+              type="button"
+              className="secondary-link photo-admin-action"
+              onClick={() => void toggle3d(photo)}
+              disabled={busy || uploading}
+            >
+              {photo.showIn3d ? "移出 3D" : "加入 3D"}
+            </button>
+            <button
+              type="button"
+              className="danger-btn photo-admin-action"
+              onClick={() => void deletePhoto(photo)}
+              disabled={busy || uploading}
+            >
+              {busy ? "处理中..." : "删除"}
+            </button>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
   return (
     <main className="admin-page">
       <div className="admin-panel">
@@ -464,66 +535,54 @@ export default function AdminPhotosPage() {
             </div>
 
             {photos.length > 0 ? (
-              <div className="photo-admin-grid">
-                {photos.map((photo) => {
-                  const busy = busyPhotoId === photo._id;
+              <>
+                <div className="photo-library-filters">
+                  {filterTabs.map((tab) => (
+                    <button
+                      key={tab}
+                      type="button"
+                      className={`photo-library-filter-btn${activeFilter === tab ? " photo-library-filter-active" : ""}`}
+                      onClick={() => setActiveFilter(tab)}
+                    >
+                      {tab === "3D展示" ? "✨ 3D 展示" : tab === "私密" ? "🔒 私密" : tab}
+                      <span className="photo-filter-count">
+                        {tab === "全部"
+                          ? photos.length
+                          : tab === "3D展示"
+                            ? photos.filter((p) => p.showIn3d).length
+                            : tab === "私密"
+                              ? photos.filter((p) => p.isPrivate).length
+                              : photos.filter((p) => (p.category || "未分类") === tab).length}
+                      </span>
+                    </button>
+                  ))}
+                </div>
 
-                  return (
-                    <article key={photo._id} className="photo-admin-item">
-                      <img
-                        src={photo.url}
-                        alt={photo.caption}
-                        className="photo-admin-media"
-                      />
-
-                      <div className="photo-admin-body">
-                        <div className="photo-admin-meta">
-                          <strong>{photo.caption || "未命名图片"}</strong>
-                          <span>{photo.category || "未分类"}</span>
+                {activeFilter === "全部" && groupedByCategory ? (
+                  <div className="photo-category-sections">
+                    {Array.from(groupedByCategory.entries()).map(([cat, catPhotos]) => (
+                      <div key={cat} className="photo-category-group">
+                        <div className="photo-category-heading">
+                          <span>{cat}</span>
+                          <span className="photo-category-count">{catPhotos.length} 张</span>
                         </div>
-
-                        <div className="photo-admin-tags">
-                          <span
-                            className={`post-visit-chip ${photo.isPrivate ? "post-visit-chip-muted" : ""}`}
-                          >
-                            {photo.isPrivate ? "仅后台可见" : "前台可见"}
-                          </span>
-                          {photo.showIn3d ? (
-                            <span className="post-visit-chip">3D 展示中</span>
-                          ) : null}
-                        </div>
-
-                        <div className="photo-admin-actions">
-                          <button
-                            type="button"
-                            className="secondary-link photo-admin-action"
-                            onClick={() => void togglePrivate(photo)}
-                            disabled={busy || uploading}
-                          >
-                            {photo.isPrivate ? "设为公开" : "设为私密"}
-                          </button>
-                          <button
-                            type="button"
-                            className="secondary-link photo-admin-action"
-                            onClick={() => void toggle3d(photo)}
-                            disabled={busy || uploading}
-                          >
-                            {photo.showIn3d ? "移出 3D" : "加入 3D"}
-                          </button>
-                          <button
-                            type="button"
-                            className="danger-btn photo-admin-action"
-                            onClick={() => void deletePhoto(photo)}
-                            disabled={busy || uploading}
-                          >
-                            {busy ? "处理中..." : "删除"}
-                          </button>
+                        <div className="photo-admin-grid">
+                          {catPhotos.map((photo) => renderPhotoCard(photo))}
                         </div>
                       </div>
-                    </article>
-                  );
-                })}
-              </div>
+                    ))}
+                  </div>
+                ) : filteredPhotos.length > 0 ? (
+                  <div className="photo-admin-grid">
+                    {filteredPhotos.map((photo) => renderPhotoCard(photo))}
+                  </div>
+                ) : (
+                  <div className="photo-library-empty">
+                    <div className="empty-icon">空</div>
+                    <p>这个分类下还没有图片。</p>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="photo-library-empty">
                 <div className="empty-icon">图</div>
