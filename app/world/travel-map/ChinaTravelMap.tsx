@@ -20,6 +20,9 @@ export default function ChinaTravelMap({ data }: Props) {
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
+  // ---- 调试标记 ----
+  const debugDoneRef = useRef(false);
+
   // ---- 3D 坐标 → 屏幕像素 ----
   const geoToScreen = useCallback((lng: number, lat: number): [number, number] | null => {
     const chart = chartRef.current;
@@ -39,32 +42,75 @@ export default function ChinaTravelMap({ data }: Props) {
         const cam = cs.viewGL?.camera as any;
         const pt: number[] | null = cs.dataToPoint([lng, lat, 2]);
         if (pt && cam) {
+          // 一次性调试日志
+          if (!debugDoneRef.current) {
+            debugDoneRef.current = true;
+            const tm: Float64Array = cs.transform;
+            console.log("[geo3D] dataToPoint:", pt);
+            console.log("[geo3D] transform:", Array.from(tm));
+            console.log("[geo3D] cam pos:", cam.position.x, cam.position.y, cam.position.z);
+
+            // 测试：不带 transform，直接投影
+            const vm2: Float64Array = cam.viewMatrix.array;
+            const pm2: Float64Array = cam.projectionMatrix.array;
+            for (const [label, wx, wy, wz] of [
+              ["raw", pt[0], pt[1], pt[2] || 0],
+              ["transformed",
+                tm[0]*pt[0] + tm[4]*pt[1] + tm[8]*pt[2] + tm[12],
+                tm[1]*pt[0] + tm[5]*pt[1] + tm[9]*pt[2] + tm[13],
+                tm[2]*pt[0] + tm[6]*pt[1] + tm[10]*pt[2] + tm[14],
+              ],
+            ]) {
+              const vx = vm2[0]*wx + vm2[4]*wy + vm2[8]*wz + vm2[12];
+              const vy = vm2[1]*wx + vm2[5]*wy + vm2[9]*wz + vm2[13];
+              const vz = vm2[2]*wx + vm2[6]*wy + vm2[10]*wz + vm2[14];
+              const vw = vm2[3]*wx + vm2[7]*wy + vm2[11]*wz + vm2[15];
+              const cx = pm2[0]*vx + pm2[4]*vy + pm2[8]*vz + pm2[12]*vw;
+              const cy = pm2[1]*vx + pm2[5]*vy + pm2[9]*vz + pm2[13]*vw;
+              const cw = pm2[3]*vx + pm2[7]*vy + pm2[11]*vz + pm2[15]*vw;
+              if (cw > 0.01) {
+                const ndcX = cx / cw, ndcY = cy / cw;
+                const cW = chart.getDom().clientWidth, cH = chart.getDom().clientHeight;
+                console.log(`[geo3D] ${label}: world(${wx.toFixed(1)},${wy.toFixed(1)},${wz.toFixed(1)}) NDC(${ndcX.toFixed(3)},${ndcY.toFixed(3)}) screen(${((ndcX+1)*0.5*cW).toFixed(0)},${((1-ndcY)*0.5*cH).toFixed(0)})`);
+              } else {
+                console.log(`[geo3D] ${label}: BEHIND CAMERA cw=${cw.toFixed(3)}`);
+              }
+            }
+          }
+
+          // 尝试两种方式
           const tm: Float64Array = cs.transform;
-          const lx = pt[0], ly = pt[1], lz = pt[2] || 0;
-          const wx = tm[0]*lx + tm[4]*ly + tm[8]*lz + tm[12];
-          const wy = tm[1]*lx + tm[5]*ly + tm[9]*lz + tm[13];
-          const wz = tm[2]*lx + tm[6]*ly + tm[10]*lz + tm[14];
+          for (const useTransform of [true, false]) {
+            let wx: number, wy: number, wz: number;
+            if (useTransform) {
+              wx = tm[0]*pt[0] + tm[4]*pt[1] + tm[8]*pt[2] + tm[12];
+              wy = tm[1]*pt[0] + tm[5]*pt[1] + tm[9]*pt[2] + tm[13];
+              wz = tm[2]*pt[0] + tm[6]*pt[1] + tm[10]*pt[2] + tm[14];
+            } else {
+              wx = pt[0]; wy = pt[1]; wz = pt[2] || 0;
+            }
 
-          const vm: Float64Array = cam.viewMatrix.array;
-          const vx = vm[0]*wx + vm[4]*wy + vm[8]*wz + vm[12];
-          const vy = vm[1]*wx + vm[5]*wy + vm[9]*wz + vm[13];
-          const vz = vm[2]*wx + vm[6]*wy + vm[10]*wz + vm[14];
-          const vw = vm[3]*wx + vm[7]*wy + vm[11]*wz + vm[15];
+            const vm: Float64Array = cam.viewMatrix.array;
+            const vx = vm[0]*wx + vm[4]*wy + vm[8]*wz + vm[12];
+            const vy = vm[1]*wx + vm[5]*wy + vm[9]*wz + vm[13];
+            const vz = vm[2]*wx + vm[6]*wy + vm[10]*wz + vm[14];
+            const vw = vm[3]*wx + vm[7]*wy + vm[11]*wz + vm[15];
 
-          const pm: Float64Array = cam.projectionMatrix.array;
-          const cx = pm[0]*vx + pm[4]*vy + pm[8]*vz + pm[12]*vw;
-          const cy = pm[1]*vx + pm[5]*vy + pm[9]*vz + pm[13]*vw;
-          const cw = pm[3]*vx + pm[7]*vy + pm[11]*vz + pm[15]*vw;
+            const pm: Float64Array = cam.projectionMatrix.array;
+            const cx = pm[0]*vx + pm[4]*vy + pm[8]*vz + pm[12]*vw;
+            const cy = pm[1]*vx + pm[5]*vy + pm[9]*vz + pm[13]*vw;
+            const cw = pm[3]*vx + pm[7]*vy + pm[11]*vz + pm[15]*vw;
 
-          if (cw > 0.01) {
-            const ndcX = cx / cw;
-            const ndcY = cy / cw;
-            const canvasW = chart.getDom().clientWidth;
-            const canvasH = chart.getDom().clientHeight;
-            const sx = (ndcX + 1) * 0.5 * canvasW;
-            const sy = (1 - ndcY) * 0.5 * canvasH;
-            if (!isNaN(sx) && sx > -200 && sx < canvasW + 200 && sy > -200 && sy < canvasH + 200) {
-              return [rect.left + sx, rect.top + sy];
+            if (cw > 0.01) {
+              const ndcX = cx / cw;
+              const ndcY = cy / cw;
+              const canvasW = chart.getDom().clientWidth;
+              const canvasH = chart.getDom().clientHeight;
+              const sx = (ndcX + 1) * 0.5 * canvasW;
+              const sy = (1 - ndcY) * 0.5 * canvasH;
+              if (!isNaN(sx) && sx > -200 && sx < canvasW + 200 && sy > -200 && sy < canvasH + 200) {
+                return [rect.left + sx, rect.top + sy];
+              }
             }
           }
         }
@@ -254,6 +300,7 @@ export default function ChinaTravelMap({ data }: Props) {
       cancelAnimationFrame(animFrameRef.current);
       clearTimeout(timeoutRef.current);
       if (svgRef.current) svgRef.current.innerHTML = "";
+      debugDoneRef.current = false;
 
       activeKeyRef.current = provKey;
       setActiveKey(provKey);
