@@ -378,9 +378,9 @@ export default function ChinaTravelMap({ data }: Props) {
 
       // fetch china.json — 多源回退，确保国内可用
       const cdnUrls = [
-        "https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json",
-        "https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/json/china.json",
         "https://registry.npmmirror.com/echarts/4.9.0/files/map/json/china.json",
+        "https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/json/china.json",
+        "https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json",
       ];
       let geoJson: unknown = null;
       for (const url of cdnUrls) {
@@ -496,7 +496,16 @@ export default function ChinaTravelMap({ data }: Props) {
                   <div className="tmap-city-desc">{place.desc}</div>
                   <div className="tmap-img-grid" id={`tmap-grid-${idx}`}>
                     {place.imgs.map((img: string, i: number) => (
-                      <img key={i} src={img} alt={place.name} className="tmap-img-card" />
+                      <img
+                        key={i}
+                        src={img}
+                        alt={place.name}
+                        className="tmap-img-card"
+                        loading="lazy"
+                        onError={(event) => {
+                          event.currentTarget.src = `https://placehold.co/600x400/0f172a/38bdf8?text=${encodeURIComponent(place.name)}`;
+                        }}
+                      />
                     ))}
                   </div>
                 </div>

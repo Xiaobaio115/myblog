@@ -6856,8 +6856,8 @@ html, body {
 .tmap-root {
   position: relative;
   width: 100%;
-  height: calc(100vh - 120px);
-  min-height: 500px;
+  height: calc(100vh - 72px);
+  min-height: 720px;
   overflow: hidden;
 }
 
@@ -6970,9 +6970,9 @@ html, body {
 /* ---- 右侧详情面板 ---- */
 .tmap-detail-panel {
   position: absolute;
-  top: 30px; right: 30px;
-  width: 420px;
-  max-height: calc(100% - 60px);
+  top: 18px; right: 18px;
+  width: clamp(420px, 34vw, 560px);
+  max-height: calc(100% - 36px);
   background: rgba(15, 23, 42, 0.85);
   backdrop-filter: blur(30px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -7076,9 +7076,11 @@ html, body {
   gap: 10px;
 }
 .tmap-img-card {
+  display: block;
   width: 100%;
-  height: 120px;
+  height: 150px;
   object-fit: cover;
+  background: rgba(15, 23, 42, 0.9);
   border-radius: 12px;
   cursor: zoom-in;
   transition: transform 0.3s;
@@ -7095,14 +7097,18 @@ html, body {
   .tmap-title { font-size: 18px; }
   .tmap-prov-btn { font-size: 13px; padding: 10px 12px; }
   .tmap-detail-panel {
-    width: 320px;
+    width: min(420px, calc(100% - 32px));
     top: 16px; right: 16px;
+    max-height: calc(100% - 32px);
   }
   .tmap-panel-title { font-size: 28px; }
 }
 
 @media (max-width: 640px) {
-  .tmap-root { height: calc(100vh - 80px); }
+  .tmap-root {
+    height: calc(100svh - 64px);
+    min-height: 680px;
+  }
   .tmap-sidebar {
     width: 100%;
     max-height: 120px;
@@ -7137,7 +7143,7 @@ html, body {
   }
   .tmap-detail-panel {
     width: 100%;
-    max-height: 55vh;
+    max-height: 64vh;
     top: auto; bottom: 130px; right: 0;
     border-radius: 20px 20px 0 0;
     transform: translateY(120%);
@@ -7148,6 +7154,6 @@ html, body {
   .tmap-panel-desc { padding: 0 20px 12px 20px; }
   .tmap-panel-content { padding: 12px 20px 20px 20px; }
   .tmap-img-grid { grid-template-columns: repeat(2, 1fr); }
-  .tmap-img-card { height: 90px; }
+  .tmap-img-card { height: 120px; }
 }
 .world-big-card:nth-child(4) .section-link  { animation-delay: 0.84s; }

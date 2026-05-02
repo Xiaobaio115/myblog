@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   title: "项目｜LQPP 正在做的东西",
 };
 
-export default async function ProjectsPage() {
+export default async function ProjectsPage() {//没上传？
   const projects = await getProjectsSetting();
   return (
     <SiteFrame>
