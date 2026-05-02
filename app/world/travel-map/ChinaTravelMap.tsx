@@ -250,6 +250,7 @@ export default function ChinaTravelMap({ data }: Props) {
             distance: vc.distance,
             alpha: vc.alpha,
             beta: vc.beta,
+            ...(vc.targetCoord ? { center: [vc.targetCoord[0] - 104.19, -(vc.targetCoord[1] - 35.86), 0] } : {}),
           },
           regions: regions.map(r => ({ ...r, name: keyToGeoRef.current[r.name] || r.name })),
         },
@@ -280,8 +281,12 @@ export default function ChinaTravelMap({ data }: Props) {
         ],
       });
 
-      if (!isInit && vc.targetCoord) {
-        panToProvince(vc.targetCoord);
+      if (!isInit) {
+        const container = containerRef.current;
+        if (container) {
+          container.style.transition = "none";
+          container.style.transform = "";
+        }
       }
 
       // click handler
