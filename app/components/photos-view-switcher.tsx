@@ -29,72 +29,43 @@ export function PhotosViewSwitcher({ photos, categories, initialView = null }: P
 
   return (
     <div>
-      {/* ── 两个玻璃拟态选项卡 ── */}
-      <div className="view-option-row">
-        {/* 3D 旋转 → 跳转到 /photos/3d */}
-        <Link href="/photos/3d" className="view-option-card view-option-card--link">
-          {bg3d ? (
-            <div
-              className="view-option-bg"
-              style={{ backgroundImage: `url(${bg3d})` }}
-            />
-          ) : (
-            <div className="view-option-bg view-option-bg--gradient-3d" />
-          )}
-          <div className="view-option-glass" />
-          <div className="view-option-body">
-            <span className="view-option-badge">点击进入 →</span>
-            <span className="view-option-icon">🎠</span>
-            <h3 className="view-option-title">3D 星空相册</h3>
-            <p className="view-option-desc">沉浸式星空旋转木马体验</p>
-            {preview3d.length > 0 && (
-              <div className="view-option-thumbs">
-                {preview3d.map((p) => (
-                  <img key={p._id} src={p.url} alt={p.caption} className="view-thumb" />
-                ))}
-              </div>
-            )}
+      {/* ── 3D 星空相册 入口卡片（全宽） ── */}
+      <Link href="/photos/3d" className="photo-hero-card">
+        {bg3d ? (
+          <div className="photo-hero-card-bg" style={{ backgroundImage: `url(${bg3d})` }} />
+        ) : (
+          <div className="photo-hero-card-bg photo-hero-card-bg--fallback" />
+        )}
+        <div className="photo-hero-card-overlay" />
+        <div className="photo-hero-card-body">
+          <div className="photo-hero-card-left">
+            <span className="photo-hero-card-icon">✨</span>
+            <h3 className="photo-hero-card-title">3D 星空相册</h3>
+            <p className="photo-hero-card-desc">沉浸式星空旋转木马，在星空中探索每一段记忆</p>
+            <span className="photo-hero-card-cta">进入体验 →</span>
           </div>
-        </Link>
+          {preview3d.length > 0 && (
+            <div className="photo-hero-card-thumbs">
+              {preview3d.map((p) => (
+                <img key={p._id} src={p.url} alt={p.caption} className="photo-hero-thumb" />
+              ))}
+            </div>
+          )}
+        </div>
+      </Link>
 
-        {/* 静态分类 */}
+      {/* ── 分类画廊切换 ── */}
+      <div className="photo-gallery-toggle">
         <button
-          className={`view-option-card ${view === "static" ? "selected" : ""}`}
+          className={`photo-gallery-toggle-btn${view === "static" ? " active" : ""}`}
           onClick={() => setView(view === "static" ? null : "static")}
-          aria-pressed={view === "static"}
         >
-          {bgStatic ? (
-            <div
-              className="view-option-bg"
-              style={{ backgroundImage: `url(${bgStatic})` }}
-            />
-          ) : (
-            <div className="view-option-bg view-option-bg--gradient-static" />
-          )}
-          <div className="view-option-glass" />
-          <div className="view-option-body">
-            {view === "static" && <span className="view-option-check">✓</span>}
-            <span className="view-option-icon">🗂</span>
-            <h3 className="view-option-title">分类浏览</h3>
-            <p className="view-option-desc">按分类筛选，静态画廊展示</p>
-            {previewStatic.length > 0 && (
-              <div className="view-option-thumbs">
-                {previewStatic.map((p) => (
-                  <img key={p._id} src={p.url} alt={p.caption} className="view-thumb" />
-                ))}
-              </div>
-            )}
-          </div>
+          {view === "static" ? "收起分类画廊" : "展开分类画廊"}
         </button>
       </div>
 
-      {/* ── 内容区 ── */}
       {view === "static" && (
         <PhotoGallery photos={photos} categories={categories} />
-      )}
-
-      {view === null && (
-        <p className="view-hint">↑ 选择上方视图开始浏览相册</p>
       )}
     </div>
   );

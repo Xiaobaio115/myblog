@@ -3756,6 +3756,81 @@ html, body {
   justify-self: stretch;
 }
 
+/* ── 首页旅行地图入口卡片 ── */
+.home-travel-map-card {
+  display: block;
+  position: relative;
+  width: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+  text-decoration: none;
+  border: 1px solid rgba(56, 189, 248, 0.15);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+.home-travel-map-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 48px rgba(56, 189, 248, 0.18);
+}
+.home-travel-map-card-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0c4a6e 100%);
+}
+.home-travel-map-card-body {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px 32px;
+  color: #f8fafc;
+}
+.home-travel-map-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 6px rgba(56, 189, 248, 0.4));
+}
+.home-travel-map-text {
+  flex: 1;
+  min-width: 0;
+}
+.home-travel-map-text h3 {
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.home-travel-map-text p {
+  margin: 0;
+  font-size: 0.88rem;
+  opacity: 0.7;
+  line-height: 1.5;
+}
+.home-travel-map-cta {
+  flex-shrink: 0;
+  padding: 7px 18px;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #38bdf8;
+  transition: all 0.25s;
+}
+.home-travel-map-card:hover .home-travel-map-cta {
+  background: rgba(56, 189, 248, 0.25);
+  transform: translateX(4px);
+}
+
+@media (max-width: 640px) {
+  .home-travel-map-card-body {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px 22px;
+    gap: 12px;
+  }
+  .home-travel-map-cta { align-self: flex-end; }
+}
+
 .home-photo-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -4740,6 +4815,161 @@ html, body {
   .view-option-body {
     min-height: 200px;
   }
+}
+
+/* ═══════════════════════════════════════════════════════
+   PHOTO HERO CARD — 3D 星空相册全宽入口
+   ═══════════════════════════════════════════════════════ */
+
+.photo-hero-card {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 220px;
+  border-radius: 20px;
+  overflow: hidden;
+  text-decoration: none;
+  margin-bottom: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: transform 0.32s ease, box-shadow 0.32s ease;
+}
+.photo-hero-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 24px 64px rgba(168, 85, 247, 0.25), 0 0 0 1px rgba(168, 85, 247, 0.3);
+}
+
+.photo-hero-card-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.6s ease;
+}
+.photo-hero-card:hover .photo-hero-card-bg {
+  transform: scale(1.06);
+}
+.photo-hero-card-bg--fallback {
+  background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #6366f1 100%);
+}
+
+.photo-hero-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.82) 0%, rgba(15, 23, 42, 0.45) 60%, rgba(168, 85, 247, 0.25) 100%);
+  backdrop-filter: blur(2px);
+}
+
+.photo-hero-card-body {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 36px 40px;
+  color: #f8fafc;
+  min-height: 220px;
+}
+
+.photo-hero-card-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.photo-hero-card-icon {
+  font-size: 2.2rem;
+  display: block;
+  margin-bottom: 12px;
+  filter: drop-shadow(0 2px 8px rgba(168, 85, 247, 0.5));
+}
+
+.photo-hero-card-title {
+  margin: 0 0 8px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+
+.photo-hero-card-desc {
+  margin: 0 0 16px;
+  font-size: 0.95rem;
+  opacity: 0.8;
+  line-height: 1.5;
+}
+
+.photo-hero-card-cta {
+  display: inline-block;
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #a855f7, #ec4899);
+  border-radius: 999px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.02em;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.photo-hero-card:hover .photo-hero-card-cta {
+  transform: translateX(4px);
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.45);
+}
+
+.photo-hero-card-thumbs {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.photo-hero-thumb {
+  width: 72px;
+  height: 54px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  transition: transform 0.25s;
+}
+.photo-hero-card:hover .photo-hero-thumb {
+  transform: scale(1.06);
+}
+
+/* ── 分类画廊切换按钮 ── */
+.photo-gallery-toggle {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.photo-gallery-toggle-btn {
+  padding: 10px 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.photo-gallery-toggle-btn:hover {
+  background: rgba(168, 85, 247, 0.12);
+  color: #a855f7;
+  border-color: rgba(168, 85, 247, 0.3);
+}
+.photo-gallery-toggle-btn.active {
+  background: rgba(168, 85, 247, 0.18);
+  color: #c084fc;
+  border-color: rgba(168, 85, 247, 0.4);
+}
+
+@media (max-width: 768px) {
+  .photo-hero-card { min-height: 180px; border-radius: 16px; }
+  .photo-hero-card-body {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 28px 24px;
+    min-height: 180px;
+  }
+  .photo-hero-card-title { font-size: 1.3rem; }
+  .photo-hero-card-desc { font-size: 0.88rem; }
+  .photo-hero-card-thumbs { display: none; }
+  .photo-hero-card-cta { font-size: 0.82rem; padding: 7px 16px; }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -6849,6 +7079,82 @@ html, body {
 .world-big-card:nth-child(4) p              { animation-delay: 0.72s; }
 .world-big-card:nth-child(4) .world-tag-row { animation-delay: 0.78s; }
 
+/* ── 我的世界 — 旅行地图入口卡片 ── */
+.world-travel-map-card {
+  display: block;
+  position: relative;
+  width: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  text-decoration: none;
+  border: 1px solid rgba(56, 189, 248, 0.12);
+  transition: transform 0.32s, box-shadow 0.32s;
+}
+.world-travel-map-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 56px rgba(56, 189, 248, 0.2), 0 0 0 1px rgba(56, 189, 248, 0.25);
+}
+.world-travel-map-card-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 40%, #0c4a6e 70%, #164e63 100%);
+}
+.world-travel-map-card-body {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 32px 36px;
+  color: #f8fafc;
+}
+.world-travel-map-icon {
+  font-size: 2.6rem;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 8px rgba(56, 189, 248, 0.5));
+}
+.world-travel-map-text {
+  flex: 1;
+  min-width: 0;
+}
+.world-travel-map-text h2 {
+  margin: 0 0 6px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.world-travel-map-text p {
+  margin: 0;
+  font-size: 0.92rem;
+  opacity: 0.72;
+  line-height: 1.6;
+}
+.world-travel-map-cta {
+  flex-shrink: 0;
+  padding: 9px 22px;
+  background: linear-gradient(135deg, #0ea5e9, #38bdf8);
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.world-travel-map-card:hover .world-travel-map-cta {
+  transform: translateX(4px);
+  box-shadow: 0 4px 16px rgba(56, 189, 248, 0.4);
+}
+
+@media (max-width: 640px) {
+  .world-travel-map-card-body {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 24px 22px;
+    gap: 14px;
+  }
+  .world-travel-map-text h2 { font-size: 1.15rem; }
+  .world-travel-map-cta { align-self: flex-end; }
+}
+
 /* ==========================================================
    3D 旅行地图
    ========================================================== */
@@ -6856,10 +7162,9 @@ html, body {
 .tmap-root {
   position: relative;
   width: 100%;
-  height: calc(100svh - 72px);
-  min-height: 480px;
-  overflow-x: hidden;
-  overflow-y: visible;
+  height: calc(100svh - 132px);
+  min-height: 560px;
+  overflow: hidden;
 }
 
 .tmap-container {
@@ -7111,8 +7416,8 @@ html, body {
 
 @media (max-width: 640px) {
   .tmap-root {
-    height: calc(100svh - 56px);
-    min-height: 420px;
+    height: calc(100svh - 104px);
+    min-height: 520px;
   }
   .tmap-sidebar {
     width: 100%;

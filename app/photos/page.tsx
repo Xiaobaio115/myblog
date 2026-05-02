@@ -29,10 +29,6 @@ export default async function PhotosPage({ searchParams }: Props) {
           <Link href="/photos/3d" className="primary-button">
             打开 3D 星空相册
           </Link>
-
-          <Link href="/photos?view=static" className="secondary-button">
-            分类浏览照片
-          </Link>
         </div>
       </section>
 

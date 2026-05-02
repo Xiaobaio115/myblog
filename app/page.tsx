@@ -87,6 +87,20 @@ export default async function HomePage() {
       </section>
 
       <section className="container section">
+        <Link href="/world/travel-map" className="home-travel-map-card">
+          <div className="home-travel-map-card-bg" />
+          <div className="home-travel-map-card-body">
+            <span className="home-travel-map-icon">🗺️</span>
+            <div className="home-travel-map-text">
+              <h3>我的旅行地图</h3>
+              <p>3D 交互式中国旅行足迹，点击探索我走过的每一座城市</p>
+            </div>
+            <span className="home-travel-map-cta">探索 →</span>
+          </div>
+        </Link>
+      </section>
+
+      <section className="container section">
         <div className="section-head">
           <div>
             <h2 className="section-title">精选相册</h2>

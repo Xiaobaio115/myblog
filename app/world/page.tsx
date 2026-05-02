@@ -56,9 +56,16 @@ export default async function WorldPage() {
       </section>
 
       <section className="container section">
-        <Link href="/world/travel-map" className="glass-panel" style={{ display: "block", textDecoration: "none", textAlign: "center", padding: "28px", transition: "transform 0.3s" }}>
-          <h2 style={{ margin: "0 0 8px 0" }}>🗺️ 我的旅行地图</h2>
-          <p style={{ margin: 0, opacity: 0.7 }}>3D 交互式中国旅行足迹，点击探索我走过的每一座城市 →</p>
+        <Link href="/world/travel-map" className="world-travel-map-card">
+          <div className="world-travel-map-card-bg" />
+          <div className="world-travel-map-card-body">
+            <span className="world-travel-map-icon">🗺️</span>
+            <div className="world-travel-map-text">
+              <h2>我的旅行地图</h2>
+              <p>3D 交互式中国旅行足迹，点击探索我走过的每一座城市</p>
+            </div>
+            <span className="world-travel-map-cta">打开地图 →</span>
+          </div>
         </Link>
       </section>
 
