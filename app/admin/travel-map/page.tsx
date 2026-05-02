@@ -172,6 +172,20 @@ export default function AdminTravelMapPage() {
     save(newData);
   };
 
+  // ---- 更新地点描述 ----
+  const updatePlaceDesc = (provKey: string, placeIdx: number, desc: string) => {
+    const newData = { ...data };
+    newData[provKey].places[placeIdx].desc = desc;
+    save(newData);
+  };
+
+  // ---- 更新省份描述 ----
+  const updateProvDesc = (provKey: string, desc: string) => {
+    const newData = { ...data };
+    newData[provKey].desc = desc;
+    save(newData);
+  };
+
   // ---- 删除图片 ----
   const deleteImage = (provKey: string, placeIdx: number, imgIdx: number) => {
     const newData = { ...data };
@@ -337,7 +351,19 @@ export default function AdminTravelMapPage() {
               {/* 展开详情 */}
               {expandedProv === provKey && (
                 <div style={{ padding: "0 20px 20px", borderTop: "1px solid #334155" }}>
-                  <p style={{ color: "#94a3b8", margin: "12px 0", fontSize: "14px" }}>{prov.desc}</p>
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center", margin: "12px 0" }}>
+                    <input
+                      defaultValue={prov.desc}
+                      placeholder="输入省份描述..."
+                      onBlur={(e) => {
+                        if (e.target.value !== prov.desc) updateProvDesc(provKey, e.target.value);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                      }}
+                      style={{ flex: 1, padding: "8px 12px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#f8fafc", fontSize: "14px" }}
+                    />
+                  </div>
                   {prov.places.length === 0 && (
                     <p style={{ color: "#64748b", fontSize: "13px" }}>暂无地点，请在上方「添加新地点」中选择此省份。</p>
                   )}
@@ -363,7 +389,19 @@ export default function AdminTravelMapPage() {
                           删除地点
                         </button>
                       </div>
-                      {place.desc && <p style={{ color: "#94a3b8", fontSize: "13px", margin: "6px 0" }}>{place.desc}</p>}
+                      <div style={{ display: "flex", gap: "8px", alignItems: "center", margin: "8px 0" }}>
+                        <input
+                          defaultValue={place.desc}
+                          placeholder="输入地点描述..."
+                          onBlur={(e) => {
+                            if (e.target.value !== place.desc) updatePlaceDesc(provKey, placeIdx, e.target.value);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                          }}
+                          style={{ flex: 1, padding: "8px 12px", borderRadius: "6px", border: "1px solid #334155", background: "#1e293b", color: "#f8fafc", fontSize: "13px" }}
+                        />
+                      </div>
 
                       {/* 图片网格 */}
                       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: "8px", marginTop: "12px" }}>

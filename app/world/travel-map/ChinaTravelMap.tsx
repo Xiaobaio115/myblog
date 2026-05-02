@@ -322,8 +322,9 @@ export default function ChinaTravelMap({ data }: Props) {
       }
       regions.push({ name: provKey, itemStyle: { color: "#38bdf8", opacity: 0.9 } });
 
+      const isMobile = window.innerWidth <= 640;
       applyFullOption(
-        { distance: 60, alpha: 50, beta: 0, targetCoord: prov.coord },
+        { distance: isMobile ? 50 : 60, alpha: isMobile ? 60 : 50, beta: 0, targetCoord: prov.coord },
         regions,
       );
 
@@ -362,7 +363,8 @@ export default function ChinaTravelMap({ data }: Props) {
     if (data[prevKey]) {
       regions.push({ name: prevKey, itemStyle: { color: "#0f1f3d" } });
     }
-    applyFullOption({ distance: 120, alpha: 45, beta: 0, targetCoord: [104.19, 35.86] }, regions);
+    const isMobile = window.innerWidth <= 640;
+    applyFullOption({ distance: isMobile ? 90 : 120, alpha: isMobile ? 55 : 45, beta: 0, targetCoord: [104.19, 35.86] }, regions);
   }, [data, applyFullOption]);
 
   // ---- 初始化 ----
@@ -422,8 +424,9 @@ export default function ChinaTravelMap({ data }: Props) {
 
       if (!mounted) return;
 
+      const isMobile = window.innerWidth <= 640;
       applyFullOption(
-        { distance: 120, alpha: 45, beta: 0, targetCoord: [104.19, 35.86] },
+        { distance: isMobile ? 90 : 120, alpha: isMobile ? 55 : 45, beta: 0, targetCoord: [104.19, 35.86] },
         [],
         true,
       );
