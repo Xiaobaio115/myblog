@@ -16,6 +16,8 @@ export default function ChinaTravelMap({ data }: Props) {
   const timeoutRef = useRef<number>(0);
   const activeKeyRef = useRef<string | null>(null);
   const geoJsonRef = useRef<unknown>(null);
+  const keyToGeoRef = useRef<Record<string, string>>({});
+  const geoToKeyRef = useRef<Record<string, string>>({});
 
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -104,11 +106,12 @@ export default function ChinaTravelMap({ data }: Props) {
         const gridDOM = document.getElementById(`tmap-grid-${idx}`);
         if (!gridDOM) return;
         const gRect = gridDOM.getBoundingClientRect();
+        const svgRect = svg.getBoundingClientRect();
 
-        const startX = pos[0];
-        const startY = pos[1] - 15;
-        const endX = gRect.left - 10;
-        const endY = gRect.top + gRect.height / 2;
+        const startX = pos[0] - svgRect.left;
+        const startY = pos[1] - 15 - svgRect.top;
+        const endX = gRect.left - 10 - svgRect.left;
+        const endY = gRect.top + gRect.height / 2 - svgRect.top;
         const cp1X = startX + (endX - startX) * 0.4;
         const cp1Y = startY - 80;
         const cp2X = startX + (endX - startX) * 0.6;
@@ -199,7 +202,7 @@ export default function ChinaTravelMap({ data }: Props) {
             alpha: vc.alpha,
             beta: vc.beta,
           },
-          regions,
+          regions: regions.map(r => ({ ...r, name: keyToGeoRef.current[r.name] || r.name })),
         },
         // hidden 2D geo for convertToPixel fallback
         geo: {
@@ -237,7 +240,9 @@ export default function ChinaTravelMap({ data }: Props) {
       chart.on("click", (params: any) => {
         let targetKey: string | null = null;
         if (params.seriesType === "scatter3D") targetKey = params.data.provKey;
-        else if (params.componentType === "geo3D") targetKey = params.name;
+        else if (params.componentType === "geo3D") {
+          targetKey = data[params.name] ? params.name : (geoToKeyRef.current[params.name] || null);
+        }
         if (targetKey && data[targetKey]) {
           doFocusProvince(targetKey);
         }
@@ -345,6 +350,25 @@ export default function ChinaTravelMap({ data }: Props) {
       }
       echarts.registerMap("china", geoJson as Parameters<typeof echarts.registerMap>[1]);
       geoJsonRef.current = geoJson;
+
+      // 构建 GeoJSON 地名 ↔ 数据 key 的双向映射
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const features = (geoJson as any)?.features || [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const geoNames: string[] = features.map((f: any) => f.properties?.name).filter(Boolean);
+      const k2g: Record<string, string> = {};
+      const g2k: Record<string, string> = {};
+      for (const dk of Object.keys(data)) {
+        if (geoNames.includes(dk)) {
+          k2g[dk] = dk; g2k[dk] = dk;
+        } else {
+          const short = data[dk].shortName;
+          const match = geoNames.find((n: string) => n === short);
+          if (match) { k2g[dk] = match; g2k[match] = dk; }
+        }
+      }
+      keyToGeoRef.current = k2g;
+      geoToKeyRef.current = g2k;
 
       if (!mounted) return;
 
