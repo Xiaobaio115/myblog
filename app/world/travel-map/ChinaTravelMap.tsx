@@ -22,7 +22,7 @@ export default function ChinaTravelMap({ data }: Props) {
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  // ---- 3D 坐标 → 屏幕像素（用隐藏 2D geo 层做主坐标源，与 pin 位置一致） ----
+  // ---- 3D 坐标 → 屏幕像素 ----
   const geoToScreen = useCallback((lng: number, lat: number): [number, number] | null => {
     const chart = chartRef.current;
     if (!chart) return null;
@@ -30,7 +30,16 @@ export default function ChinaTravelMap({ data }: Props) {
     if (!container) return null;
     const rect = container.getBoundingClientRect();
 
-    // 用隐藏的 2D geo 做坐标转换 — 最稳定
+    // 优先用 scatter3D 自己的坐标系，这样线条会贴近黄色 pin 的真实渲染位置
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const px = (chart as any).convertToPixel({ seriesIndex: 0 }, [lng, lat, 2]);
+      if (px && !isNaN(px[0]) && !isNaN(px[1])) {
+        return [rect.left + px[0], rect.top + px[1]];
+      }
+    } catch { /* ignore */ }
+
+    // 备用：用隐藏的 2D geo 做坐标转换
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const px = (chart as any).convertToPixel("geo", [lng, lat]);
@@ -39,7 +48,7 @@ export default function ChinaTravelMap({ data }: Props) {
       }
     } catch { /* ignore */ }
 
-    // 备用：通过 seriesIndex
+    // 再备用：通过隐藏 scatter series
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const px = (chart as any).convertToPixel({ seriesIndex: 1 }, [lng, lat]);
@@ -75,7 +84,7 @@ export default function ChinaTravelMap({ data }: Props) {
         const svgRect = svg.getBoundingClientRect();
 
         const startX = pos[0] - svgRect.left;
-        const startY = pos[1] - 15 - svgRect.top;
+        const startY = pos[1] - svgRect.top;
         const endX = gRect.left - 10 - svgRect.left;
         const endY = gRect.top + gRect.height / 2 - svgRect.top;
         const cp1X = startX + (endX - startX) * 0.4;
@@ -107,7 +116,7 @@ export default function ChinaTravelMap({ data }: Props) {
     const pxPerDegLat = window.innerHeight / 100;
     let offsetX = -lngDiff * pxPerDegLng;
     let offsetY = latDiff * pxPerDegLat;
-    const maxOff = Math.min(window.innerWidth, window.innerHeight) * 0.35;
+    const maxOff = Math.min(window.innerWidth, window.innerHeight) * 0.18;
     offsetX = Math.max(-maxOff, Math.min(maxOff, offsetX));
     offsetY = Math.max(-maxOff, Math.min(maxOff, offsetY));
     container.style.transition = "transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)";
