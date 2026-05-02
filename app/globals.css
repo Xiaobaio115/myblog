@@ -6990,6 +6990,18 @@ html, body {
   transform: translateX(0);
   opacity: 1;
 }
+.tmap-detail-panel .tmap-panel-header,
+.tmap-detail-panel .tmap-panel-desc {
+  flex-shrink: 0;
+}
+.tmap-detail-panel .tmap-panel-content {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 28px 28px 28px;
+}
+.tmap-detail-panel .tmap-panel-content::-webkit-scrollbar { width: 4px; }
+.tmap-detail-panel .tmap-panel-content::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 2px; }
 
 .tmap-panel-header {
   display: flex;
@@ -7039,7 +7051,8 @@ html, body {
 }
 
 .tmap-panel-content {
-  flex: 1;
+  flex: 1 1 0;
+  min-height: 0;
   overflow-y: auto;
   padding: 16px 28px 28px 28px;
 }

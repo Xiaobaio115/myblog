@@ -53,14 +53,16 @@ export default function ChinaTravelMap({ data }: Props) {
             // 测试：不带 transform，直接投影
             const vm2: Float64Array = cam.viewMatrix.array;
             const pm2: Float64Array = cam.projectionMatrix.array;
-            for (const [label, wx, wy, wz] of [
+            const cases: [string, number, number, number][] = [
               ["raw", pt[0], pt[1], pt[2] || 0],
               ["transformed",
                 tm[0]*pt[0] + tm[4]*pt[1] + tm[8]*pt[2] + tm[12],
                 tm[1]*pt[0] + tm[5]*pt[1] + tm[9]*pt[2] + tm[13],
                 tm[2]*pt[0] + tm[6]*pt[1] + tm[10]*pt[2] + tm[14],
               ],
-            ]) {
+            ];
+            for (const c of cases) {
+              const label = c[0], wx = c[1], wy = c[2], wz = c[3];
               const vx = vm2[0]*wx + vm2[4]*wy + vm2[8]*wz + vm2[12];
               const vy = vm2[1]*wx + vm2[5]*wy + vm2[9]*wz + vm2[13];
               const vz = vm2[2]*wx + vm2[6]*wy + vm2[10]*wz + vm2[14];
