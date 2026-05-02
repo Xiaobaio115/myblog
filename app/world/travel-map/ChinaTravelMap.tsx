@@ -22,7 +22,7 @@ export default function ChinaTravelMap({ data }: Props) {
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
 
-  // ---- 3D 坐标 → 屏幕像素 ----
+  // ---- 3D 坐标 → 屏幕像素（用隐藏 2D geo 层做主坐标源，与 pin 位置一致） ----
   const geoToScreen = useCallback((lng: number, lat: number): [number, number] | null => {
     const chart = chartRef.current;
     if (!chart) return null;
@@ -30,54 +30,20 @@ export default function ChinaTravelMap({ data }: Props) {
     if (!container) return null;
     const rect = container.getBoundingClientRect();
 
+    // 用隐藏的 2D geo 做坐标转换 — 最稳定
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const model = (chart as any).getModel();
-      const comp = model?.getComponent("geo3D");
-      if (comp?.coordinateSystem) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const cs = comp.coordinateSystem as any;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const cam = cs.viewGL?.camera as any;
-        const pt: number[] | null = cs.dataToPoint([lng, lat, 2]);
-        if (pt && cam) {
-          const tm: Float64Array = cs.transform;
-          const lx = pt[0], ly = pt[1], lz = pt[2] || 0;
-          const wx = tm[0]*lx + tm[4]*ly + tm[8]*lz + tm[12];
-          const wy = tm[1]*lx + tm[5]*ly + tm[9]*lz + tm[13];
-          const wz = tm[2]*lx + tm[6]*ly + tm[10]*lz + tm[14];
-
-          const vm: Float64Array = cam.viewMatrix.array;
-          const vx = vm[0]*wx + vm[4]*wy + vm[8]*wz + vm[12];
-          const vy = vm[1]*wx + vm[5]*wy + vm[9]*wz + vm[13];
-          const vz = vm[2]*wx + vm[6]*wy + vm[10]*wz + vm[14];
-          const vw = vm[3]*wx + vm[7]*wy + vm[11]*wz + vm[15];
-
-          const pm: Float64Array = cam.projectionMatrix.array;
-          const cx = pm[0]*vx + pm[4]*vy + pm[8]*vz + pm[12]*vw;
-          const cy = pm[1]*vx + pm[5]*vy + pm[9]*vz + pm[13]*vw;
-          const cw = pm[3]*vx + pm[7]*vy + pm[11]*vz + pm[15]*vw;
-
-          if (cw > 0.01) {
-            const ndcX = cx / cw;
-            const ndcY = cy / cw;
-            const canvasW = chart.getDom().clientWidth;
-            const canvasH = chart.getDom().clientHeight;
-            const sx = (ndcX + 1) * 0.5 * canvasW;
-            const sy = (1 - ndcY) * 0.5 * canvasH;
-            if (!isNaN(sx) && sx > -200 && sx < canvasW + 200 && sy > -200 && sy < canvasH + 200) {
-              return [rect.left + sx, rect.top + sy];
-            }
-          }
-        }
+      const px = (chart as any).convertToPixel("geo", [lng, lat]);
+      if (px && !isNaN(px[0]) && !isNaN(px[1])) {
+        return [rect.left + px[0], rect.top + px[1]];
       }
     } catch { /* ignore */ }
 
-    // fallback: hidden 2D geo
+    // 备用：通过 seriesIndex
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const px = (chart as any).convertToPixel({ seriesIndex: 1 }, [lng, lat]);
-      if (px && !isNaN(px[0])) {
+      if (px && !isNaN(px[0]) && !isNaN(px[1])) {
         return [rect.left + px[0], rect.top + px[1]];
       }
     } catch { /* ignore */ }
