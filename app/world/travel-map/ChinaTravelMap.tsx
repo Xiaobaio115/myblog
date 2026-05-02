@@ -321,20 +321,26 @@ export default function ChinaTravelMap({ data }: Props) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).echarts = echarts;
 
-      // fetch china.json — 主源 aliyun DataV，备源 jsdelivr
-      const GEO_URLS = [
+      // fetch china.json — 多源回退，确保国内可用
+      const cdnUrls = [
         "https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json",
-        "https://cdn.jsdelivr.net/npm/echarts@5/map/json/china.json",
+        "https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/json/china.json",
+        "https://registry.npmmirror.com/echarts/4.9.0/files/map/json/china.json",
       ];
       let geoJson: unknown = null;
-      for (const url of GEO_URLS) {
+      for (const url of cdnUrls) {
         try {
-          const res = await fetch(url);
-          if (res.ok) { geoJson = await res.json(); break; }
-        } catch { /* try next */ }
+          const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+          if (res.ok) {
+            geoJson = await res.json();
+            break;
+          }
+        } catch {
+          console.warn("[ChinaTravelMap] cdn failed:", url);
+        }
       }
       if (!geoJson) {
-        console.error("[ChinaTravelMap] Failed to load china.json from all sources");
+        console.error("[ChinaTravelMap] All china.json sources failed");
         return;
       }
       echarts.registerMap("china", geoJson as Parameters<typeof echarts.registerMap>[1]);
