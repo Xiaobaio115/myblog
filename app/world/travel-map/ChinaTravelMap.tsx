@@ -152,7 +152,8 @@ export default function ChinaTravelMap({ data }: Props) {
       regions: { name: string; itemStyle: Record<string, unknown> }[],
       isInit = false,
     ) => {
-      const echarts = chartRef.current?.getDom() ? window.echarts : undefined;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const echarts = (window as any).echarts;
       if (!echarts) return;
 
       if (chartRef.current) {

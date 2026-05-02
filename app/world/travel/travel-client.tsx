@@ -70,6 +70,13 @@ export function TravelClient({ destinations, profile, postCount, photoCount }: P
               {dest.name}
             </button>
           ))}
+          <Link
+            href="/world/travel-map"
+            className="world-sub-nav-item"
+            style={{ color: "#38bdf8", fontWeight: 600, textAlign: "center", borderTop: "1px solid rgba(56,189,248,0.15)", marginTop: "8px", paddingTop: "12px" }}
+          >
+            🗺️ 3D 旅行地图
+          </Link>
           <span className="world-sub-nav-item muted">更多地方…</span>
         </aside>
 
