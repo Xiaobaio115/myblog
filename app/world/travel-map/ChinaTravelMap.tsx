@@ -188,9 +188,9 @@ export default function ChinaTravelMap({ data }: Props) {
     const latDiff = coord[1] - mapCenterLat;
     const pxPerDegLng = window.innerWidth / 150;
     const pxPerDegLat = window.innerHeight / 100;
-    let offsetX = -lngDiff * pxPerDegLng;
-    let offsetY = latDiff * pxPerDegLat;
-    const maxOff = Math.min(window.innerWidth, window.innerHeight) * 0.18;
+    let offsetX = -lngDiff * pxPerDegLng * 0.35;
+    let offsetY = latDiff * pxPerDegLat * 0.2;
+    const maxOff = Math.min(window.innerWidth, window.innerHeight) * 0.08;
     offsetX = Math.max(-maxOff, Math.min(maxOff, offsetX));
     offsetY = Math.max(-maxOff, Math.min(maxOff, offsetY));
     container.style.transition = "transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)";
