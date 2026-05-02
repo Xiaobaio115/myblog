@@ -7453,33 +7453,35 @@ html, body {
     border-bottom: 3px solid #38bdf8;
   }
 
-  /* 详情面板：从底部滑出，占 45vh，在省份栏上方 */
+  /* 详情面板：全屏覆盖，在省份栏上方 */
   .tmap-detail-panel {
     width: 100%;
-    height: 45vh;
-    max-height: 45vh;
-    top: auto;
-    bottom: 54px;
+    height: calc(100% - 54px);
+    max-height: none;
+    top: 0;
+    bottom: auto;
     right: 0;
     left: 0;
-    border-radius: 16px 16px 0 0;
-    transform: translateY(110%);
-    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+    border-radius: 0 0 16px 16px;
+    transform: translateY(-110%);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    background: rgba(15, 23, 42, 0.96);
+    backdrop-filter: blur(30px);
   }
   .tmap-detail-panel.show {
     transform: translateY(0);
   }
 
-  .tmap-panel-header { padding: 12px 16px 4px 16px; }
-  .tmap-panel-title { font-size: 18px; letter-spacing: 0.5px; }
-  .tmap-close-btn { width: 28px; height: 28px; font-size: 13px; }
-  .tmap-panel-desc { padding: 0 16px 8px 16px; font-size: 12px; line-height: 1.5; }
-  .tmap-panel-content { padding: 8px 16px 16px 16px; }
-  .tmap-city-name { font-size: 15px; margin-bottom: 4px; }
-  .tmap-city-desc { font-size: 12px; margin-bottom: 8px; }
-  .tmap-city-group { margin-bottom: 16px; }
-  .tmap-img-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
-  .tmap-img-card { height: 80px; border-radius: 8px; }
+  .tmap-panel-header { padding: 16px 16px 6px 16px; }
+  .tmap-panel-title { font-size: 22px; letter-spacing: 1px; }
+  .tmap-close-btn { width: 32px; height: 32px; font-size: 15px; }
+  .tmap-panel-desc { padding: 0 16px 10px 16px; font-size: 13px; line-height: 1.6; }
+  .tmap-panel-content { padding: 10px 16px 20px 16px; }
+  .tmap-city-name { font-size: 17px; margin-bottom: 4px; }
+  .tmap-city-desc { font-size: 13px; margin-bottom: 10px; }
+  .tmap-city-group { margin-bottom: 20px; }
+  .tmap-img-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .tmap-img-card { height: 120px; border-radius: 10px; }
   .tmap-svg-layer { display: none; }
 }
 .world-big-card:nth-child(4) .section-link  { animation-delay: 0.84s; }
