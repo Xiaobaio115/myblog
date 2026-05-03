@@ -7453,35 +7453,35 @@ html, body {
     border-bottom: 3px solid #38bdf8;
   }
 
-  /* 详情面板：全屏覆盖，在省份栏上方 */
+  /* 详情面板：底部弹出，40vh，地图在上方可见 */
   .tmap-detail-panel {
     width: 100%;
-    height: calc(100% - 54px);
-    max-height: none;
-    top: 0;
-    bottom: auto;
+    height: 40vh;
+    max-height: 40vh;
+    top: auto;
+    bottom: 54px;
     right: 0;
     left: 0;
-    border-radius: 0 0 16px 16px;
-    transform: translateY(-110%);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-    background: rgba(15, 23, 42, 0.96);
-    backdrop-filter: blur(30px);
+    border-radius: 14px 14px 0 0;
+    transform: translateY(110%);
+    box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.5);
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(24px);
   }
   .tmap-detail-panel.show {
     transform: translateY(0);
   }
 
-  .tmap-panel-header { padding: 16px 16px 6px 16px; }
-  .tmap-panel-title { font-size: 22px; letter-spacing: 1px; }
-  .tmap-close-btn { width: 32px; height: 32px; font-size: 15px; }
-  .tmap-panel-desc { padding: 0 16px 10px 16px; font-size: 13px; line-height: 1.6; }
-  .tmap-panel-content { padding: 10px 16px 20px 16px; }
-  .tmap-city-name { font-size: 17px; margin-bottom: 4px; }
-  .tmap-city-desc { font-size: 13px; margin-bottom: 10px; }
-  .tmap-city-group { margin-bottom: 20px; }
-  .tmap-img-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-  .tmap-img-card { height: 120px; border-radius: 10px; }
+  .tmap-panel-header { padding: 10px 14px 4px 14px; }
+  .tmap-panel-title { font-size: 16px; letter-spacing: 0.5px; }
+  .tmap-close-btn { width: 26px; height: 26px; font-size: 12px; }
+  .tmap-panel-desc { padding: 0 14px 6px 14px; font-size: 11px; line-height: 1.4; }
+  .tmap-panel-content { padding: 6px 14px 14px 14px; }
+  .tmap-city-name { font-size: 14px; margin-bottom: 2px; }
+  .tmap-city-desc { font-size: 11px; margin-bottom: 6px; }
+  .tmap-city-group { margin-bottom: 12px; }
+  .tmap-img-grid { grid-template-columns: repeat(3, 1fr); gap: 5px; }
+  .tmap-img-card { height: 60px; border-radius: 6px; }
   .tmap-svg-layer { display: none; }
 }
 .world-big-card:nth-child(4) .section-link  { animation-delay: 0.84s; }
