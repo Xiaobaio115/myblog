@@ -1,10 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect } from "react";
 
-export type Theme = "dark" | "blue" | "light";
-
-const CYCLE: Theme[] = ["light", "dark", "blue"];
+export type Theme = "light";
 
 const ThemeContext = createContext<{ theme: Theme; setTheme: (t: Theme) => void; toggle: () => void }>({
   theme: "light",
@@ -13,34 +11,22 @@ const ThemeContext = createContext<{ theme: Theme; setTheme: (t: Theme) => void;
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof window === "undefined") return "light";
-    const stored = localStorage.getItem("luna-theme") as Theme | null;
-    return stored && CYCLE.includes(stored) ? stored : "light";
-  });
-
-  function apply(t: Theme) {
-    setThemeState(t);
-    document.documentElement.setAttribute("data-theme", t);
-  }
-
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
+    localStorage.setItem("luna-theme", "light");
+    document.documentElement.setAttribute("data-theme", "light");
+  }, []);
 
-  function setTheme(t: Theme) {
-    localStorage.setItem("luna-theme", t);
-    apply(t);
+  function setTheme() {
+    localStorage.setItem("luna-theme", "light");
+    document.documentElement.setAttribute("data-theme", "light");
   }
 
   function toggle() {
-    const idx = CYCLE.indexOf(theme);
-    const next = CYCLE[(idx + 1) % CYCLE.length];
-    setTheme(next);
+    setTheme();
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, toggle }}>
+    <ThemeContext.Provider value={{ theme: "light", setTheme, toggle }}>
       {children}
     </ThemeContext.Provider>
   );

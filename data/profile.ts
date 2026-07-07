@@ -1,20 +1,20 @@
 export const profile = {
-  name: "LQPP",
+  name: "甘蔗甜不甜",
   siteName: "LQPP World",
-  tagline: "生活、技术、旅行与游戏构成的个人宇宙。",
+  tagline: "Stay hungry, stay foolish.",
   intro:
     "你好，我是 LQPP。这里记录我的生活、技术、家乡、学校、旅行、游戏，以及一些慢慢长大的想法。",
-  status: "正在建设自己的数字花园",
-  location: "中国 · 地球在线",
+  status: "正在逃早八中",
+  location: "中国 · 海南",
   avatarUrl: "",
-  email: "your-email@example.com",
+  email: "3559078927@qq.com",
   githubUrl: "https://github.com/yourname",
   tags: ["学生", "博客作者", "代码学习者", "旅行探索者", "游戏玩家"],
 };
 
 export const socials = [
   { label: "Email", value: profile.email, href: `mailto:${profile.email}` },
-  { label: "GitHub", value: "github.com/yourname", href: profile.githubUrl },
+  { label: "GitHub", value: "GitHub", href: profile.githubUrl },
   { label: "B 站", value: "Bilibili", href: "#" },
   { label: "微博", value: "Weibo", href: "#" },
 ];
@@ -22,15 +22,37 @@ export const socials = [
 export const skills = [
   {
     group: "正在使用",
-    items: ["HTML", "CSS", "JavaScript", "React", "Next.js", "Markdown", "Git"],
+    items: [
+      { name: "HTML", iconUrl: "https://cdn.simpleicons.org/html5/E34F26" },
+      { name: "CSS", iconUrl: "https://cdn.simpleicons.org/css/663399" },
+      { name: "JavaScript", iconUrl: "https://cdn.simpleicons.org/javascript/F7DF1E" },
+      { name: "React", iconUrl: "https://cdn.simpleicons.org/react/61DAFB" },
+      { name: "Next.js", iconUrl: "https://cdn.simpleicons.org/nextdotjs/000000" },
+      { name: "Markdown", iconUrl: "https://cdn.simpleicons.org/markdown/000000" },
+      { name: "Git", iconUrl: "https://cdn.simpleicons.org/git/F05032" },
+    ],
   },
   {
     group: "正在学习",
-    items: ["Node.js", "Python", "数据库", "算法", "AI 辅助编程", "性能优化"],
+    items: [
+      { name: "Node.js", iconUrl: "https://cdn.simpleicons.org/nodedotjs/5FA04E" },
+      { name: "Python", iconUrl: "https://cdn.simpleicons.org/python/3776AB" },
+      { name: "MongoDB", iconUrl: "https://cdn.simpleicons.org/mongodb/47A248" },
+      { name: "算法" },
+      { name: "AI 辅助编程", iconUrl: "https://cdn.simpleicons.org/openai/412991" },
+      { name: "性能优化" },
+    ],
   },
   {
     group: "想继续探索",
-    items: ["全栈开发", "个人知识库", "旅行地图", "游戏开发", "Web 动效", "3D 交互"],
+    items: [
+      { name: "全栈开发" },
+      { name: "个人知识库", iconUrl: "https://cdn.simpleicons.org/obsidian/7C3AED" },
+      { name: "旅行地图" },
+      { name: "游戏开发", iconUrl: "https://cdn.simpleicons.org/unity/000000" },
+      { name: "Web 动效" },
+      { name: "3D 交互", iconUrl: "https://cdn.simpleicons.org/threedotjs/000000" },
+    ],
   },
 ];
 

@@ -34,7 +34,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
   return (
     <SiteFrame>
-      <section className="article-layout container">
+      <section className="article-layout container pink-article-detail">
         <header className="article-header">
           <div className="article-nav-bar">
             <Link href="/articles" className="back-link">

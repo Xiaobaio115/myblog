@@ -49,7 +49,7 @@ export function TwikooComments({
   if (!envId) {
     return (
       <div className="comment-placeholder">
-        还没有配置 Twikoo。部署后可在环境变量里补上 `TWIKOO_ENV_ID`。
+        还没有配置 Twikoo。部署后可以在环境变量里补上 `TWIKOO_ENV_ID`。
       </div>
     );
   }

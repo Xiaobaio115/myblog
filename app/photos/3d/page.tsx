@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { getDb } from "@/lib/mongodb";
+import { AdminUploadLink } from "./AdminUploadLink";
 import StarPhotoWall from "./StarPhotoWall";
 
 type RawPhoto = {
@@ -13,13 +14,19 @@ type RawPhoto = {
 };
 
 export default async function ThreeDPhotosPage() {
-  const db = await getDb();
-  const result = (await db
-    .collection("photos")
-    .find({ isPrivate: { $ne: true } })
-    .sort({ createdAt: -1 })
-    .limit(80)
-    .toArray()) as RawPhoto[];
+  let result: RawPhoto[] = [];
+
+  try {
+    const db = await getDb();
+    result = (await db
+      .collection("photos")
+      .find({ isPrivate: { $ne: true } })
+      .sort({ createdAt: -1 })
+      .limit(80)
+      .toArray()) as RawPhoto[];
+  } catch {
+    result = [];
+  }
 
   const selectedCount = result.filter((photo) => Boolean(photo.showIn3d)).length;
   const selected =
@@ -40,8 +47,8 @@ export default async function ThreeDPhotosPage() {
     <main>
       <div className="three-d-page-nav">
         <Link href="/photos?view=static">返回分类浏览</Link>
-        <span>我的星空相册 · 3D 星空照片墙</span>
-        <Link href="/admin/photos">上传照片</Link>
+        <span>我的星空相册 / 3D 星空照片墙</span>
+        <AdminUploadLink />
       </div>
 
       <StarPhotoWall photos={photos} />

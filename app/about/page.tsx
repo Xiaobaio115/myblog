@@ -10,12 +10,17 @@ import {
   getSkillsSetting,
   getSocialsSetting,
 } from "@/lib/settings";
+import type { SkillItem } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "关于我 | LQPP Profile",
 };
+
+function normalizeSkill(item: SkillItem) {
+  return typeof item === "string" ? { name: item, iconUrl: "" } : item;
+}
 
 export default async function AboutPage() {
   const [profile, skills, education, socials] = await Promise.all([
@@ -27,45 +32,46 @@ export default async function AboutPage() {
 
   return (
     <SiteFrame>
-      <section className="hero container">
+      <section className="container pink-page-hero">
         <p className="eyebrow">LQPP Profile</p>
-        <h1 className="hero-title">我的档案</h1>
-        <p className="hero-copy">一个正在用代码、文字和照片搭建自己世界的人。</p>
+        <h1>我的档案</h1>
+        <p>这里放着我的状态、技能、经历和一些慢慢长大的想法。</p>
       </section>
 
-      <section className="container section profile-layout">
-        <div className="profile-side-wrapper">
-          <aside className="profile-side-card">
-            <div className="profile-avatar">
-              {profile.avatarUrl ? <img src={profile.avatarUrl} alt={profile.name} /> : "LQPP"}
-            </div>
-            <strong>{profile.name}</strong>
-            <span>{profile.status}</span>
-            <p>{profile.location}</p>
-            <div className="hero-actions">
-              <Link href="/guestbook" className="primary-link">
-                联系我
-              </Link>
-              <Link href="/world" className="secondary-link">
-                查看我的世界
-              </Link>
-            </div>
-          </aside>
-        </div>
+      <section className="container pink-about-layout">
+        <aside className="pink-about-card">
+          <div className="pink-profile-avatar">
+            {profile.avatarUrl ? <img src={profile.avatarUrl} alt={profile.name} /> : <span>LQ</span>}
+          </div>
+          <h2>{profile.name}</h2>
+          <p>{profile.status}</p>
+          {profile.location && <span>{profile.location}</span>}
+          <div className="pink-about-tags">
+            {profile.tags?.slice(0, 4).map((tag) => (
+              <span key={tag}>{tag}</span>
+            ))}
+          </div>
+          <Link href="/guestbook" className="pink-btn primary">
+            给我留言
+          </Link>
+          <Link href="/world" className="pink-btn">
+            查看我的世界
+          </Link>
+        </aside>
 
-        <div className="profile-content-stack">
-          <section className="glass-panel">
+        <div className="pink-about-stack">
+          <section className="pink-panel">
             <h2>我是谁</h2>
             <p>{profile.intro}</p>
             <p>
-              我会把学习过程、旅行照片、家乡记忆、学校经历、游戏片段和一些突然出现的想法放在这里。希望这个网站像一本不断更新的个人地图，记录我从哪里来、正在做什么、想去哪里。
+              我会把学习过程、旅行照片、家乡记忆、学校经历、游戏片段和突然冒出来的想法放在这里。这个网站像一张不断更新的个人地图，记录我从哪里来，正在做什么，也记录我想去哪里。
             </p>
             <div className="about-highlight-grid">
               {[
-                ["热爱探索", "探索未知世界和新技术"],
-                ["持续学习", "保持好奇心，不断成长"],
-                ["追求细节", "注重交互、排版与体验"],
-                ["分享交流", "把经验整理成可以被看见的内容"],
+                ["热爱探索", "探索未知世界和新的技术工具"],
+                ["持续学习", "保持好奇心，把学到的东西沉淀下来"],
+                ["追求细节", "在交互、排版和内容表达上慢慢打磨"],
+                ["分享交流", "把经历整理成可以被看见的内容"],
               ].map(([title, desc]) => (
                 <div key={title} className="about-highlight-card">
                   <strong>{title}</strong>
@@ -75,7 +81,7 @@ export default async function AboutPage() {
             </div>
           </section>
 
-          <section className="glass-panel">
+          <section className="pink-panel">
             <h2>教育经历</h2>
             <div className="profile-timeline">
               {education.map((item) => (
@@ -93,26 +99,33 @@ export default async function AboutPage() {
             </div>
           </section>
 
-          <section className="glass-panel">
+          <section className="pink-panel">
             <h2>我的工具箱</h2>
             <div className="tech-stack-grid">
               {skills.map((group) => (
                 <div key={group.group} className="tech-stack-group">
                   <strong>{group.group}</strong>
                   <div className="tech-icon-grid">
-                    {group.items.map((item) => (
-                      <span key={item} className="tech-icon-card">
-                        <b>{item.slice(0, 2).toUpperCase()}</b>
-                        <small>{item}</small>
-                      </span>
-                    ))}
+                    {group.items.map((rawItem) => {
+                      const item = normalizeSkill(rawItem);
+                      return (
+                        <span key={item.name} className="tech-icon-card">
+                          {item.iconUrl ? (
+                            <img src={item.iconUrl} alt="" className="tech-icon-image" />
+                          ) : (
+                            <b>{item.name.slice(0, 2).toUpperCase()}</b>
+                          )}
+                          <small>{item.name}</small>
+                        </span>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
             </div>
           </section>
 
-          <section className="glass-panel">
+          <section className="pink-panel">
             <h2>一些关于我的关键词</h2>
             <div className="personality-grid">
               {personality.map((item) => (
@@ -124,7 +137,7 @@ export default async function AboutPage() {
             </div>
           </section>
 
-          <section className="contact-panel">
+          <section className="pink-panel">
             <h2>找到我</h2>
             <p>如果你想交流技术、博客、游戏、旅行，或者只是想打个招呼，可以通过下面的方式找到我。</p>
             <div className="portal-grid">

@@ -15,6 +15,10 @@ type Photo = {
 };
 
 const DEFAULT_CATEGORIES = ["日常", "旅行", "风景", "美食", "截图", "灵感"];
+const ALL_FILTER = "全部";
+const THREE_D_FILTER = "3D 展示";
+const PRIVATE_FILTER = "私密";
+const UNCATEGORIZED = "未分类";
 
 async function parseJsonSafely(response: Response) {
   const text = await response.text();
@@ -42,7 +46,7 @@ export default function AdminPhotosPage() {
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState("");
   const [busyPhotoId, setBusyPhotoId] = useState("");
-  const [activeFilter, setActiveFilter] = useState<string>("全部");
+  const [activeFilter, setActiveFilter] = useState<string>(ALL_FILTER);
 
   const categories = useMemo(() => {
     const fromPhotos = photos.map((photo) => photo.category).filter(Boolean);
@@ -50,27 +54,31 @@ export default function AdminPhotosPage() {
   }, [photos]);
 
   const filterTabs = useMemo(() => {
-    const cats = Array.from(new Set(photos.map((p) => p.category || "未分类")));
-    return ["全部", ...cats, "3D展示", "私密"];
+    const cats = Array.from(new Set(photos.map((photo) => photo.category || UNCATEGORIZED)));
+    return [ALL_FILTER, ...cats, THREE_D_FILTER, PRIVATE_FILTER];
   }, [photos]);
 
   const filteredPhotos = useMemo(() => {
-    if (activeFilter === "全部") return photos;
-    if (activeFilter === "3D展示") return photos.filter((p) => p.showIn3d);
-    if (activeFilter === "私密") return photos.filter((p) => p.isPrivate);
-    return photos.filter((p) => (p.category || "未分类") === activeFilter);
+    if (activeFilter === ALL_FILTER) return photos;
+    if (activeFilter === THREE_D_FILTER) return photos.filter((photo) => photo.showIn3d);
+    if (activeFilter === PRIVATE_FILTER) return photos.filter((photo) => photo.isPrivate);
+    return photos.filter((photo) => (photo.category || UNCATEGORIZED) === activeFilter);
   }, [photos, activeFilter]);
 
   const groupedByCategory = useMemo(() => {
-    if (activeFilter !== "全部") return null;
+    if (activeFilter !== ALL_FILTER) return null;
     const map = new Map<string, Photo[]>();
-    for (const p of photos) {
-      const cat = p.category || "未分类";
+    for (const photo of photos) {
+      const cat = photo.category || UNCATEGORIZED;
       if (!map.has(cat)) map.set(cat, []);
-      map.get(cat)!.push(p);
+      map.get(cat)!.push(photo);
     }
     return map;
   }, [photos, activeFilter]);
+
+  const publicCount = photos.filter((photo) => !photo.isPrivate).length;
+  const privateCount = photos.filter((photo) => photo.isPrivate).length;
+  const selectedCount = photos.filter((photo) => photo.showIn3d).length;
 
   useEffect(() => {
     return () => {
@@ -115,9 +123,7 @@ export default function AdminPhotosPage() {
       } catch (error) {
         if (!cancelled) {
           startTransition(() => {
-            setMessage(
-              error instanceof Error ? error.message : "读取照片失败。"
-            );
+            setMessage(error instanceof Error ? error.message : "读取照片失败。");
           });
         }
       }
@@ -331,7 +337,7 @@ export default function AdminPhotosPage() {
 
       if (!response.ok) {
         throw new Error(
-          typeof data?.error === "string" ? data.error : "更新 3D 状态失败。"
+          typeof data?.error === "string" ? data.error : "更新 3D 展示状态失败。"
         );
       }
 
@@ -343,23 +349,28 @@ export default function AdminPhotosPage() {
         )
       );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "更新 3D 状态失败。");
+      setMessage(error instanceof Error ? error.message : "更新 3D 展示状态失败。");
     } finally {
       setBusyPhotoId("");
     }
   }
 
-  const selectedCount = photos.filter((photo) => photo.showIn3d).length;
+  function getFilterCount(tab: string) {
+    if (tab === ALL_FILTER) return photos.length;
+    if (tab === THREE_D_FILTER) return selectedCount;
+    if (tab === PRIVATE_FILTER) return privateCount;
+    return photos.filter((photo) => (photo.category || UNCATEGORIZED) === tab).length;
+  }
 
   function renderPhotoCard(photo: Photo) {
     const busy = busyPhotoId === photo._id;
     return (
       <article key={photo._id} className="photo-admin-item">
-        <img src={photo.url} alt={photo.caption} className="photo-admin-media" />
+        <img src={photo.url} alt={photo.caption || "照片"} className="photo-admin-media" />
         <div className="photo-admin-body">
           <div className="photo-admin-meta">
             <strong>{photo.caption || "未命名图片"}</strong>
-            <span>{photo.category || "未分类"}</span>
+            <span>{photo.category || UNCATEGORIZED}</span>
           </div>
           <div className="photo-admin-tags">
             <span className={`post-visit-chip ${photo.isPrivate ? "post-visit-chip-muted" : ""}`}>
@@ -399,199 +410,207 @@ export default function AdminPhotosPage() {
   }
 
   return (
-    <main className="admin-page">
-      <div className="admin-panel">
-        <div className="section-head">
+    <main className="admin-dashboard photo-admin-page">
+      <div className="admin-page-head admin-page-head-compact">
+        <div>
+          <div className="admin-badge">PHOTOS</div>
+          <h1>相册管理</h1>
+          <p>上传照片、设置分类、控制公开状态，并挑选进入 3D 相册的内容。</p>
+        </div>
+        <button type="button" className="secondary-link" onClick={() => void loadPhotos()}>
+          刷新图片库
+        </button>
+      </div>
+
+      <section className="photo-admin-summary">
+        <div>
+          <span>全部照片</span>
+          <strong>{photos.length}</strong>
+        </div>
+        <div>
+          <span>前台可见</span>
+          <strong>{publicCount}</strong>
+        </div>
+        <div>
+          <span>私密照片</span>
+          <strong>{privateCount}</strong>
+        </div>
+        <div>
+          <span>3D 展示</span>
+          <strong>{selectedCount}</strong>
+        </div>
+      </section>
+
+      {message ? <div className="status-banner">{message}</div> : null}
+
+      <section className="photo-admin-layout">
+        <div className="photo-upload-card">
           <div>
-            <div className="admin-kicker">Photos</div>
-            <h1 className="section-title">相册管理</h1>
-            <p className="section-copy">
-              上传照片、切换公开或私密、删除照片，以及挑选进入 3D 展示的内容。
-            </p>
+            <div className="admin-badge">UPLOAD</div>
+            <h2 className="section-title">上传图片</h2>
+            <p className="section-copy">支持批量选择。上传后会保存到相册库，再按分类展示。</p>
+          </div>
+
+          <label className="photo-file-drop">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(event) =>
+                handleFileChange(Array.from(event.target.files || []))
+              }
+            />
+            {previews.length > 0 ? (
+              <div className="photo-upload-preview-grid">
+                {previews.slice(0, 6).map((preview, index) => (
+                  <img
+                    key={preview}
+                    src={preview}
+                    alt={`预览 ${index + 1}`}
+                    className="photo-upload-preview"
+                  />
+                ))}
+                {previews.length > 6 ? (
+                  <span className="photo-upload-count">+{previews.length - 6}</span>
+                ) : null}
+              </div>
+            ) : (
+              <div className="photo-upload-empty">
+                <div className="photo-upload-icon">IMG</div>
+                <strong>选择一张或多张图片</strong>
+                <p>支持 JPG、PNG、WebP、GIF。上传前可先设置说明、分类和可见范围。</p>
+              </div>
+            )}
+          </label>
+
+          <div className="photo-upload-form">
+            <input
+              className="admin-input"
+              placeholder="图片说明，可选"
+              value={caption}
+              onChange={(event) => setCaption(event.target.value)}
+              disabled={uploading}
+            />
+
+            <select
+              className="admin-input"
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              disabled={uploading}
+            >
+              {categories.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+              <option value="__custom__">+ 自定义分类</option>
+            </select>
+
+            {category === "__custom__" ? (
+              <input
+                className="admin-input"
+                placeholder="输入新的分类名"
+                value={customCategory}
+                onChange={(event) => setCustomCategory(event.target.value)}
+                disabled={uploading}
+              />
+            ) : null}
+
+            <label className="checkbox-row">
+              <input
+                type="checkbox"
+                checked={isPrivate}
+                onChange={(event) => setIsPrivate(event.target.checked)}
+                disabled={uploading}
+              />
+              <span>仅后台可见</span>
+            </label>
+
+            {uploading ? (
+              <div className="upload-progress">
+                <span>上传中 {progress}%</span>
+                <div className="upload-progress-bar">
+                  <div
+                    className="upload-progress-value"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            <button
+              type="button"
+              className="admin-button"
+              onClick={() => void uploadPhoto()}
+              disabled={uploading}
+            >
+              {uploading
+                ? "上传中..."
+                : files.length > 1
+                  ? `上传 ${files.length} 张图片`
+                  : "上传到相册"}
+            </button>
           </div>
         </div>
 
-        {message ? <div className="status-banner">{message}</div> : null}
-
-        <section className="photo-admin-layout">
-          <div className="photo-upload-card">
+        <div className="photo-library-card">
+          <div className="section-head photo-library-head">
             <div>
-              <h2 className="section-title">上传图片</h2>
-              <p className="section-copy">
-                支持公开或仅后台可见。大图会直接上传到 Blob，不再走旧的函数体上传。
-              </p>
+              <div className="admin-badge">LIBRARY</div>
+              <h2 className="section-title">图片库</h2>
+              <p className="section-copy">当前筛选：{activeFilter}，共 {filteredPhotos.length} 张。</p>
             </div>
+          </div>
 
-            <label className="photo-file-drop">
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(event) =>
-                  handleFileChange(Array.from(event.target.files || []))
-                }
-              />
-              {previews.length > 0 ? (
-                <div className="photo-upload-preview-grid">
-                  {previews.slice(0, 6).map((preview, index) => (
-                    <img
-                      key={preview}
-                      src={preview}
-                      alt={`预览 ${index + 1}`}
-                      className="photo-upload-preview"
-                    />
+          {photos.length > 0 ? (
+            <>
+              <div className="photo-library-filters">
+                {filterTabs.map((tab) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    className={`photo-library-filter-btn${activeFilter === tab ? " photo-library-filter-active" : ""}`}
+                    onClick={() => setActiveFilter(tab)}
+                  >
+                    {tab}
+                    <span className="photo-filter-count">{getFilterCount(tab)}</span>
+                  </button>
+                ))}
+              </div>
+
+              {activeFilter === ALL_FILTER && groupedByCategory ? (
+                <div className="photo-category-sections">
+                  {Array.from(groupedByCategory.entries()).map(([cat, catPhotos]) => (
+                    <div key={cat} className="photo-category-group">
+                      <div className="photo-category-heading">
+                        <span>{cat}</span>
+                        <span className="photo-category-count">{catPhotos.length} 张</span>
+                      </div>
+                      <div className="photo-admin-grid">
+                        {catPhotos.map((photo) => renderPhotoCard(photo))}
+                      </div>
+                    </div>
                   ))}
-                  {previews.length > 6 ? (
-                    <span className="photo-upload-count">+{previews.length - 6}</span>
-                  ) : null}
+                </div>
+              ) : filteredPhotos.length > 0 ? (
+                <div className="photo-admin-grid">
+                  {filteredPhotos.map((photo) => renderPhotoCard(photo))}
                 </div>
               ) : (
-                <div className="photo-upload-empty">
-                  <div className="photo-upload-icon">IMG</div>
-                  <strong>选择一张或多张要上传的图片</strong>
-                  <p>支持 JPG、PNG、WebP、GIF。上传后会自动保存到相册库。</p>
+                <div className="photo-library-empty">
+                  <div className="empty-icon">空</div>
+                  <p>这个筛选条件下还没有图片。</p>
                 </div>
               )}
-            </label>
-
-            <div className="photo-upload-form">
-              <input
-                className="admin-input"
-                placeholder="图片说明，可选"
-                value={caption}
-                onChange={(event) => setCaption(event.target.value)}
-                disabled={uploading}
-              />
-
-              <select
-                className="admin-input"
-                value={category}
-                onChange={(event) => setCategory(event.target.value)}
-                disabled={uploading}
-              >
-                {categories.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-                <option value="__custom__">+ 自定义分类</option>
-              </select>
-
-              {category === "__custom__" ? (
-                <input
-                  className="admin-input"
-                  placeholder="输入新的分类名"
-                  value={customCategory}
-                  onChange={(event) => setCustomCategory(event.target.value)}
-                  disabled={uploading}
-                />
-              ) : null}
-
-              <label className="checkbox-row">
-                <input
-                  type="checkbox"
-                  checked={isPrivate}
-                  onChange={(event) => setIsPrivate(event.target.checked)}
-                  disabled={uploading}
-                />
-                <span>仅后台可见</span>
-              </label>
-
-              {uploading ? (
-                <div className="upload-progress">
-                  <span>上传中 {progress}%</span>
-                  <div className="upload-progress-bar">
-                    <div
-                      className="upload-progress-value"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                </div>
-              ) : null}
-
-              <button
-                type="button"
-                className="admin-button"
-                onClick={() => void uploadPhoto()}
-                disabled={uploading}
-              >
-                {uploading
-                  ? "上传中..."
-                  : files.length > 1
-                    ? `上传 ${files.length} 张图片`
-                    : "上传到相册"}
-              </button>
+            </>
+          ) : (
+            <div className="photo-library-empty">
+              <div className="empty-icon">图</div>
+              <p>还没有图片，先上传一张看看。</p>
             </div>
-          </div>
-
-          <div className="photo-library-card">
-            <div className="section-head">
-              <div>
-                <h2 className="section-title">图片库</h2>
-                <p className="section-copy">
-                  共 {photos.length} 张，已加入 3D 展示 {selectedCount} 张。
-                </p>
-              </div>
-            </div>
-
-            {photos.length > 0 ? (
-              <>
-                <div className="photo-library-filters">
-                  {filterTabs.map((tab) => (
-                    <button
-                      key={tab}
-                      type="button"
-                      className={`photo-library-filter-btn${activeFilter === tab ? " photo-library-filter-active" : ""}`}
-                      onClick={() => setActiveFilter(tab)}
-                    >
-                      {tab === "3D展示" ? "✨ 3D 展示" : tab === "私密" ? "🔒 私密" : tab}
-                      <span className="photo-filter-count">
-                        {tab === "全部"
-                          ? photos.length
-                          : tab === "3D展示"
-                            ? photos.filter((p) => p.showIn3d).length
-                            : tab === "私密"
-                              ? photos.filter((p) => p.isPrivate).length
-                              : photos.filter((p) => (p.category || "未分类") === tab).length}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-
-                {activeFilter === "全部" && groupedByCategory ? (
-                  <div className="photo-category-sections">
-                    {Array.from(groupedByCategory.entries()).map(([cat, catPhotos]) => (
-                      <div key={cat} className="photo-category-group">
-                        <div className="photo-category-heading">
-                          <span>{cat}</span>
-                          <span className="photo-category-count">{catPhotos.length} 张</span>
-                        </div>
-                        <div className="photo-admin-grid">
-                          {catPhotos.map((photo) => renderPhotoCard(photo))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : filteredPhotos.length > 0 ? (
-                  <div className="photo-admin-grid">
-                    {filteredPhotos.map((photo) => renderPhotoCard(photo))}
-                  </div>
-                ) : (
-                  <div className="photo-library-empty">
-                    <div className="empty-icon">空</div>
-                    <p>这个分类下还没有图片。</p>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="photo-library-empty">
-                <div className="empty-icon">图</div>
-                <p>还没有图片，先上传一张看看。</p>
-              </div>
-            )}
-          </div>
-        </section>
-      </div>
+          )}
+        </div>
+      </section>
     </main>
   );
 }

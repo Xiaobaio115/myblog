@@ -97,7 +97,7 @@ export function GuestbookForm() {
       {status === "success" ? (
         <p className="guestbook-success">留言已提交，审核后会显示在页面上。</p>
       ) : (
-        <button type="submit" className="admin-button" disabled={status === "loading"}>
+        <button type="submit" className="pink-btn primary" disabled={status === "loading"}>
           {status === "loading" ? "提交中..." : "发送留言"}
         </button>
       )}

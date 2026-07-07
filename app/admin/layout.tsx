@@ -1,4 +1,4 @@
-import AdminGate from "../photos/AdminGate";
+import AdminGate from "./AdminGate";
 
 
 export default function AdminLayout({

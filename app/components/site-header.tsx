@@ -4,7 +4,6 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ThemeToggle } from "@/app/components/theme-toggle";
 
 type SiteHeaderProps = {
   profileName?: string;
@@ -40,6 +39,7 @@ const SearchIcon = () => (
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
+    aria-hidden="true"
   >
     <circle cx="11" cy="11" r="8" />
     <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -89,10 +89,11 @@ export function SiteHeader({
 
   return (
     <>
-      <nav className="nav">
+      <nav className="nav pink-nav">
         <div className="container nav-inner">
-          <Link href="/" className="nav-logo">
-            LQPP World
+          <Link href="/" className="nav-logo pink-brand">
+            <span className="pink-brand-mark" />
+            <span>LQPP World</span>
           </Link>
 
           <div className="nav-links">
@@ -109,14 +110,13 @@ export function SiteHeader({
 
           <div className="nav-actions">
             <button
-              className="theme-toggle"
+              className="theme-toggle pink-search-button"
               aria-label="搜索文章"
               onClick={() => setSearchOpen(true)}
               type="button"
             >
               <SearchIcon />
             </button>
-            <ThemeToggle />
             <button
               type="button"
               className="mobile-menu-button"

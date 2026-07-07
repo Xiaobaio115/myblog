@@ -39,46 +39,42 @@ export default async function GuestbookPage() {
 
   return (
     <SiteFrame>
-      <section className="hero container">
+      <section className="container pink-page-hero">
         <p className="eyebrow">Guestbook</p>
-        <h1 className="hero-title">给我留句话</h1>
-        <p className="hero-copy">
-          无论是技术、博客、旅行、游戏，还是一句简单的你好，都欢迎留下。
-        </p>
+        <h1>给我留句话</h1>
+        <p>无论是技术、博客、旅行、游戏，还是一句简单的你好，都欢迎留下。</p>
       </section>
 
-      <section className="container section guestbook-shell">
-        <aside className="guestbook-contact">
-          <div className="glass-panel">
-            <h2>联系我</h2>
-            <p className="section-copy">也可以通过以下方式找到我：</p>
-            <div className="profile-content-stack">
-              {socials.map((item) => (
-                <a
-                  key={item.label}
-                  href={item.href}
-                  className="guestbook-social-link"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <span>{item.label}</span>
-                  <span>{item.value}</span>
-                </a>
-              ))}
-            </div>
+      <section className="container pink-guestbook-shell">
+        <aside className="pink-panel">
+          <h2>联系我</h2>
+          <p>也可以通过以下方式找到我：</p>
+          <div className="profile-content-stack">
+            {socials.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                className="guestbook-social-link"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>{item.label}</span>
+                <span>{item.value}</span>
+              </a>
+            ))}
           </div>
         </aside>
 
-        <div className="guestbook-main">
-          <div className="glass-panel">
+        <div className="pink-about-stack">
+          <div className="pink-panel">
             <h2>留言板</h2>
-            <p className="section-copy">留言提交后会进入审核，审核通过后展示在这里。</p>
+            <p>留言提交后会进入审核，通过后展示在这里。接口保留限流、防刷和审核逻辑。</p>
             <GuestbookForm />
           </div>
 
-          {messages.length > 0 && (
-            <div className="guestbook-messages">
-              <h3 className="section-title">大家说的话</h3>
+          <div className="guestbook-messages">
+            <h3 className="section-title">大家说的话</h3>
+            {messages.length > 0 ? (
               <div className="guestbook-list">
                 {messages.map((item) => (
                   <div key={item._id} className="guestbook-item">
@@ -98,8 +94,13 @@ export default async function GuestbookPage() {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="empty-state">
+                <div className="empty-icon">LQ</div>
+                <p>还没有公开留言，等第一条审核通过后会显示在这里。</p>
+              </div>
+            )}
+          </div>
         </div>
       </section>
     </SiteFrame>

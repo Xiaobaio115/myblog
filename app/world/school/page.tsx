@@ -31,28 +31,16 @@ export default async function SchoolPage() {
         <aside className="world-sub-sidebar">
           <div className="sidebar-profile-card">
             <div className="sidebar-profile-avatar">
-              {profile.avatarUrl ? (
-                <img src={profile.avatarUrl} alt={profile.name} />
-              ) : (
-                <span>{profile.name.slice(0, 2)}</span>
-              )}
+              {profile.avatarUrl ? <img src={profile.avatarUrl} alt={profile.name} /> : <span>{profile.name.slice(0, 2)}</span>}
             </div>
             <strong className="sidebar-profile-name">{profile.name}</strong>
             <span className="sidebar-profile-tagline">{profile.tagline}</span>
             <div className="sidebar-profile-stats">
-              <div>
-                <strong>{posts.length}</strong>
-                <span>文章</span>
-              </div>
-              <div>
-                <strong>{photosAll.length}</strong>
-                <span>照片</span>
-              </div>
+              <div><strong>{posts.length}</strong><span>文章</span></div>
+              <div><strong>{photosAll.length}</strong><span>照片</span></div>
             </div>
             {profile.location && <p className="sidebar-profile-location">{profile.location}</p>}
-            <Link href="/about" className="sidebar-profile-link">
-              查看完整档案
-            </Link>
+            <Link href="/about" className="sidebar-profile-link">查看完整档案</Link>
           </div>
           <div className="world-sub-nav-item active">{section.title}</div>
         </aside>
@@ -66,21 +54,9 @@ export default async function SchoolPage() {
               </div>
             </div>
 
-            {section.cover && (
-              <div className="world-sub-cover">
-                <img src={section.cover} alt={section.title} />
-              </div>
-            )}
-
+            {section.cover && <div className="world-sub-cover"><img src={section.cover} alt={section.title} /></div>}
             {section.desc && <p className="world-sub-desc">{section.desc}</p>}
-
-            {section.tags.length > 0 && (
-              <div className="world-tag-row">
-                {section.tags.map((tag) => (
-                  <span key={tag}>{tag}</span>
-                ))}
-              </div>
-            )}
+            {section.tags.length > 0 && <div className="world-tag-row">{section.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>}
           </div>
 
           {education.length > 0 && (
@@ -99,9 +75,7 @@ export default async function SchoolPage() {
                       {item.desc && <p className="edu-timeline-desc">{item.desc}</p>}
                       {item.tags.length > 0 && (
                         <div className="world-tag-row" style={{ justifyContent: "flex-start" }}>
-                          {item.tags.map((tag) => (
-                            <span key={tag}>{tag}</span>
-                          ))}
+                          {item.tags.map((tag) => <span key={tag}>{tag}</span>)}
                         </div>
                       )}
                     </div>

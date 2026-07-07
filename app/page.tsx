@@ -14,8 +14,10 @@ export default async function HomePage() {
     getLatestPhotos(48),
     getProfileSetting(),
   ]);
+
   const latestPosts = posts.slice(0, 4);
   const featuredPhotos = photos.slice(0, 8);
+  const displayName = profile.name || "LQPP";
 
   const stats = [
     { label: "文章", value: posts.length },
@@ -25,67 +27,90 @@ export default async function HomePage() {
 
   return (
     <SiteFrame>
-      <section className="home-hero-v2 container">
-        <div className="home-hero-left">
+      <section className="pink-home-hero container">
+        <div className="pink-home-copy">
           <p className="eyebrow">Personal Digital Garden</p>
-          <h1 className="home-hi-title">
-            Hi，我是 {profile.name}
-          </h1>
-          <p className="home-hi-sub">{profile.status}</p>
-          <p className="home-hi-desc">{profile.intro}</p>
-          <div className="hero-actions left">
-            <Link href="/world" className="primary-link">
+          <h1>Hi，我是 {displayName}</h1>
+          <p className="pink-home-status">{profile.status}</p>
+          <p className="pink-home-intro">{profile.intro}</p>
+          <div className="pink-home-actions">
+            <Link href="/world" className="pink-btn primary">
               探索我的世界
             </Link>
-            <Link href="/articles" className="secondary-link">
+            <Link href="/articles" className="pink-btn">
               查看文章
             </Link>
-            <Link href="/photos/3d" className="secondary-link star-wall-btn">
+            <Link href="/photos/3d" className="pink-btn">
               进入星空相册
             </Link>
           </div>
         </div>
 
-        <aside className="home-profile-card">
-          <div className="home-profile-avatar">
-            {profile.avatarUrl ? <img src={profile.avatarUrl} alt={profile.name} /> : <span>LQPP</span>}
+        <aside className="pink-profile-card">
+          <div className="pink-profile-avatar">
+            {profile.avatarUrl ? <img src={profile.avatarUrl} alt={displayName} /> : <span>LQ</span>}
           </div>
-          <strong className="home-profile-name">{profile.name}</strong>
-          <span className="home-profile-tagline">{profile.tagline}</span>
-          <div className="home-profile-stats">
+          <h2>{displayName}</h2>
+          <p>{profile.tagline}</p>
+          <div className="pink-profile-stats">
             {stats.map((item) => (
-              <div key={item.label} className="home-stat">
+              <div key={item.label}>
                 <strong>{item.value}</strong>
                 <span>{item.label}</span>
               </div>
             ))}
           </div>
-          <div className="home-profile-meta">
+          <div className="pink-profile-meta">
             {profile.location && <span>{profile.location}</span>}
             {profile.email && <span>{profile.email}</span>}
             {profile.githubUrl && (
-              <span>
-                <a href={profile.githubUrl} target="_blank" rel="noopener noreferrer">
-                  GitHub
-                </a>
-              </span>
+              <a href={profile.githubUrl} target="_blank" rel="noopener noreferrer">
+                GitHub
+              </a>
             )}
           </div>
-          <Link href="/about" className="profile-card-link">
+          <Link href="/about" className="pink-profile-link">
             查看完整档案
           </Link>
         </aside>
       </section>
 
-      <section className="container section">
-        <div className="section-head">
-          <div>
-            <h2 className="section-title">最新文章</h2>
-            <p className="section-copy">技术笔记、生活随笔和突然出现的想法。</p>
-          </div>
-          <Link href="/articles" className="section-link">
-            查看全部
+      <section className="container pink-section">
+        <div className="pink-section-head">
+          <h2>保留现有内容模块，再统一成粉色高级前台。</h2>
+          <p>文章、旅行地图、相册和 3D 星空墙都继续读取你现在的数据，只调整展示层。</p>
+        </div>
+
+        <div className="pink-module-grid">
+          <article className="pink-module pink-module-wide">
+            <div>
+              <span className="pink-module-kicker">Articles</span>
+              <h3>最新文章</h3>
+              <p>技术笔记、生活随笔和突然出现的想法，继续来自文章数据库。</p>
+            </div>
+            <Link href="/articles" className="pink-text-link">
+              查看全部
+            </Link>
+          </article>
+
+          <Link href="/world/travel-map" className="pink-module pink-module-dark">
+            <span className="pink-module-kicker">Travel Map</span>
+            <h3>我的旅行地图</h3>
+            <p>3D 中国地图、城市详情、照片和路线记忆全部保留。</p>
           </Link>
+
+          <Link href="/photos/3d" className="pink-module">
+            <span className="pink-module-kicker">Star Album</span>
+            <h3>3D 星空相册</h3>
+            <p>访客只看照片墙和评论，上传入口仍然只给后台登录用户。</p>
+          </Link>
+        </div>
+      </section>
+
+      <section className="container pink-section">
+        <div className="pink-section-head">
+          <h2>最新文章</h2>
+          <p>这里直接使用 `getPublishedPosts` 的数据，部署后仍然显示后台发布的文章。</p>
         </div>
         {latestPosts.length > 0 ? (
           <div className="cards-grid">
@@ -101,32 +126,13 @@ export default async function HomePage() {
         )}
       </section>
 
-      <section className="container section">
-        <Link href="/world/travel-map" className="home-travel-map-card">
-          <div className="home-travel-map-card-bg" />
-          <div className="home-travel-map-card-body">
-            <span className="home-travel-map-icon">Map</span>
-            <div className="home-travel-map-text">
-              <h3>我的旅行地图</h3>
-              <p>用 3D 互动地图记录走过的城市、照片和路线记忆。</p>
-            </div>
-            <span className="home-travel-map-cta">探索</span>
-          </div>
-        </Link>
-      </section>
-
-      <section className="container section">
-        <div className="section-head">
-          <div>
-            <h2 className="section-title">精选相册</h2>
-            <p className="section-copy">把生活片段放进一个可以浏览的星空里。</p>
-          </div>
-          <Link href="/photos" className="section-link">
-            查看全部
-          </Link>
+      <section className="container pink-section">
+        <div className="pink-section-head">
+          <h2>精选相册</h2>
+          <p>这里直接使用 `getLatestPhotos` 的数据，后台上传后前台会自动展示。</p>
         </div>
         {featuredPhotos.length > 0 ? (
-          <div className="home-photo-grid">
+          <div className="home-photo-grid pink-photo-grid">
             {featuredPhotos.map((photo) => (
               <Link key={photo._id} href="/photos" className="home-photo-item">
                 <img src={photo.url} alt={photo.caption} loading="lazy" />
@@ -135,10 +141,10 @@ export default async function HomePage() {
           </div>
         ) : (
           <div className="home-photo-placeholder">
-            <Link href="/photos/3d" className="primary-link">
+            <Link href="/photos/3d" className="pink-btn primary">
               打开 3D 星空相册
             </Link>
-            <Link href="/photos" className="secondary-link">
+            <Link href="/photos" className="pink-btn">
               查看全部照片
             </Link>
           </div>

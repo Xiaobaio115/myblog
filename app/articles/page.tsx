@@ -37,16 +37,14 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
 
   return (
     <SiteFrame>
-      <section className="hero container">
+      <section className="container pink-page-hero">
         <p className="eyebrow">Thinking Fragments</p>
-        <h1 className="hero-title">思考碎片</h1>
-        <p className="hero-copy">
-          这里放着我的技术笔记、生活随笔、旅行记录和一些突然出现的想法。
-        </p>
+        <h1>思考碎片</h1>
+        <p>这里放着我的技术笔记、生活随笔、旅行记录和一些突然出现的想法。</p>
       </section>
 
-      <section className="container section article-shell">
-        <aside className="article-sidebar">
+      <section className="container pink-content-shell">
+        <aside className="pink-filter-panel">
           <strong>文章分类</strong>
           <div className="article-sidebar-links">
             <Link
@@ -67,8 +65,8 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
           </div>
         </aside>
 
-        <div className="article-main">
-          <div className="filter-panel">
+        <div className="pink-content-main">
+          <div className="pink-panel">
             <form action="/articles" method="get" className="search-form">
               {selectedTag ? <input type="hidden" name="tag" value={selectedTag} /> : null}
               <input
@@ -78,19 +76,15 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
                 placeholder="搜索标题、摘要或标签"
                 className="search-input"
               />
-              <button type="submit" className="search-button">
+              <button type="submit" className="pink-btn primary">
                 搜索
               </button>
             </form>
           </div>
 
-          <div className="section-head">
-            <div>
-              <h2 className="section-title">
-                {query ? `“${query}”的搜索结果` : selectedTag || "全部文章"}
-              </h2>
-              <p className="section-copy">共找到 {filteredPosts.length} 篇内容。</p>
-            </div>
+          <div className="pink-section-head compact">
+            <h2>{query ? `“${query}”的搜索结果` : selectedTag || "全部文章"}</h2>
+            <p>共找到 {filteredPosts.length} 篇内容。</p>
           </div>
 
           {filteredPosts.length > 0 ? (

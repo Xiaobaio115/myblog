@@ -14,13 +14,13 @@ export default async function ProjectsPage() {
 
   return (
     <SiteFrame>
-      <section className="hero container">
+      <section className="container pink-page-hero">
         <p className="eyebrow">Projects</p>
-        <h1 className="hero-title">我正在做的东西</h1>
-        <p className="hero-copy">这里记录本站、技术练习、未来想探索的作品和长期建设计划。</p>
+        <h1>我正在做的东西</h1>
+        <p>这里记录本站、技术练习、未来想探索的作品和长期建设计划。</p>
       </section>
 
-      <section className="container section">
+      <section className="container pink-section">
         <div className="project-showcase-grid">
           {projects.map((project) => (
             <Link key={project.title} href={project.href} className="project-card">

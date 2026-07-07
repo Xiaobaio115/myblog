@@ -6,6 +6,7 @@ import type {
   ProfileSetting,
   SocialItem,
   SkillGroup,
+  SkillItem,
   EducationItem,
   ProjectItem,
   TravelItem,
@@ -27,6 +28,21 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "games", label: "🎮 游戏列表" },
   { key: "world", label: "🌍 世界分区" },
 ];
+
+async function parseJsonSafely(response: Response) {
+  const text = await response.text();
+  if (!text.trim()) return null;
+
+  try {
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch {
+    return { error: text };
+  }
+}
+
+function normalizeSkillItem(item: SkillItem) {
+  return typeof item === "string" ? { name: item, iconUrl: "" } : item;
+}
 
 export default function AdminSettingsPage() {
   const [pw] = useState(() =>
@@ -128,7 +144,7 @@ export default function AdminSettingsPage() {
                 />
               )}
               {tab === "skills" && (
-                <SkillsForm
+                <SkillsFormWithIcons
                   value={settings.skills}
                   saving={saving}
                   onChange={(v) => setSettings({ ...settings, skills: v })}
@@ -317,6 +333,183 @@ function ProfileForm({ value, saving, onChange, onSave }: {
   );
 }
 
+function SkillsFormWithIcons({ value, saving, onChange, onSave }: {
+  value: SkillGroup[];
+  saving: boolean;
+  onChange: (v: SkillGroup[]) => void;
+  onSave: (v: SkillGroup[]) => void;
+}) {
+  function updateItem(groupIndex: number, itemIndex: number, item: SkillItem) {
+    const next = [...value];
+    const group = next[groupIndex];
+    const items = [...group.items];
+    items[itemIndex] = item;
+    next[groupIndex] = { ...group, items };
+    onChange(next);
+  }
+
+  return (
+    <div className="settings-col">
+      <h2>技能栈</h2>
+      <p className="settings-help">
+        每个技术项都可以配置图标图片 URL，也可以直接上传图片到线上 Blob。部署后不会依赖本地文件。
+      </p>
+
+      {value.map((group, gi) => (
+        <div key={gi} className="settings-skill-group">
+          <div className="settings-row2">
+            <input
+              className="admin-input"
+              placeholder="分组名称"
+              value={group.group}
+              onChange={(event) => {
+                const next = [...value];
+                next[gi] = { ...group, group: event.target.value };
+                onChange(next);
+              }}
+            />
+            <button
+              type="button"
+              className="danger-btn"
+              onClick={() => onChange(value.filter((_, i) => i !== gi))}
+            >
+              删除分组
+            </button>
+          </div>
+
+          <div className="settings-skill-items">
+            {group.items.map((rawItem, itemIndex) => {
+              const item = normalizeSkillItem(rawItem);
+              return (
+                <div className="settings-skill-item-editor" key={`${item.name}-${itemIndex}`}>
+                  <div className="settings-skill-icon-preview">
+                    {item.iconUrl ? (
+                      <img src={item.iconUrl} alt="" />
+                    ) : (
+                      <span>{item.name.slice(0, 2).toUpperCase() || "?"}</span>
+                    )}
+                  </div>
+                  <input
+                    className="admin-input"
+                    placeholder="技术名称，如 React"
+                    value={item.name}
+                    onChange={(event) => updateItem(gi, itemIndex, { ...item, name: event.target.value })}
+                  />
+                  <input
+                    className="admin-input"
+                    placeholder="图标图片 URL，可粘贴 CDN / Blob 地址"
+                    value={item.iconUrl ?? ""}
+                    onChange={(event) => updateItem(gi, itemIndex, { ...item, iconUrl: event.target.value })}
+                  />
+                  <SkillIconUploader
+                    onUploaded={(iconUrl) => updateItem(gi, itemIndex, { ...item, iconUrl })}
+                  />
+                  <button
+                    type="button"
+                    className="danger-btn"
+                    onClick={() => {
+                      const next = [...value];
+                      const items = [...group.items];
+                      items.splice(itemIndex, 1);
+                      next[gi] = { ...group, items };
+                      onChange(next);
+                    }}
+                  >
+                    删除
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            className="settings-add-btn"
+            onClick={() => {
+              const next = [...value];
+              next[gi] = {
+                ...group,
+                items: [...group.items, { name: "新技术", iconUrl: "" }],
+              };
+              onChange(next);
+            }}
+          >
+            + 添加技术项
+          </button>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        className="settings-add-btn"
+        onClick={() => onChange([...value, { group: "新分组", items: [] }])}
+      >
+        + 添加分组
+      </button>
+      <button className="admin-button" disabled={saving} onClick={() => onSave(value)}>
+        {saving ? "保存中..." : "保存技能栈"}
+      </button>
+    </div>
+  );
+}
+
+function SkillIconUploader({ onUploaded }: { onUploaded: (url: string) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  async function handleUpload(file: File | null) {
+    if (!file) return;
+
+    const password = localStorage.getItem("admin_password") || "";
+    if (!password) {
+      setMessage("后台密码已丢失，请重新登录。");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    setUploading(true);
+    setMessage("");
+
+    try {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "x-admin-password": password },
+        body: formData,
+      });
+      const data = await parseJsonSafely(response);
+
+      if (!response.ok) {
+        throw new Error(typeof data?.error === "string" ? data.error : "上传失败。");
+      }
+
+      const url = typeof data?.url === "string" ? data.url : "";
+      if (!url) throw new Error("上传成功，但没有拿到图片 URL。");
+
+      onUploaded(url);
+      setMessage("已上传");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "上传失败。");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <label className="secondary-link settings-upload-inline">
+      {uploading ? "上传中..." : "上传图标"}
+      <input
+        type="file"
+        accept="image/*"
+        hidden
+        disabled={uploading}
+        onChange={(event) => void handleUpload(event.target.files?.[0] || null)}
+      />
+      {message ? <span>{message}</span> : null}
+    </label>
+  );
+}
+
 function SkillsForm({ value, saving, onChange, onSave }: {
   value: SkillGroup[];
   saving: boolean;
@@ -368,6 +561,8 @@ function SkillsForm({ value, saving, onChange, onSave }: {
     </div>
   );
 }
+
+void SkillsForm;
 
 function WorldSectionsForm({ value, saving, onChange, onSave }: {
   value: WorldSectionSetting[];

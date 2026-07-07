@@ -24,14 +24,19 @@ export default async function WorldPage() {
 
   return (
     <SiteFrame>
-      <section className="hero container">
+      <section className="container pink-page-hero">
         <p className="eyebrow">My World</p>
-        <h1 className="hero-title">我的世界</h1>
-        <p className="hero-copy">探索世界，记录生活，发现我的坐标。</p>
+        <h1>我的世界</h1>
+        <p>探索世界，记录生活，发现我的坐标。</p>
       </section>
 
-      <section className="container section">
-        <div className="world-card-grid">
+      <section className="container pink-section">
+        <div className="pink-section-head">
+          <h2>家乡、学校、旅行和游戏，都保留成独立入口。</h2>
+          <p>这里继续读取后台可配置的我的世界模块，封面、标签和描述都来自现有设置。</p>
+        </div>
+
+        <div className="world-card-grid pink-world-grid">
           {dbSections.map((section) => {
             const meta =
               SECTION_META[section.id] ??
@@ -39,7 +44,7 @@ export default async function WorldPage() {
               { href: "/world", cta: "进入" };
 
             return (
-              <article key={section.id} id={section.id} className="world-big-card">
+              <article key={section.id} id={section.id} className="world-big-card pink-world-card">
                 <div className="world-big-card-cover">
                   {section.cover ? (
                     <img src={section.cover} alt={section.title} />
@@ -56,7 +61,7 @@ export default async function WorldPage() {
                       <span key={tag}>{tag}</span>
                     ))}
                   </div>
-                  <Link href={meta.href} className="section-link">
+                  <Link href={meta.href} className="pink-text-link">
                     {meta.cta}
                   </Link>
                 </div>
@@ -66,26 +71,24 @@ export default async function WorldPage() {
         </div>
       </section>
 
-      <section className="container section">
-        <Link href="/world/travel-map" className="world-travel-map-card">
-          <div className="world-travel-map-card-bg" />
-          <div className="world-travel-map-card-body">
-            <span className="world-travel-map-icon">Map</span>
-            <div className="world-travel-map-text">
-              <h2>我的旅行地图</h2>
-              <p>用 3D 互动地图记录走过的城市、照片和路线记忆。</p>
-            </div>
-            <span className="world-travel-map-cta">打开地图</span>
+      <section className="container pink-section">
+        <Link href="/world/travel-map" className="pink-travel-map-card">
+          <div className="pink-map-visual">
+            <span>Map</span>
+          </div>
+          <div>
+            <p className="eyebrow">Travel Map</p>
+            <h2>我的旅行地图</h2>
+            <p>用 3D 互动地图记录走过的城市、照片和路线记忆。</p>
+            <span className="pink-btn primary">打开地图</span>
           </div>
         </Link>
       </section>
 
-      <section id="personality" className="container section">
-        <div className="section-head">
-          <div>
-            <h2 className="section-title">我的特点</h2>
-            <p className="section-copy">这些关键词一起构成了我正在扩展的个人世界。</p>
-          </div>
+      <section id="personality" className="container pink-section">
+        <div className="pink-section-head">
+          <h2>我的特点</h2>
+          <p>这些关键词一起构成了我正在扩展的个人世界。</p>
         </div>
         <div className="personality-grid">
           {personality.map((item) => (
@@ -97,8 +100,8 @@ export default async function WorldPage() {
         </div>
       </section>
 
-      <section className="container section">
-        <div className="glass-panel">
+      <section className="container pink-section">
+        <div className="pink-panel">
           <h2>世界更新日志</h2>
           <div className="profile-timeline">
             {worldLogs.map((item) => (

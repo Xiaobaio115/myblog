@@ -43,19 +43,11 @@ export default async function HometownPage({ searchParams }: Props) {
             <strong className="sidebar-profile-name">{profile.name}</strong>
             <span className="sidebar-profile-tagline">{profile.tagline}</span>
             <div className="sidebar-profile-stats">
-              <div>
-                <strong>{posts.length}</strong>
-                <span>文章</span>
-              </div>
-              <div>
-                <strong>{photosAll.length}</strong>
-                <span>照片</span>
-              </div>
+              <div><strong>{posts.length}</strong><span>文章</span></div>
+              <div><strong>{photosAll.length}</strong><span>照片</span></div>
             </div>
             {profile.location && <p className="sidebar-profile-location">{profile.location}</p>}
-            <Link href="/about" className="sidebar-profile-link">
-              查看完整档案
-            </Link>
+            <Link href="/about" className="sidebar-profile-link">查看完整档案</Link>
           </div>
           <div className="world-sub-nav-item active">{section.title}</div>
           {section.tags.length > 0 && (

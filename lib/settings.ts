@@ -12,10 +12,12 @@ export type ProfileSetting = {
   email: string;
   githubUrl: string;
   avatarUrl: string;
+  tags?: string[];
 };
 
 export type SocialItem = { label: string; value: string; href: string };
-export type SkillGroup = { group: string; items: string[] };
+export type SkillItem = string | { name: string; iconUrl?: string };
+export type SkillGroup = { group: string; items: SkillItem[] };
 export type EducationItem = { time: string; title: string; desc: string; tags: string[] };
 export type ProjectItem = { title: string; status: string; desc: string; stack: string[]; href: string };
 export type TravelItem = { id: string; name: string; date: string; desc: string; cover: string; coverPosition?: string; photos: string[]; tags: string[]; sections: ContentSection[] };
@@ -55,6 +57,7 @@ export async function getProfileSetting(): Promise<ProfileSetting> {
     email: defaultProfile.email,
     githubUrl: defaultProfile.githubUrl,
     avatarUrl: defaultProfile.avatarUrl,
+    tags: defaultProfile.tags,
   });
 }
 

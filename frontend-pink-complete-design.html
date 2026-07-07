@@ -1,0 +1,875 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LQPP Blog 粉色主题完整前台设计图</title>
+  <style>
+    :root {
+      --pink: #ff4fa3;
+      --pink-2: #f02f8f;
+      --purple: #b75cf5;
+      --ink: #172033;
+      --text: #566176;
+      --muted: #8a94a8;
+      --line: rgba(23, 32, 51, 0.1);
+      --paper: #fffafb;
+      --soft: #fff1f7;
+      --card: rgba(255, 255, 255, 0.76);
+      --dark-card: #464d61;
+      --shadow: 0 24px 70px rgba(255, 79, 163, 0.14);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+      background:
+        radial-gradient(circle at 75% 0%, rgba(255, 79, 163, 0.16), transparent 28%),
+        radial-gradient(circle at 8% 10%, rgba(255, 214, 232, 0.86), transparent 27%),
+        linear-gradient(180deg, #fff7fb 0%, #ffffff 48%, #fff8fb 100%);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    .wrap { width: min(1440px, calc(100vw - 44px)); margin: 0 auto; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid rgba(255, 79, 163, 0.12);
+      background: rgba(255, 250, 252, 0.86);
+      backdrop-filter: blur(18px);
+    }
+
+    .nav {
+      height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--pink), var(--purple));
+      box-shadow: 0 12px 28px rgba(255, 79, 163, 0.26);
+    }
+
+    .nav-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .nav-links a {
+      padding: 10px 13px;
+      border-radius: 999px;
+    }
+
+    .nav-links a.active,
+    .nav-links a:hover {
+      color: var(--pink-2);
+      background: rgba(255, 79, 163, 0.1);
+    }
+
+    .hero {
+      min-height: calc(100svh - 68px);
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(360px, 0.9fr);
+      align-items: center;
+      gap: clamp(38px, 6vw, 96px);
+      padding: clamp(46px, 7vw, 96px) 0 58px;
+    }
+
+    .eyebrow {
+      margin: 0 0 34px;
+      color: var(--pink);
+      font-size: clamp(14px, 1.2vw, 18px);
+      font-weight: 900;
+      letter-spacing: 0.34em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      max-width: 900px;
+      font-size: clamp(64px, 8vw, 136px);
+      font-weight: 500;
+      line-height: 0.98;
+      letter-spacing: 0;
+    }
+
+    .status {
+      margin: 30px 0 0;
+      color: var(--pink);
+      font-size: clamp(21px, 2vw, 31px);
+      font-weight: 900;
+    }
+
+    .intro {
+      max-width: 780px;
+      margin: 28px 0 0;
+      color: #647086;
+      font-size: clamp(18px, 1.4vw, 24px);
+      line-height: 1.92;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-top: 44px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 58px;
+      padding: 0 30px;
+      border-radius: 999px;
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--ink);
+      font-size: 18px;
+      font-weight: 900;
+      box-shadow: 0 14px 34px rgba(23, 32, 51, 0.06);
+    }
+
+    .btn.primary {
+      border: 0;
+      color: #fff;
+      background: linear-gradient(135deg, var(--pink), var(--purple));
+      box-shadow: 0 22px 48px rgba(255, 79, 163, 0.28);
+    }
+
+    .profile-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 560px;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      gap: 18px;
+      padding: clamp(34px, 4vw, 58px);
+      border-radius: 30px;
+      color: #fff;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(255, 184, 214, 0.14), transparent 36%),
+        linear-gradient(145deg, #4b5267 0%, #464d61 48%, #41485c 100%);
+      box-shadow: 0 36px 92px rgba(31, 41, 55, 0.25);
+    }
+
+    .avatar {
+      display: grid;
+      place-items: center;
+      width: 148px;
+      height: 148px;
+      border-radius: 999px;
+      overflow: hidden;
+      background: linear-gradient(135deg, #ffb703, #ffd6a5 58%, #ff7aa8);
+      box-shadow: 0 24px 44px rgba(0, 0, 0, 0.22);
+      font-size: 36px;
+      font-weight: 900;
+    }
+
+    .profile-card h2 { margin: 4px 0 0; font-size: 28px; }
+    .profile-card p { margin: 0; color: rgba(238, 242, 247, 0.72); font-size: 18px; }
+
+    .stats {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin: 12px 0;
+    }
+
+    .stat {
+      min-height: 90px;
+      display: grid;
+      place-items: center;
+      padding: 14px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .stat strong { font-size: 28px; }
+    .stat span { color: rgba(238, 242, 247, 0.7); font-weight: 700; }
+
+    .meta {
+      width: 100%;
+      display: grid;
+      gap: 13px;
+      color: rgba(238, 242, 247, 0.72);
+      font-size: 18px;
+    }
+
+    .profile-link {
+      margin-top: 16px;
+      color: #ff69b4;
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    section.block {
+      padding: 72px 0;
+      border-top: 1px solid rgba(255, 79, 163, 0.1);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 30px;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: clamp(32px, 4vw, 56px);
+      line-height: 1.08;
+    }
+
+    .section-head p {
+      max-width: 680px;
+      margin: 14px 0 0;
+      color: var(--text);
+      line-height: 1.78;
+      font-size: 17px;
+    }
+
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .module {
+      min-height: 230px;
+      display: grid;
+      align-content: end;
+      gap: 12px;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: 0 16px 40px rgba(23, 32, 51, 0.06);
+    }
+
+    .module.big { grid-column: span 2; min-height: 300px; }
+    .module.dark {
+      color: #fff;
+      background:
+        linear-gradient(135deg, rgba(255, 79, 163, 0.22), rgba(183, 92, 245, 0.16)),
+        #3f465b;
+    }
+
+    .module h3 { margin: 0; font-size: 24px; }
+    .module p { margin: 0; color: var(--text); line-height: 1.75; }
+    .module.dark p { color: rgba(255, 255, 255, 0.75); }
+
+    .visual-strip {
+      display: grid;
+      grid-template-columns: 1.35fr 0.9fr;
+      gap: 18px;
+    }
+
+    .map-preview {
+      min-height: 420px;
+      position: relative;
+      overflow: hidden;
+      border-radius: 28px;
+      background:
+        radial-gradient(circle at 52% 38%, rgba(255, 255, 255, 0.35), transparent 9%),
+        radial-gradient(circle at 46% 48%, rgba(255, 79, 163, 0.42), transparent 18%),
+        linear-gradient(135deg, #3c4257, #22283a);
+      box-shadow: 0 28px 80px rgba(31, 41, 55, 0.2);
+    }
+
+    .map-preview::before {
+      content: "";
+      position: absolute;
+      inset: 52px 72px;
+      border-radius: 42% 58% 48% 52%;
+      border: 2px solid rgba(255, 255, 255, 0.26);
+      transform: rotate(-10deg);
+      box-shadow: inset 0 0 70px rgba(255, 79, 163, 0.24);
+    }
+
+    .map-chip {
+      position: absolute;
+      left: 34px;
+      bottom: 34px;
+      padding: 18px 20px;
+      border-radius: 20px;
+      color: #fff;
+      background: rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(16px);
+    }
+
+    .side-panel {
+      display: grid;
+      gap: 14px;
+      padding: 24px;
+      border-radius: 28px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 84px 1fr;
+      gap: 14px;
+      align-items: center;
+      padding: 12px;
+      border-radius: 18px;
+      background: var(--soft);
+    }
+
+    .thumb {
+      height: 62px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #ffd6e7, #ff83bd);
+    }
+
+    .about-layout {
+      display: grid;
+      grid-template-columns: 330px 1fr;
+      gap: 22px;
+      align-items: start;
+    }
+
+    .about-card {
+      position: sticky;
+      top: 92px;
+      display: grid;
+      justify-items: center;
+      gap: 14px;
+      padding: 28px;
+      border-radius: 28px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .about-stack { display: grid; gap: 18px; }
+    .panel {
+      padding: 26px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .panel h3 { margin: 0 0 12px; font-size: 26px; }
+    .panel p { margin: 0; color: var(--text); line-height: 1.8; }
+
+    .tech-grid, .route-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .pill {
+      display: grid;
+      place-items: center;
+      min-height: 62px;
+      padding: 12px;
+      border-radius: 16px;
+      color: #c02672;
+      background: var(--soft);
+      font-weight: 900;
+      text-align: center;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 22px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .table th, .table td {
+      padding: 18px;
+      border-bottom: 1px solid rgba(23, 32, 51, 0.08);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .table th { color: #c02672; background: #fff1f7; }
+    .table td { color: var(--text); line-height: 1.65; }
+
+    .assistant {
+      position: fixed;
+      right: 26px;
+      bottom: 26px;
+      z-index: 30;
+    }
+
+    .assistant-panel {
+      width: 342px;
+      margin-bottom: 14px;
+      overflow: hidden;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.94);
+      border: 1px solid rgba(255, 79, 163, 0.18);
+      box-shadow: 0 28px 80px rgba(56, 18, 38, 0.22);
+    }
+
+    .assistant-head {
+      padding: 18px;
+      color: #fff;
+      background: linear-gradient(135deg, var(--pink), var(--purple));
+      font-weight: 900;
+    }
+
+    .chat { display: grid; gap: 10px; padding: 16px; }
+    .bubble { width: fit-content; max-width: 86%; padding: 10px 13px; border-radius: 16px; background: #fff1f7; color: #7a174c; line-height: 1.55; }
+    .bubble.user { justify-self: end; color: #fff; background: linear-gradient(135deg, var(--pink), var(--purple)); }
+    .assistant-button { width: 62px; height: 62px; border-radius: 999px; background: linear-gradient(135deg, var(--pink), var(--purple)); box-shadow: 0 18px 42px rgba(255, 79, 163, 0.34); }
+
+    .note {
+      margin-top: 28px;
+      padding: 20px;
+      border-radius: 22px;
+      color: #7a174c;
+      background: rgba(255, 241, 247, 0.86);
+      border: 1px solid rgba(255, 79, 163, 0.14);
+      line-height: 1.75;
+    }
+
+    @media (max-width: 980px) {
+      .wrap { width: min(100vw - 26px, 760px); }
+      .hero, .visual-strip, .about-layout { grid-template-columns: 1fr; }
+      h1 { font-size: clamp(52px, 14vw, 92px); }
+      .profile-card { min-height: auto; }
+      .module-grid, .tech-grid, .route-grid { grid-template-columns: 1fr 1fr; }
+      .module.big { grid-column: span 1; }
+      .about-card { position: static; }
+    }
+
+    @media (max-width: 560px) {
+      .nav { height: auto; padding: 14px 0; align-items: flex-start; }
+      .nav-links { display: none; }
+      .actions { display: grid; }
+      .btn { width: 100%; }
+      .stats { gap: 8px; }
+      .module-grid, .tech-grid, .route-grid { grid-template-columns: 1fr; }
+      .table { display: block; overflow-x: auto; }
+      .assistant-panel { display: none; }
+    }
+
+    /* Calm revision: smaller type, more breathing room, less crowded modules */
+    .wrap { width: min(1280px, calc(100vw - 56px)); }
+    .nav { height: 64px; }
+    .brand { font-size: 14px; letter-spacing: 0.06em; }
+    .nav-links { gap: 4px; font-size: 13px; }
+    .nav-links a { padding: 9px 11px; }
+
+    .hero {
+      min-height: auto;
+      grid-template-columns: minmax(0, 1fr) minmax(340px, 440px);
+      gap: clamp(38px, 5vw, 76px);
+      padding: clamp(64px, 8vw, 108px) 0 clamp(78px, 8vw, 118px);
+    }
+
+    .eyebrow {
+      margin-bottom: 26px;
+      font-size: clamp(12px, 0.95vw, 15px);
+      letter-spacing: 0.26em;
+    }
+
+    h1 {
+      max-width: 760px;
+      font-size: clamp(48px, 6.2vw, 94px);
+      line-height: 1.04;
+    }
+
+    .status {
+      margin-top: 22px;
+      font-size: clamp(18px, 1.55vw, 24px);
+    }
+
+    .intro {
+      max-width: 660px;
+      margin-top: 20px;
+      font-size: clamp(15px, 1.1vw, 18px);
+      line-height: 1.86;
+    }
+
+    .actions {
+      gap: 12px;
+      margin-top: 34px;
+    }
+
+    .btn {
+      min-height: 48px;
+      padding: 0 22px;
+      font-size: 15px;
+    }
+
+    .profile-card {
+      min-height: 460px;
+      gap: 13px;
+      padding: 34px;
+      border-radius: 26px;
+      box-shadow: 0 28px 70px rgba(31, 41, 55, 0.2);
+    }
+
+    .avatar {
+      width: 112px;
+      height: 112px;
+      font-size: 28px;
+    }
+
+    .profile-card h2 { font-size: 22px; }
+    .profile-card p { font-size: 15px; }
+    .stats { gap: 10px; margin: 8px 0; }
+    .stat { min-height: 72px; border-radius: 16px; }
+    .stat strong { font-size: 22px; }
+    .stat span { font-size: 13px; }
+    .meta { gap: 9px; font-size: 14px; }
+    .profile-link { margin-top: 8px; font-size: 16px; }
+
+    section.block {
+      padding: 92px 0;
+    }
+
+    .section-head {
+      display: block;
+      max-width: 760px;
+      margin-bottom: 34px;
+    }
+
+    .section-head h2 {
+      font-size: clamp(28px, 3vw, 42px);
+      line-height: 1.18;
+    }
+
+    .section-head p {
+      max-width: 720px;
+      font-size: 15px;
+      line-height: 1.82;
+    }
+
+    .module-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+    }
+
+    .module,
+    .module.big {
+      grid-column: auto;
+      min-height: 210px;
+      align-content: start;
+      padding: 24px;
+      border-radius: 22px;
+    }
+
+    .module h3 { font-size: 20px; }
+    .module p { font-size: 14px; line-height: 1.78; }
+
+    .visual-strip {
+      grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+      gap: 24px;
+    }
+
+    .map-preview { min-height: 360px; border-radius: 24px; }
+    .side-panel { gap: 12px; padding: 20px; border-radius: 24px; }
+    .row { grid-template-columns: 70px 1fr; padding: 10px; }
+    .thumb { height: 52px; }
+
+    .about-layout {
+      grid-template-columns: 300px 1fr;
+      gap: 24px;
+    }
+
+    .about-card,
+    .panel {
+      border-radius: 22px;
+    }
+
+    .panel { padding: 24px; }
+    .panel h3 { font-size: 22px; }
+    .panel p { font-size: 14px; line-height: 1.82; }
+    .tech-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .pill { min-height: 52px; font-size: 14px; }
+
+    .table {
+      font-size: 14px;
+      box-shadow: 0 18px 48px rgba(255, 79, 163, 0.1);
+    }
+
+    .table th,
+    .table td {
+      padding: 14px 16px;
+    }
+
+    .table td {
+      line-height: 1.72;
+    }
+
+    .note {
+      max-width: 920px;
+      margin-top: 24px;
+      font-size: 14px;
+    }
+
+    .assistant {
+      right: 22px;
+      bottom: 22px;
+    }
+
+    .assistant-panel {
+      width: 300px;
+      opacity: 0.94;
+      transform: scale(0.94);
+      transform-origin: right bottom;
+    }
+
+    .assistant-button {
+      width: 54px;
+      height: 54px;
+      margin-left: auto;
+    }
+
+    @media (max-width: 980px) {
+      .wrap { width: min(100vw - 30px, 760px); }
+      .hero {
+        grid-template-columns: 1fr;
+        padding: 48px 0 78px;
+      }
+      h1 { font-size: clamp(42px, 11vw, 72px); }
+      .module-grid,
+      .visual-strip,
+      .about-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .wrap { width: min(100vw - 24px, 100%); }
+      section.block { padding: 68px 0; }
+      .profile-card { padding: 26px; }
+      .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .tech-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <nav class="wrap nav">
+      <a class="brand" href="#home"><span class="brand-mark"></span><span>LQPP World</span></a>
+      <div class="nav-links">
+        <a class="active" href="#home">首页</a>
+        <a href="#content">文章/相册</a>
+        <a href="#world">我的世界</a>
+        <a href="#about">关于我</a>
+        <a href="#guestbook">留言</a>
+        <a href="#coverage">覆盖表</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section id="home" class="wrap hero">
+      <div>
+        <p class="eyebrow">Personal Digital Garden</p>
+        <h1>Hi，我是 甘蔗甜不甜</h1>
+        <p class="status">正在逃早八中</p>
+        <p class="intro">你好，我是 LQPP。这里记录我的生活、技术、家乡、学校、旅行、游戏，以及一些慢慢长大的想法。</p>
+        <div class="actions">
+          <a class="btn primary" href="#world">探索我的世界</a>
+          <a class="btn" href="#content">查看文章</a>
+          <a class="btn" href="#photos">进入星空相册</a>
+        </div>
+      </div>
+
+      <aside class="profile-card">
+        <div class="avatar">甜</div>
+        <h2>甘蔗甜不甜</h2>
+        <p>Stay hungry, stay foolish.</p>
+        <div class="stats">
+          <div class="stat"><strong>3</strong><span>文章</span></div>
+          <div class="stat"><strong>6</strong><span>照片</span></div>
+          <div class="stat"><strong>5</strong><span>主题</span></div>
+        </div>
+        <div class="meta">
+          <span>中国 · 海南</span>
+          <span>3559078927@qq.com</span>
+          <span>GitHub</span>
+        </div>
+        <a class="profile-link" href="#about">查看完整档案</a>
+      </aside>
+    </section>
+
+    <section id="content" class="wrap block">
+      <div class="section-head">
+        <div>
+          <h2>保留首页现有模块，再统一成粉色高级前台。</h2>
+          <p>首页不是推翻重做，而是保留你已有的文章、旅行地图、相册入口，用同一套粉色视觉和信息层级串起来。</p>
+        </div>
+      </div>
+      <div class="module-grid">
+        <article class="module big">
+          <h3>最新文章 / 文章列表</h3>
+          <p>覆盖 `/articles`、`/posts`、`/posts/[slug]`：卡片列表、文章详情、阅读量、评论区都使用同一套粉色细节和清晰排版。</p>
+        </article>
+        <article class="module">
+          <h3>精选相册</h3>
+          <p>覆盖 `/photos`：普通照片墙保持可浏览，图片网格更干净，和首页风格统一。</p>
+        </article>
+        <article id="photos" class="module dark">
+          <h3>3D 星空相册</h3>
+          <p>覆盖 `/photos/3d`：保留星空感和评论，访客只看内容，上传入口只给后台登录用户。</p>
+        </article>
+        <article class="module">
+          <h3>搜索入口</h3>
+          <p>全站搜索浮层放进导航和 AI 助手能力里，文章、相册、旅行地图都能被发现。</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="world" class="wrap block">
+      <div class="section-head">
+        <div>
+          <h2>我的世界模块完整保留：家乡、学校、旅行、游戏、旅行地图。</h2>
+          <p>这里是你项目最有个人特色的部分，设计上作为第二视觉核心，而不是普通卡片堆叠。</p>
+        </div>
+      </div>
+      <div class="visual-strip">
+        <div class="map-preview">
+          <div class="map-chip">
+            <strong>我的旅行地图</strong><br />
+            3D 中国地图 / 城市 / 照片 / 路线记忆
+          </div>
+        </div>
+        <div class="side-panel">
+          <div class="row"><div class="thumb"></div><div><strong>家乡</strong><br /><span>海南、记忆、生活片段</span></div></div>
+          <div class="row"><div class="thumb"></div><div><strong>学校</strong><br /><span>教育经历、课程、成长线</span></div></div>
+          <div class="row"><div class="thumb"></div><div><strong>旅行</strong><br /><span>目的地、照片、日期</span></div></div>
+          <div class="row"><div class="thumb"></div><div><strong>游戏</strong><br /><span>游戏记录、兴趣、作品</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="about" class="wrap block">
+      <div class="section-head">
+        <div>
+          <h2>关于我模块保留原来的结构，只做质感升级。</h2>
+          <p>左侧个人档案卡继续保留，右侧继续是“我是谁、教育经历、技术栈、关键词、联系方式”。</p>
+        </div>
+      </div>
+      <div class="about-layout">
+        <aside class="about-card">
+          <div class="avatar">LQ</div>
+          <h3>甘蔗甜不甜</h3>
+          <p>正在逃早八中</p>
+          <a class="btn primary" href="#guestbook">给我留言</a>
+          <a class="btn" href="#world">查看我的世界</a>
+        </aside>
+        <div class="about-stack">
+          <section class="panel">
+            <h3>我是谁</h3>
+            <p>保留你原来关于页的叙事方式，只把排版、层次、留白和卡片质感统一到粉色主题里。</p>
+          </section>
+          <section class="panel">
+            <h3>教育经历</h3>
+            <p>时间线继续保留，强化年份、学校、课程、成长标签，移动端改为纵向易读。</p>
+          </section>
+          <section class="panel">
+            <h3>我的工具箱</h3>
+            <div class="tech-grid">
+              <span class="pill">HTML</span><span class="pill">CSS</span><span class="pill">JavaScript</span><span class="pill">React</span>
+              <span class="pill">Next.js</span><span class="pill">MongoDB</span><span class="pill">Python</span><span class="pill">AI 编程</span>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section id="guestbook" class="wrap block">
+      <div class="section-head">
+        <div>
+          <h2>留言、AI 助手和全局组件也放进同一套前台。</h2>
+          <p>留言不只是表单，后台审核、防刷、公开展示都要在设计里体现；AI 助手保留右下角，但更像站内导航和问答入口。</p>
+        </div>
+      </div>
+      <div class="module-grid">
+        <article class="module big">
+          <h3>留言板 /guestbook</h3>
+          <p>展示公开留言、提交表单、审核提示、防刷策略说明。前台只显示已审核留言，后台保留审批和删除。</p>
+        </article>
+        <article class="module">
+          <h3>右下角 AI</h3>
+          <p>保留悬浮入口，加入快捷问题：文章在哪、旅行地图在哪、3D 相册怎么打开。</p>
+        </article>
+        <article class="module">
+          <h3>页头 / 页脚</h3>
+          <p>导航、搜索、主题色、站点信息、社交链接全部统一。</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="coverage" class="wrap block">
+      <div class="section-head">
+        <div>
+          <h2>现有页面、模块、接口覆盖表。</h2>
+          <p>这张设计图的目的就是把你现在已经有的东西全部放进去，后面动工时按这个表拆页面，不再漏模块。</p>
+        </div>
+      </div>
+      <table class="table">
+        <thead>
+          <tr><th>现有入口</th><th>新前台设计处理</th><th>关联数据 / 接口</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>/</td><td>保留截图式首页：左侧大标题、右侧个人卡、文章/地图/相册模块</td><td>posts、photos、profile settings</td></tr>
+          <tr><td>/articles / /posts / /posts/[slug]</td><td>文章列表、文章详情、阅读量、评论统一粉色排版</td><td>/api/posts、/api/posts/[slug]、/api/posts/[slug]/view</td></tr>
+          <tr><td>/world</td><td>我的世界总入口，连接家乡、学校、旅行、游戏、地图</td><td>/api/settings world、data/world</td></tr>
+          <tr><td>/world/hometown / school / travel / games</td><td>保留侧边个人卡和内容详情，移动端变成顶部摘要</td><td>world sections、education、games、travel</td></tr>
+          <tr><td>/world/travel-map</td><td>3D 中国旅行地图作为视觉重点，城市详情抽屉和照片列表保留</td><td>/api/travel-map、lib/travel-map</td></tr>
+          <tr><td>/photos / /photos/3d</td><td>普通相册 + 星空照片墙，访客不显示上传入口</td><td>/api/photos、/api/photos/[id]/comments</td></tr>
+          <tr><td>/about</td><td>保留原关于模块：个人卡、我是谁、教育、技术栈、关键词、联系</td><td>/api/settings profile、skills、education、socials</td></tr>
+          <tr><td>/guestbook</td><td>前台提交、公开留言、审核提示、防刷提示合理展示</td><td>/api/guestbook</td></tr>
+          <tr><td>右下角 AI</td><td>保留悬浮助手，升级为站内导航 + 简短问答 + AI 回复</td><td>/api/chat、/api/ai-test</td></tr>
+          <tr><td>后台关联</td><td>前台不展示后台入口；后台管理继续维护文章、照片、设置、留言、地图</td><td>/api/auth、/api/upload、/api/settings</td></tr>
+        </tbody>
+      </table>
+      <div class="note">
+        设计原则：只保留粉色品牌主题；首页和关于我保留你指定的原模块；新前台覆盖所有现有页面和接口入口；后台功能不混到访客前台里。
+      </div>
+    </section>
+  </main>
+
+  <div class="assistant">
+    <div class="assistant-panel">
+      <div class="assistant-head">甘蔗小助手</div>
+      <div class="chat">
+        <div class="bubble">你好，我可以帮你找文章、相册、旅行地图和留言入口。</div>
+        <div class="bubble user">旅行地图在哪里？</div>
+        <div class="bubble">在“我的世界 / 旅行地图”，也可以从首页的地图模块进入。</div>
+      </div>
+    </div>
+    <div class="assistant-button"></div>
+  </div>
+</body>
+</html>

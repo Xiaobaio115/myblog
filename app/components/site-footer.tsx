@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function SiteFooter() {
   return (
-    <footer className="site-footer">
+    <footer className="site-footer pink-footer">
       <div className="container footer-inner">
         <div className="footer-brand">
           <span className="footer-logo">LQPP World</span>

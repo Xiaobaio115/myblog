@@ -15,14 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN" data-scroll-behavior="smooth">
-      <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('luna-theme');if(t==='dark'||t==='blue'||t==='light'){document.documentElement.setAttribute('data-theme',t);}else{document.documentElement.setAttribute('data-theme','light');}}catch(e){}`,
-          }}
-        />
-      </head>
+    <html lang="zh-CN" data-theme="light" data-scroll-behavior="smooth">
       <body>
         <ThemeProvider>{children}</ThemeProvider>
         <VirtualAssistant />

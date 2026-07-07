@@ -19,20 +19,22 @@ export default async function PhotosPage({ searchParams }: Props) {
 
   return (
     <SiteFrame>
-      <section className="hero container">
+      <section className="container pink-page-hero">
         <p className="eyebrow">Memory Atlas</p>
-        <h1 className="hero-title">记忆星图</h1>
-        <p className="hero-copy">
-          把生活片段放进可以浏览的星空里，同时保留普通相册和 3D 星空相册两种体验。
-        </p>
-        <div className="hero-actions">
-          <Link href="/photos/3d" className="primary-button">
+        <h1>记忆星图</h1>
+        <p>把生活片段放进可以浏览的星空里，同时保留普通相册和 3D 星空相册两种体验。</p>
+        <div className="pink-home-actions">
+          <Link href="/photos/3d" className="pink-btn primary">
             打开 3D 星空相册
           </Link>
         </div>
       </section>
 
-      <section className="container section">
+      <section className="container pink-section">
+        <div className="pink-section-head">
+          <h2>照片墙</h2>
+          <p>照片、分类和展示视图继续来自现有照片接口，后台上传后这里自动更新。</p>
+        </div>
         <PhotosGalleryClient photos={photos} categories={categories} initialView={initialView} />
       </section>
     </SiteFrame>
