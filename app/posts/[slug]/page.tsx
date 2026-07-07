@@ -13,21 +13,23 @@ type PostDetailPageProps = {
   params: Promise<{ slug: string }>;
 };
 
-export default async function PostDetailPage({
-  params,
-}: PostDetailPageProps) {
+export default async function PostDetailPage({ params }: PostDetailPageProps) {
   const { slug: rawSlug } = await params;
   let slug: string;
-  try { slug = decodeURIComponent(rawSlug); } catch { slug = rawSlug; }
-  const post = await getPublishedPost(slug);
-
-  if (!post) {
-    notFound();
+  try {
+    slug = decodeURIComponent(rawSlug);
+  } catch {
+    slug = rawSlug;
   }
 
-  const html = await marked.parse(post.content || "");
+  const post = await getPublishedPost(slug);
+  if (!post) notFound();
 
-  const wordCount = (post.content || "").replace(/[\u4e00-\u9fa5]/g, "aa").split(/\s+/).filter(Boolean).length;
+  const html = await marked.parse(post.content || "");
+  const wordCount = (post.content || "")
+    .replace(/[\u4e00-\u9fa5]/g, "aa")
+    .split(/\s+/)
+    .filter(Boolean).length;
   const readingMinutes = Math.max(1, Math.ceil(wordCount / 250));
 
   return (
@@ -36,7 +38,7 @@ export default async function PostDetailPage({
         <header className="article-header">
           <div className="article-nav-bar">
             <Link href="/articles" className="back-link">
-              ← 返回文章列表
+              返回文章列表
             </Link>
             <span className="article-reading-time">约 {readingMinutes} 分钟阅读</span>
           </div>
@@ -69,22 +71,16 @@ export default async function PostDetailPage({
           />
         ) : null}
 
-        <div
-          className="article-content"
-          dangerouslySetInnerHTML={{ __html: html }}
-        />
+        <div className="article-content" dangerouslySetInnerHTML={{ __html: html }} />
 
         <footer className="article-footer">
           <Link href="/articles" className="back-link">
-            ← 返回文章列表
+            返回文章列表
           </Link>
         </footer>
 
         <section className="comments-section">
-          <TwikooComments
-            envId={process.env.TWIKOO_ENV_ID}
-            path={`/posts/${slug}`}
-          />
+          <TwikooComments envId={process.env.TWIKOO_ENV_ID} path={`/posts/${slug}`} />
         </section>
       </section>
     </SiteFrame>

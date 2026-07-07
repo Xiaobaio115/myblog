@@ -7,7 +7,7 @@ import { GuestbookForm } from "./guestbook-form";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "留言｜给 LQPP 留句话",
+  title: "留言 | 给 LQPP 留句话",
 };
 
 async function getMessages() {
@@ -19,12 +19,15 @@ async function getMessages() {
       .sort({ createdAt: -1 })
       .limit(50)
       .toArray();
-    return messages.map((m) => ({
-      _id: String(m._id),
-      name: String(m.name ?? "匿名"),
-      website: m.website ? String(m.website) : "",
-      message: String(m.message ?? ""),
-      createdAt: m.createdAt ? new Date(m.createdAt as Date).toLocaleDateString("zh-CN") : "",
+
+    return messages.map((message) => ({
+      _id: String(message._id),
+      name: String(message.name ?? "匿名"),
+      website: message.website ? String(message.website) : "",
+      message: String(message.message ?? ""),
+      createdAt: message.createdAt
+        ? new Date(message.createdAt as Date).toLocaleDateString("zh-CN")
+        : "",
     }));
   } catch {
     return [];
@@ -39,7 +42,9 @@ export default async function GuestbookPage() {
       <section className="hero container">
         <p className="eyebrow">Guestbook</p>
         <h1 className="hero-title">给我留句话</h1>
-        <p className="hero-copy">无论是技术、博客、旅行、游戏，还是一句简单的你好，都欢迎留下。</p>
+        <p className="hero-copy">
+          无论是技术、博客、旅行、游戏，还是一句简单的你好，都欢迎留下。
+        </p>
       </section>
 
       <section className="container section guestbook-shell">
@@ -67,7 +72,7 @@ export default async function GuestbookPage() {
         <div className="guestbook-main">
           <div className="glass-panel">
             <h2>留言板</h2>
-            <p className="section-copy">留下你的留言，我会认真阅读每一条。</p>
+            <p className="section-copy">留言提交后会进入审核，审核通过后展示在这里。</p>
             <GuestbookForm />
           </div>
 
@@ -75,17 +80,21 @@ export default async function GuestbookPage() {
             <div className="guestbook-messages">
               <h3 className="section-title">大家说的话</h3>
               <div className="guestbook-list">
-                {messages.map((m) => (
-                  <div key={m._id} className="guestbook-item">
+                {messages.map((item) => (
+                  <div key={item._id} className="guestbook-item">
                     <div className="guestbook-item-header">
                       <strong>
-                        {m.website
-                          ? <a href={m.website} target="_blank" rel="noopener noreferrer">{m.name}</a>
-                          : m.name}
+                        {item.website ? (
+                          <a href={item.website} target="_blank" rel="noopener noreferrer">
+                            {item.name}
+                          </a>
+                        ) : (
+                          item.name
+                        )}
                       </strong>
-                      <span>{m.createdAt}</span>
+                      <span>{item.createdAt}</span>
                     </div>
-                    <p>{m.message}</p>
+                    <p>{item.message}</p>
                   </div>
                 ))}
               </div>

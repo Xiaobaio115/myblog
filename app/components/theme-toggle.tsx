@@ -2,22 +2,48 @@
 
 import { useTheme } from "@/app/components/theme-provider";
 
-const LABELS: Record<string, string> = {
+const LABELS = {
   dark: "深色",
   blue: "蓝色",
   light: "浅色",
-};
+} as const;
+
+const NEXT_LABEL = {
+  dark: "蓝色",
+  blue: "浅色",
+  light: "深色",
+} as const;
 
 const MoonIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
     <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
   </svg>
 );
 
 const SunIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
     <circle cx="12" cy="12" r="5" />
     <line x1="12" y1="1" x2="12" y2="3" />
     <line x1="12" y1="21" x2="12" y2="23" />
@@ -30,9 +56,19 @@ const SunIcon = () => (
   </svg>
 );
 
-const StarIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
-    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+const FocusIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
     <circle cx="12" cy="12" r="9" />
     <circle cx="12" cy="12" r="3" />
     <line x1="12" y1="3" x2="12" y2="6" />
@@ -45,17 +81,16 @@ const StarIcon = () => (
 export function ThemeToggle() {
   const { theme, toggle } = useTheme();
 
-  const NEXT_LABEL: Record<string, string> = { dark: "蓝色", blue: "浅色", light: "深色" };
-
   return (
     <button
       onClick={toggle}
       className="theme-toggle"
-      aria-label={`切换主题（当前：${LABELS[theme]}）`}
+      aria-label={`切换主题，当前为${LABELS[theme]}`}
       title={`切换到${NEXT_LABEL[theme]}主题`}
+      type="button"
     >
       {theme === "dark" && <MoonIcon />}
-      {theme === "blue" && <StarIcon />}
+      {theme === "blue" && <FocusIcon />}
       {theme === "light" && <SunIcon />}
     </button>
   );

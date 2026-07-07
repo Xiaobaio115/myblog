@@ -68,15 +68,16 @@ export async function GET() {
       baseUrl,
       raw: text.slice(0, 2000),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : null;
     return NextResponse.json(
       {
         ok: false,
-        errorName: error?.name,
+        errorName: err?.name,
         errorMessage:
-          error?.name === "AbortError"
+          err?.name === "AbortError"
             ? "AI 接口 60 秒超时"
-            : error?.message || "未知错误",
+            : err?.message || "未知错误",
         model,
         baseUrl,
       },

@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFrame } from "@/app/components/site-frame";
@@ -6,19 +7,21 @@ import { personality, worldLogs, worldSections as defaultWorldSections } from "@
 import { getWorldSectionsSetting } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
-  title: "我的世界｜LQPP World Map",
+  title: "我的世界 | LQPP World Map",
 };
 
 const SECTION_META: Record<string, { href: string; cta: string }> = {
   hometown: { href: "/world/hometown", cta: "进入家乡页面" },
-  school:   { href: "/world/school",   cta: "进入学校页面" },
-  travel:   { href: "/world/travel",   cta: "进入旅行探索" },
-  games:    { href: "/world/games",    cta: "进入游戏世界" },
+  school: { href: "/world/school", cta: "进入学校页面" },
+  travel: { href: "/world/travel", cta: "进入旅行探索" },
+  games: { href: "/world/games", cta: "进入游戏世界" },
 };
 
 export default async function WorldPage() {
   const dbSections = await getWorldSectionsSetting();
+
   return (
     <SiteFrame>
       <section className="hero container">
@@ -30,24 +33,32 @@ export default async function WorldPage() {
       <section className="container section">
         <div className="world-card-grid">
           {dbSections.map((section) => {
-            const meta = SECTION_META[section.id] ??
-              defaultWorldSections.find((s) => s.id === section.id) ??
+            const meta =
+              SECTION_META[section.id] ??
+              defaultWorldSections.find((item) => item.id === section.id) ??
               { href: "/world", cta: "进入" };
+
             return (
               <article key={section.id} id={section.id} className="world-big-card">
                 <div className="world-big-card-cover">
-                  {section.cover
-                    ? <img src={section.cover} alt={section.title} />
-                    : <span className="world-big-card-icon">{section.icon}</span>}
+                  {section.cover ? (
+                    <img src={section.cover} alt={section.title} />
+                  ) : (
+                    <span className="world-big-card-icon">{section.icon}</span>
+                  )}
                 </div>
                 <div className="world-big-card-body">
                   <p className="world-kicker">{section.eyebrow}</p>
                   <h2>{section.title}</h2>
                   <p>{section.desc}</p>
                   <div className="world-tag-row">
-                    {section.tags.map((tag) => <span key={tag}>{tag}</span>)}
+                    {section.tags.map((tag) => (
+                      <span key={tag}>{tag}</span>
+                    ))}
                   </div>
-                  <Link href={meta.href} className="section-link">{meta.cta} →</Link>
+                  <Link href={meta.href} className="section-link">
+                    {meta.cta}
+                  </Link>
                 </div>
               </article>
             );
@@ -59,12 +70,12 @@ export default async function WorldPage() {
         <Link href="/world/travel-map" className="world-travel-map-card">
           <div className="world-travel-map-card-bg" />
           <div className="world-travel-map-card-body">
-            <span className="world-travel-map-icon">🗺️</span>
+            <span className="world-travel-map-icon">Map</span>
             <div className="world-travel-map-text">
               <h2>我的旅行地图</h2>
-              <p>3D 交互式中国旅行足迹，点击探索我走过的每一座城市</p>
+              <p>用 3D 互动地图记录走过的城市、照片和路线记忆。</p>
             </div>
-            <span className="world-travel-map-cta">打开地图 →</span>
+            <span className="world-travel-map-cta">打开地图</span>
           </div>
         </Link>
       </section>

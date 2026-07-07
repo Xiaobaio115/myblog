@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useState, useCallback } from "react";
 import type {
@@ -28,7 +29,9 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 export default function AdminSettingsPage() {
-  const [pw, setPw] = useState("");
+  const [pw] = useState(() =>
+    typeof window === "undefined" ? "" : localStorage.getItem("admin_password") || ""
+  );
   const [tab, setTab] = useState<Tab>("profile");
   const [settings, setSettings] = useState<AllSettings | null>(null);
   const [loading, setLoading] = useState(false);
@@ -47,9 +50,7 @@ export default function AdminSettingsPage() {
   }, []);
 
   useEffect(() => {
-    const stored = localStorage.getItem("admin_password") || "";
-    setPw(stored);
-    load();
+    queueMicrotask(load);
   }, [load]);
 
   async function saveSection(key: Tab, value: unknown) {

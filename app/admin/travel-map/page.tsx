@@ -3,20 +3,8 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import type { TravelMapData, TravelPlace } from "@/data/travel-map";
+import type { TravelMapData } from "@/data/travel-map";
 import { CITY_COORDS, PROV_COORDS } from "@/data/travel-map";
-
-type EditingPlace = {
-  name: string;
-  desc: string;
-  imgs: string[];
-};
-
-type EditingProvince = {
-  shortName: string;
-  desc: string;
-  places: EditingPlace[];
-};
 
 export default function AdminTravelMapPage() {
   const [data, setData] = useState<TravelMapData>({});
@@ -52,7 +40,9 @@ export default function AdminTravelMapPage() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    queueMicrotask(fetchData);
+  }, [fetchData]);
 
   const save = async (newData: TravelMapData) => {
     setSaving(true);

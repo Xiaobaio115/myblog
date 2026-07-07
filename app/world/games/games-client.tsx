@@ -30,19 +30,30 @@ export function GamesClient({ games, profile, postCount, photoCount }: Props) {
       <aside className="world-sub-sidebar">
         <div className="sidebar-profile-card">
           <div className="sidebar-profile-avatar">
-            {profile.avatarUrl
-              ? <img src={profile.avatarUrl} alt={profile.name} />
-              : <span>{profile.name.slice(0, 2)}</span>}
+            {profile.avatarUrl ? (
+              <img src={profile.avatarUrl} alt={profile.name} />
+            ) : (
+              <span>{profile.name.slice(0, 2)}</span>
+            )}
           </div>
           <strong className="sidebar-profile-name">{profile.name}</strong>
           <span className="sidebar-profile-tagline">{profile.tagline}</span>
           <div className="sidebar-profile-stats">
-            <div><strong>{postCount}</strong><span>文章</span></div>
-            <div><strong>{photoCount}</strong><span>照片</span></div>
+            <div>
+              <strong>{postCount}</strong>
+              <span>文章</span>
+            </div>
+            <div>
+              <strong>{photoCount}</strong>
+              <span>照片</span>
+            </div>
           </div>
-          {profile.location && <p className="sidebar-profile-location">📍 {profile.location}</p>}
-          <Link href="/about" className="sidebar-profile-link">查看完整档案 →</Link>
+          {profile.location && <p className="sidebar-profile-location">{profile.location}</p>}
+          <Link href="/about" className="sidebar-profile-link">
+            查看完整档案
+          </Link>
         </div>
+
         {games.map((game) => (
           <button
             key={game.id}
@@ -66,15 +77,19 @@ export function GamesClient({ games, profile, postCount, photoCount }: Props) {
           </div>
 
           <div className="world-sub-cover">
-            {selected.cover
-              ? <img src={selected.cover} alt={selected.name} />
-              : <span className="world-sub-cover-placeholder">🎮 封面图待上传</span>}
+            {selected.cover ? (
+              <img src={selected.cover} alt={selected.name} />
+            ) : (
+              <span className="world-sub-cover-placeholder">游戏封面图待上传</span>
+            )}
           </div>
 
           <p className="world-sub-desc">{selected.desc}</p>
 
           <div className="world-tag-row">
-            {selected.tags.map((tag) => <span key={tag}>{tag}</span>)}
+            {selected.tags.map((tag) => (
+              <span key={tag}>{tag}</span>
+            ))}
           </div>
         </div>
       </main>

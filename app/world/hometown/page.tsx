@@ -3,11 +3,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFrame } from "@/app/components/site-frame";
 import { getProfileSetting, getWorldSectionsSetting } from "@/lib/settings";
-import { getPublishedPosts, getLatestPhotos } from "@/lib/content";
+import { getLatestPhotos, getPublishedPosts } from "@/lib/content";
 import { WorldSectionPhotoClient } from "@/app/world/world-section-photo-client";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "我的家乡｜LQPP World" };
+export const metadata: Metadata = { title: "我的家乡 | LQPP World" };
 
 type Props = { searchParams: Promise<{ tag?: string }> };
 
@@ -19,14 +19,14 @@ export default async function HometownPage({ searchParams }: Props) {
     getLatestPhotos(999),
     getWorldSectionsSetting(),
   ]);
-  const section = sections.find((s) => s.id === "hometown") ?? sections[0];
+  const section = sections.find((item) => item.id === "hometown") ?? sections[0];
   if (!section) return null;
 
   return (
     <SiteFrame>
       <div className="world-sub-breadcrumb container">
         <Link href="/world">我的世界</Link>
-        <span>›</span>
+        <span>/</span>
         <span>{section.title}</span>
       </div>
 
@@ -34,18 +34,28 @@ export default async function HometownPage({ searchParams }: Props) {
         <aside className="world-sub-sidebar">
           <div className="sidebar-profile-card">
             <div className="sidebar-profile-avatar">
-              {profile.avatarUrl
-                ? <img src={profile.avatarUrl} alt={profile.name} />
-                : <span>{profile.name.slice(0, 2)}</span>}
+              {profile.avatarUrl ? (
+                <img src={profile.avatarUrl} alt={profile.name} />
+              ) : (
+                <span>{profile.name.slice(0, 2)}</span>
+              )}
             </div>
             <strong className="sidebar-profile-name">{profile.name}</strong>
             <span className="sidebar-profile-tagline">{profile.tagline}</span>
             <div className="sidebar-profile-stats">
-              <div><strong>{posts.length}</strong><span>文章</span></div>
-              <div><strong>{photosAll.length}</strong><span>照片</span></div>
+              <div>
+                <strong>{posts.length}</strong>
+                <span>文章</span>
+              </div>
+              <div>
+                <strong>{photosAll.length}</strong>
+                <span>照片</span>
+              </div>
             </div>
-            {profile.location && <p className="sidebar-profile-location">📍 {profile.location}</p>}
-            <Link href="/about" className="sidebar-profile-link">查看完整档案 →</Link>
+            {profile.location && <p className="sidebar-profile-location">{profile.location}</p>}
+            <Link href="/about" className="sidebar-profile-link">
+              查看完整档案
+            </Link>
           </div>
           <div className="world-sub-nav-item active">{section.title}</div>
           {section.tags.length > 0 && (

@@ -10,7 +10,7 @@ export function ArticleCard({ post }: { post: Post }) {
         {post.coverUrl ? (
           <img src={post.coverUrl} alt={post.title} className="article-cover" />
         ) : (
-          <div className="article-cover article-cover-fallback">✦</div>
+          <div className="article-cover article-cover-fallback">LQ</div>
         )}
       </div>
 

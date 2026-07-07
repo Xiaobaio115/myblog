@@ -15,7 +15,7 @@ export const profile = {
 export const socials = [
   { label: "Email", value: profile.email, href: `mailto:${profile.email}` },
   { label: "GitHub", value: "github.com/yourname", href: profile.githubUrl },
-  { label: "B站", value: "Bilibili", href: "#" },
+  { label: "B 站", value: "Bilibili", href: "#" },
   { label: "微博", value: "Weibo", href: "#" },
 ];
 

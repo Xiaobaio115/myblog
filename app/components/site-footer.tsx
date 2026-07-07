@@ -7,13 +7,13 @@ export function SiteFooter() {
         <div className="footer-brand">
           <span className="footer-logo">LQPP World</span>
           <p className="footer-tagline">
-            生活、技术、旅行与游戏构成的个人宇宙。
+            一个记录生活、技术、旅行与游戏的个人数字花园。
           </p>
         </div>
 
         <div className="footer-nav-cols">
           <div className="footer-col">
-            <strong>快捷导航</strong>
+            <strong>快速导航</strong>
             <Link href="/">首页</Link>
             <Link href="/articles">文章</Link>
             <Link href="/photos">相册</Link>
@@ -22,17 +22,17 @@ export function SiteFooter() {
             <Link href="/guestbook">留言</Link>
           </div>
           <div className="footer-col">
-            <strong>更多</strong>
+            <strong>更多入口</strong>
             <Link href="/photos/3d">3D 星空相册</Link>
+            <Link href="/world/travel-map">旅行地图</Link>
             <Link href="/projects">项目</Link>
-            <Link href="/articles">思考碎片</Link>
             <Link href="/admin">后台入口</Link>
           </div>
           <div className="footer-col">
             <strong>联系</strong>
             <span>Email</span>
             <span>GitHub</span>
-            <span>微博</span>
+            <span>社交平台</span>
           </div>
         </div>
       </div>

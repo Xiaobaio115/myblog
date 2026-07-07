@@ -10,9 +10,7 @@ type PostViewTrackerProps = {
 async function parseJsonSafely(response: Response) {
   const text = await response.text();
 
-  if (!text.trim()) {
-    return null;
-  }
+  if (!text.trim()) return null;
 
   try {
     return JSON.parse(text) as Record<string, unknown>;
@@ -21,10 +19,7 @@ async function parseJsonSafely(response: Response) {
   }
 }
 
-export function PostViewTracker({
-  slug,
-  initialViews,
-}: PostViewTrackerProps) {
+export function PostViewTracker({ slug, initialViews }: PostViewTrackerProps) {
   const [views, setViews] = useState(initialViews);
 
   useEffect(() => {
@@ -39,15 +34,13 @@ export function PostViewTracker({
 
         const data = await parseJsonSafely(response);
 
-        if (!active || !response.ok) {
-          return;
-        }
+        if (!active || !response.ok) return;
 
         if (typeof data?.views === "number") {
           setViews(data.views);
         }
       } catch {
-        // Ignore client-side tracking failures and keep the initial count.
+        // Keep the initial count when client-side tracking fails.
       }
     }
 

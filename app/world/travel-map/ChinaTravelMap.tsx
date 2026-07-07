@@ -8,6 +8,8 @@ type Props = {
   data: TravelMapData;
 };
 
+const isMobileViewport = () => window.innerWidth <= 640;
+
 export default function ChinaTravelMap({ data }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -15,6 +17,7 @@ export default function ChinaTravelMap({ data }: Props) {
   const animFrameRef = useRef<number>(0);
   const timeoutRef = useRef<number>(0);
   const activeKeyRef = useRef<string | null>(null);
+  const focusProvinceRef = useRef<(provKey: string) => void>(() => {});
   const geoJsonRef = useRef<unknown>(null);
   const keyToGeoRef = useRef<Record<string, string>>({});
   const geoToKeyRef = useRef<Record<string, string>>({});
@@ -293,7 +296,7 @@ export default function ChinaTravelMap({ data }: Props) {
           targetKey = data[params.name] ? params.name : (geoToKeyRef.current[params.name] || null);
         }
         if (targetKey && data[targetKey]) {
-          doFocusProvince(targetKey);
+          focusProvinceRef.current(targetKey);
         }
       });
     },
@@ -310,21 +313,21 @@ export default function ChinaTravelMap({ data }: Props) {
       if (svgRef.current) svgRef.current.innerHTML = "";
       debugDoneRef.current = false;
 
+      const prevKey = activeKeyRef.current;
       activeKeyRef.current = provKey;
       setActiveKey(provKey);
       setDetailOpen(true);
 
       const prov = data[provKey];
-      const prevKey = activeKeyRef.current;
       const regions: { name: string; itemStyle: Record<string, unknown> }[] = [];
       if (prevKey && prevKey !== provKey) {
         regions.push({ name: prevKey, itemStyle: { color: "#0f1f3d" } });
       }
       regions.push({ name: provKey, itemStyle: { color: "#38bdf8", opacity: 0.9 } });
 
-      const isMobile = window.innerWidth <= 640;
+      const isMobile = isMobileViewport();
       applyFullOption(
-        { distance: isMobile ? 50 : 60, alpha: isMobile ? 60 : 50, beta: 0, targetCoord: prov.coord },
+        { distance: isMobile ? 62 : 60, alpha: isMobile ? 58 : 50, beta: 0, targetCoord: prov.coord },
         regions,
       );
 
@@ -337,6 +340,10 @@ export default function ChinaTravelMap({ data }: Props) {
     },
     [data, applyFullOption, runTrackingLoop],
   );
+
+  useEffect(() => {
+    focusProvinceRef.current = doFocusProvince;
+  }, [doFocusProvince]);
 
   // ---- 返回总览 ----
   const resetView = useCallback(() => {
@@ -363,7 +370,7 @@ export default function ChinaTravelMap({ data }: Props) {
     if (data[prevKey]) {
       regions.push({ name: prevKey, itemStyle: { color: "#0f1f3d" } });
     }
-    const isMobile = window.innerWidth <= 640;
+    const isMobile = isMobileViewport();
     applyFullOption({ distance: isMobile ? 90 : 120, alpha: isMobile ? 55 : 45, beta: 0, targetCoord: [104.19, 35.86] }, regions);
   }, [data, applyFullOption]);
 
@@ -424,7 +431,7 @@ export default function ChinaTravelMap({ data }: Props) {
 
       if (!mounted) return;
 
-      const isMobile = window.innerWidth <= 640;
+      const isMobile = isMobileViewport();
       applyFullOption(
         { distance: isMobile ? 90 : 120, alpha: isMobile ? 55 : 45, beta: 0, targetCoord: [104.19, 35.86] },
         [],
@@ -443,20 +450,51 @@ export default function ChinaTravelMap({ data }: Props) {
         chartRef.current = null;
       }
     };
-  }, [applyFullOption]);
+  }, [applyFullOption, data]);
 
   // ---- 窗口缩放 ----
   useEffect(() => {
-    const onResize = () => chartRef.current?.resize();
+    let wasMobile = isMobileViewport();
+    const onResize = () => {
+      chartRef.current?.resize();
+
+      const nowMobile = isMobileViewport();
+      if (nowMobile === wasMobile) return;
+      wasMobile = nowMobile;
+
+      const currentKey = activeKeyRef.current;
+      if (currentKey && data[currentKey]) {
+        const prov = data[currentKey];
+        applyFullOption(
+          { distance: nowMobile ? 62 : 60, alpha: nowMobile ? 58 : 50, beta: 0, targetCoord: prov.coord },
+          [{ name: currentKey, itemStyle: { color: "#38bdf8", opacity: 0.9 } }],
+        );
+        return;
+      }
+
+      applyFullOption(
+        { distance: nowMobile ? 90 : 120, alpha: nowMobile ? 55 : 45, beta: 0, targetCoord: [104.19, 35.86] },
+        [],
+        true,
+      );
+    };
+
+    const observer = new ResizeObserver(onResize);
+    if (containerRef.current) observer.observe(containerRef.current);
     window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
+    window.addEventListener("orientationchange", onResize);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+    };
+  }, [data, applyFullOption]);
 
   // ---- 渲染 ----
   const activeProv = activeKey ? data[activeKey] : null;
 
   return (
-    <div className="tmap-root">
+    <div className={`tmap-root${detailOpen ? " detail-open" : ""}`}>
       {/* 3D 地图容器 */}
       <div ref={containerRef} className="tmap-container" />
 

@@ -3,9 +3,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SiteFrame } from "@/app/components/site-frame";
 import { getEducationSetting, getProfileSetting, getWorldSectionsSetting } from "@/lib/settings";
-import { getPublishedPosts, getLatestPhotos } from "@/lib/content";
+import { getLatestPhotos, getPublishedPosts } from "@/lib/content";
+
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "我的学校｜LQPP World" };
+export const metadata: Metadata = { title: "我的学校 | LQPP World" };
 
 export default async function SchoolPage() {
   const [education, profile, posts, photosAll, sections] = await Promise.all([
@@ -15,14 +16,14 @@ export default async function SchoolPage() {
     getLatestPhotos(200),
     getWorldSectionsSetting(),
   ]);
-  const section = sections.find((s) => s.id === "school") ?? sections[1];
+  const section = sections.find((item) => item.id === "school") ?? sections[1];
   if (!section) return null;
 
   return (
     <SiteFrame>
       <div className="world-sub-breadcrumb container">
         <Link href="/world">我的世界</Link>
-        <span>›</span>
+        <span>/</span>
         <span>{section.title}</span>
       </div>
 
@@ -30,26 +31,33 @@ export default async function SchoolPage() {
         <aside className="world-sub-sidebar">
           <div className="sidebar-profile-card">
             <div className="sidebar-profile-avatar">
-              {profile.avatarUrl
-                ? <img src={profile.avatarUrl} alt={profile.name} />
-                : <span>{profile.name.slice(0, 2)}</span>}
+              {profile.avatarUrl ? (
+                <img src={profile.avatarUrl} alt={profile.name} />
+              ) : (
+                <span>{profile.name.slice(0, 2)}</span>
+              )}
             </div>
             <strong className="sidebar-profile-name">{profile.name}</strong>
             <span className="sidebar-profile-tagline">{profile.tagline}</span>
             <div className="sidebar-profile-stats">
-              <div><strong>{posts.length}</strong><span>文章</span></div>
-              <div><strong>{photosAll.length}</strong><span>照片</span></div>
+              <div>
+                <strong>{posts.length}</strong>
+                <span>文章</span>
+              </div>
+              <div>
+                <strong>{photosAll.length}</strong>
+                <span>照片</span>
+              </div>
             </div>
-            {profile.location && (
-              <p className="sidebar-profile-location">📍 {profile.location}</p>
-            )}
-            <Link href="/about" className="sidebar-profile-link">查看完整档案 →</Link>
+            {profile.location && <p className="sidebar-profile-location">{profile.location}</p>}
+            <Link href="/about" className="sidebar-profile-link">
+              查看完整档案
+            </Link>
           </div>
           <div className="world-sub-nav-item active">{section.title}</div>
         </aside>
 
         <main className="world-sub-main">
-          {/* 封面 + 简介 */}
           <div className="world-sub-detail">
             <div className="world-sub-detail-header">
               <div>
@@ -68,12 +76,13 @@ export default async function SchoolPage() {
 
             {section.tags.length > 0 && (
               <div className="world-tag-row">
-                {section.tags.map((tag) => <span key={tag}>{tag}</span>)}
+                {section.tags.map((tag) => (
+                  <span key={tag}>{tag}</span>
+                ))}
               </div>
             )}
           </div>
 
-          {/* 教育时间轴 */}
           {education.length > 0 && (
             <div className="edu-timeline-section">
               <div className="edu-timeline-heading">
@@ -81,8 +90,8 @@ export default async function SchoolPage() {
                 <span className="edu-timeline-en">EDUCATION</span>
               </div>
               <div className="edu-timeline">
-                {education.map((item, idx) => (
-                  <div key={idx} className="edu-timeline-card">
+                {education.map((item, index) => (
+                  <div key={index} className="edu-timeline-card">
                     <div className="edu-timeline-dot" />
                     <div className="edu-timeline-body">
                       <span className="edu-timeline-time">{item.time}</span>
@@ -90,7 +99,9 @@ export default async function SchoolPage() {
                       {item.desc && <p className="edu-timeline-desc">{item.desc}</p>}
                       {item.tags.length > 0 && (
                         <div className="world-tag-row" style={{ justifyContent: "flex-start" }}>
-                          {item.tags.map((tag) => <span key={tag}>{tag}</span>)}
+                          {item.tags.map((tag) => (
+                            <span key={tag}>{tag}</span>
+                          ))}
                         </div>
                       )}
                     </div>

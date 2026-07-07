@@ -20,49 +20,60 @@ export default async function HomePage() {
   const stats = [
     { label: "文章", value: posts.length },
     { label: "照片", value: photos.length },
-    { label: "标签", value: 5 },
+    { label: "主题", value: 5 },
   ];
 
   return (
     <SiteFrame>
       <section className="home-hero-v2 container">
         <div className="home-hero-left">
+          <p className="eyebrow">Personal Digital Garden</p>
           <h1 className="home-hi-title">
-            Hi, 我是 {profile.name} <span className="wave-emoji">👋</span>
+            Hi，我是 {profile.name}
           </h1>
           <p className="home-hi-sub">{profile.status}</p>
           <p className="home-hi-desc">{profile.intro}</p>
           <div className="hero-actions left">
-            <Link href="/world" className="primary-link">探索我的世界</Link>
-            <Link href="/articles" className="secondary-link">查看文章</Link>
+            <Link href="/world" className="primary-link">
+              探索我的世界
+            </Link>
+            <Link href="/articles" className="secondary-link">
+              查看文章
+            </Link>
             <Link href="/photos/3d" className="secondary-link star-wall-btn">
-              <span style={{ marginRight: "5px" }}>✨</span>星空照片墙
+              进入星空相册
             </Link>
           </div>
         </div>
 
         <aside className="home-profile-card">
           <div className="home-profile-avatar">
-            {profile.avatarUrl
-              ? <img src={profile.avatarUrl} alt={profile.name} />
-              : <span>LQPP</span>}
+            {profile.avatarUrl ? <img src={profile.avatarUrl} alt={profile.name} /> : <span>LQPP</span>}
           </div>
           <strong className="home-profile-name">{profile.name}</strong>
           <span className="home-profile-tagline">{profile.tagline}</span>
           <div className="home-profile-stats">
-            {stats.map((s) => (
-              <div key={s.label} className="home-stat">
-                <strong>{s.value}</strong>
-                <span>{s.label}</span>
+            {stats.map((item) => (
+              <div key={item.label} className="home-stat">
+                <strong>{item.value}</strong>
+                <span>{item.label}</span>
               </div>
             ))}
           </div>
           <div className="home-profile-meta">
-            {profile.location && <span>📍 {profile.location}</span>}
-            {profile.email && <span>✉️ {profile.email}</span>}
-            {profile.githubUrl && <span>🐙 <a href={profile.githubUrl} target="_blank" rel="noopener noreferrer">GitHub</a></span>}
+            {profile.location && <span>{profile.location}</span>}
+            {profile.email && <span>{profile.email}</span>}
+            {profile.githubUrl && (
+              <span>
+                <a href={profile.githubUrl} target="_blank" rel="noopener noreferrer">
+                  GitHub
+                </a>
+              </span>
+            )}
           </div>
-          <Link href="/about" className="profile-card-link">查看完整档案 →</Link>
+          <Link href="/about" className="profile-card-link">
+            查看完整档案
+          </Link>
         </aside>
       </section>
 
@@ -72,15 +83,19 @@ export default async function HomePage() {
             <h2 className="section-title">最新文章</h2>
             <p className="section-copy">技术笔记、生活随笔和突然出现的想法。</p>
           </div>
-          <Link href="/articles" className="section-link">查看全部 →</Link>
+          <Link href="/articles" className="section-link">
+            查看全部
+          </Link>
         </div>
         {latestPosts.length > 0 ? (
           <div className="cards-grid">
-            {latestPosts.map((post) => <ArticleCard key={post._id} post={post} />)}
+            {latestPosts.map((post) => (
+              <ArticleCard key={post._id} post={post} />
+            ))}
           </div>
         ) : (
           <div className="empty-state">
-            <div className="empty-icon">📝</div>
+            <div className="empty-icon">LQ</div>
             <p>还没有发布文章，去后台发布第一篇吧。</p>
           </div>
         )}
@@ -90,12 +105,12 @@ export default async function HomePage() {
         <Link href="/world/travel-map" className="home-travel-map-card">
           <div className="home-travel-map-card-bg" />
           <div className="home-travel-map-card-body">
-            <span className="home-travel-map-icon">🗺️</span>
+            <span className="home-travel-map-icon">Map</span>
             <div className="home-travel-map-text">
               <h3>我的旅行地图</h3>
-              <p>3D 交互式中国旅行足迹，点击探索我走过的每一座城市</p>
+              <p>用 3D 互动地图记录走过的城市、照片和路线记忆。</p>
             </div>
-            <span className="home-travel-map-cta">探索 →</span>
+            <span className="home-travel-map-cta">探索</span>
           </div>
         </Link>
       </section>
@@ -106,7 +121,9 @@ export default async function HomePage() {
             <h2 className="section-title">精选相册</h2>
             <p className="section-copy">把生活片段放进一个可以浏览的星空里。</p>
           </div>
-          <Link href="/photos" className="section-link">查看全部 →</Link>
+          <Link href="/photos" className="section-link">
+            查看全部
+          </Link>
         </div>
         {featuredPhotos.length > 0 ? (
           <div className="home-photo-grid">
@@ -118,8 +135,12 @@ export default async function HomePage() {
           </div>
         ) : (
           <div className="home-photo-placeholder">
-            <Link href="/photos/3d" className="primary-link">打开 3D 星空相册</Link>
-            <Link href="/photos" className="secondary-link">查看全部照片</Link>
+            <Link href="/photos/3d" className="primary-link">
+              打开 3D 星空相册
+            </Link>
+            <Link href="/photos" className="secondary-link">
+              查看全部照片
+            </Link>
           </div>
         )}
       </section>

@@ -23,7 +23,7 @@ export default async function PhotosPage({ searchParams }: Props) {
         <p className="eyebrow">Memory Atlas</p>
         <h1 className="hero-title">记忆星图</h1>
         <p className="hero-copy">
-          把生活片段放进一个可以浏览的星空里，保留普通相册和 3D 星空相册两种体验。
+          把生活片段放进可以浏览的星空里，同时保留普通相册和 3D 星空相册两种体验。
         </p>
         <div className="hero-actions">
           <Link href="/photos/3d" className="primary-button">
@@ -33,11 +33,7 @@ export default async function PhotosPage({ searchParams }: Props) {
       </section>
 
       <section className="container section">
-        <PhotosGalleryClient
-          photos={photos}
-          categories={categories}
-          initialView={initialView}
-        />
+        <PhotosGalleryClient photos={photos} categories={categories} initialView={initialView} />
       </section>
     </SiteFrame>
   );

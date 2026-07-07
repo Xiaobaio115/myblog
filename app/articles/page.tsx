@@ -28,13 +28,8 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
   const makeFilterHref = (tag: string) => {
     const urlParams = new URLSearchParams();
 
-    if (tag) {
-      urlParams.set("tag", tag);
-    }
-
-    if (query) {
-      urlParams.set("q", query);
-    }
+    if (tag) urlParams.set("tag", tag);
+    if (query) urlParams.set("q", query);
 
     const search = urlParams.toString();
     return search ? `/articles?${search}` : "/articles";
@@ -92,7 +87,7 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
           <div className="section-head">
             <div>
               <h2 className="section-title">
-                {query ? `“${query}” 的搜索结果` : selectedTag || "全部文章"}
+                {query ? `“${query}”的搜索结果` : selectedTag || "全部文章"}
               </h2>
               <p className="section-copy">共找到 {filteredPosts.length} 篇内容。</p>
             </div>
@@ -106,8 +101,8 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
             </div>
           ) : (
             <div className="empty-state">
-              <div className="empty-icon">🔎</div>
-              <p>没有找到符合条件的文章，你可以换个关键词或者回到全部文章。</p>
+              <div className="empty-icon">LQ</div>
+              <p>没有找到符合条件的文章，可以换个关键词，或者回到全部文章。</p>
             </div>
           )}
         </div>

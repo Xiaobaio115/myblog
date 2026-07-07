@@ -6,11 +6,12 @@ import { getProjectsSetting } from "@/lib/settings";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "项目｜LQPP 正在做的东西",
+  title: "项目 | LQPP 正在做的东西",
 };
 
-export default async function ProjectsPage() {//没上传？
+export default async function ProjectsPage() {
   const projects = await getProjectsSetting();
+
   return (
     <SiteFrame>
       <section className="hero container">
@@ -27,9 +28,11 @@ export default async function ProjectsPage() {//没上传？
               <h2>{project.title}</h2>
               <p>{project.desc}</p>
               <div className="world-tag-row">
-                {project.stack.map((item) => <span key={item}>{item}</span>)}
+                {project.stack.map((item) => (
+                  <span key={item}>{item}</span>
+                ))}
               </div>
-              <strong>查看详情 →</strong>
+              <strong>查看详情</strong>
             </Link>
           ))}
         </div>

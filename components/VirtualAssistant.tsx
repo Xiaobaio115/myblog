@@ -14,65 +14,43 @@ export default function VirtualAssistant() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
-      content:
-        "你好呀，我是 甘蔗。简单问题我会直接回答，复杂问题每天可以问我 10 次。",
+      content: "你好呀，我是甘蔗。简单问题我会直接回答，复杂问题每天可以问我 10 次。",
     },
   ]);
 
   async function sendMessage(textFromButton?: string) {
     const text = (textFromButton || input).trim();
-
     if (!text || sending) return;
 
-    const nextMessages: ChatMessage[] = [
-      ...messages,
-      {
-        role: "user",
-        content: text,
-      },
-    ];
-
+    const nextMessages: ChatMessage[] = [...messages, { role: "user", content: text }];
     const assistantIndex = nextMessages.length;
 
-    setMessages([
-      ...nextMessages,
-      {
-        role: "assistant",
-        content: "",
-      },
-    ]);
-
+    setMessages([...nextMessages, { role: "assistant", content: "" }]);
     setInput("");
     setSending(true);
 
     try {
-      const res = await fetch("/api/chat", {
+      const response = await fetch("/api/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messages: nextMessages,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: nextMessages }),
       });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => null);
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
         throw new Error(data?.error || "聊天失败");
       }
 
-      if (!res.body) {
+      if (!response.body) {
         throw new Error("浏览器不支持流式响应");
       }
 
-      const reader = res.body.getReader();
+      const reader = response.body.getReader();
       const decoder = new TextDecoder();
-
       let fullReply = "";
 
       while (true) {
         const { value, done } = await reader.read();
-
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
@@ -80,12 +58,10 @@ export default function VirtualAssistant() {
 
         setMessages((currentMessages) => {
           const copiedMessages = [...currentMessages];
-
           copiedMessages[assistantIndex] = {
             role: "assistant",
-            content: fullReply || "Luna 正在回复...",
+            content: fullReply || "甘蔗正在回复...",
           };
-
           return copiedMessages;
         });
       }
@@ -93,25 +69,21 @@ export default function VirtualAssistant() {
       if (!fullReply.trim()) {
         setMessages((currentMessages) => {
           const copiedMessages = [...currentMessages];
-
           copiedMessages[assistantIndex] = {
             role: "assistant",
             content: "我刚刚没有收到有效回复，可以再问一次吗？",
           };
-
           return copiedMessages;
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "聊天服务暂时有点小故障，可以稍后再试。";
       setMessages((currentMessages) => {
         const copiedMessages = [...currentMessages];
-
         copiedMessages[assistantIndex] = {
           role: "assistant",
-          content:
-            error?.message || "聊天服务暂时有点小故障，可以稍后再试。",
+          content: message,
         };
-
         return copiedMessages;
       });
     } finally {
@@ -125,19 +97,23 @@ export default function VirtualAssistant() {
         <div className="assistant-panel">
           <div className="assistant-header">
             <div>
-              <strong>甘蔗 小助手</strong>
+              <strong>甘蔗小助手</strong>
               <span>简单问题不消耗 AI 次数</span>
             </div>
 
-            <button onClick={() => setOpen(false)}>×</button>
+            <button onClick={() => setOpen(false)} type="button">
+              ×
+            </button>
           </div>
 
           <div className="assistant-quick-actions">
-            <button onClick={() => sendMessage("相册在哪里？")}>相册</button>
-            <button onClick={() => sendMessage("3D照片墙怎么打开？")}>
-              3D照片墙
+            <button onClick={() => sendMessage("相册在哪里？")} type="button">
+              相册
             </button>
-            <button onClick={() => sendMessage("后台入口在哪里？")}>
+            <button onClick={() => sendMessage("3D 照片墙怎么打开？")} type="button">
+              3D 照片墙
+            </button>
+            <button onClick={() => sendMessage("后台入口在哪里？")} type="button">
               后台
             </button>
           </div>
@@ -158,16 +134,14 @@ export default function VirtualAssistant() {
           <div className="assistant-input-row">
             <input
               value={input}
-              placeholder="和 Luna 说点什么..."
+              placeholder="和甘蔗说点什么..."
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  sendMessage();
-                }
+                if (event.key === "Enter") sendMessage();
               }}
             />
 
-            <button onClick={() => sendMessage()} disabled={sending}>
+            <button onClick={() => sendMessage()} disabled={sending} type="button">
               发送
             </button>
           </div>
@@ -178,6 +152,7 @@ export default function VirtualAssistant() {
         className="assistant-avatar"
         onClick={() => setOpen((value) => !value)}
         aria-label="打开聊天助手"
+        type="button"
       >
         <div className="assistant-avatar-face">
           <span className="assistant-eye left" />
@@ -185,7 +160,7 @@ export default function VirtualAssistant() {
           <span className="assistant-mouth" />
         </div>
 
-        <span className="assistant-bubble">聊聊</span>
+        <span className="assistant-bubble">聊天</span>
       </button>
     </div>
   );
