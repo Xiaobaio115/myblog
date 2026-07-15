@@ -12,55 +12,115 @@ export const metadata: Metadata = {
   title: "我的世界 | LQPP World Map",
 };
 
-const SECTION_META: Record<string, { href: string; cta: string }> = {
-  hometown: { href: "/world/hometown", cta: "进入家乡页面" },
-  school: { href: "/world/school", cta: "进入学校页面" },
-  travel: { href: "/world/travel", cta: "进入旅行探索" },
-  games: { href: "/world/games", cta: "进入游戏世界" },
+const SECTION_META: Record<
+  string,
+  { href: string; cta: string; label: string; tone: string }
+> = {
+  hometown: {
+    href: "/world/hometown",
+    cta: "进入家乡页面",
+    label: "Home",
+    tone: "tone-home",
+  },
+  school: {
+    href: "/world/school",
+    cta: "进入学校页面",
+    label: "School",
+    tone: "tone-school",
+  },
+  travel: {
+    href: "/world/travel",
+    cta: "进入旅行探索",
+    label: "Travel",
+    tone: "tone-travel",
+  },
+  games: {
+    href: "/world/games",
+    cta: "进入游戏世界",
+    label: "Games",
+    tone: "tone-games",
+  },
 };
 
 export default async function WorldPage() {
   const dbSections = await getWorldSectionsSetting();
+  const dbById = new Map(dbSections.map((section) => [section.id, section]));
+
+  // Keep the four design-map coordinates stable even if DB settings are partial.
+  const sections = defaultWorldSections.map((fallback) => {
+    const saved = dbById.get(fallback.id);
+    return {
+      id: fallback.id,
+      eyebrow: saved?.eyebrow || fallback.eyebrow,
+      title: saved?.title || fallback.title,
+      desc: saved?.desc || fallback.desc,
+      cover: saved?.cover || fallback.cover,
+      icon: saved?.icon || fallback.icon,
+      tags: saved?.tags?.length ? saved.tags : fallback.tags,
+      photos: saved?.photos ?? [],
+      sections: saved?.sections ?? [],
+    };
+  });
 
   return (
     <SiteFrame>
       <section className="container pink-page-hero">
-        <p className="eyebrow">My World</p>
+        <p className="eyebrow">My World Map</p>
         <h1>我的世界</h1>
-        <p>探索世界，记录生活，发现我的坐标。</p>
+        <p>从家乡出发，在学校成长，去旅行探索，也在游戏里进入另一个宇宙。</p>
+        <div className="pink-home-actions">
+          <a href="#hometown" className="pink-btn primary">
+            看看我的家乡
+          </a>
+          <a href="#travel" className="pink-btn">
+            查看旅行轨迹
+          </a>
+          <a href="#games" className="pink-btn">
+            进入游戏宇宙
+          </a>
+        </div>
       </section>
 
       <section className="container pink-section">
         <div className="pink-section-head">
-          <h2>家乡、学校、旅行和游戏，都保留成独立入口。</h2>
-          <p>这里继续读取后台可配置的我的世界模块，封面、标签和描述都来自现有设置。</p>
+          <h2>世界由这些坐标组成</h2>
+          <p>家乡、学校、旅行和游戏，各自是独立入口，也一起拼成完整的地图。</p>
         </div>
 
         <div className="world-card-grid pink-world-grid">
-          {dbSections.map((section) => {
-            const meta =
-              SECTION_META[section.id] ??
-              defaultWorldSections.find((item) => item.id === section.id) ??
-              { href: "/world", cta: "进入" };
+          {sections.map((section) => {
+            const meta = SECTION_META[section.id] ?? {
+              href: "/world",
+              cta: "进入",
+              label: section.icon || section.title,
+              tone: "tone-default",
+            };
+            const cover = typeof section.cover === "string" ? section.cover.trim() : "";
 
             return (
-              <article key={section.id} id={section.id} className="world-big-card pink-world-card">
-                <div className="world-big-card-cover">
-                  {section.cover ? (
-                    <img src={section.cover} alt={section.title} />
+              <article
+                key={section.id}
+                id={section.id}
+                className={`world-big-card pink-world-card ${meta.tone}`}
+              >
+                <div className={`world-big-card-cover ${meta.tone}`}>
+                  {cover ? (
+                    <img src={cover} alt={section.title} />
                   ) : (
-                    <span className="world-big-card-icon">{section.icon}</span>
+                    <span className="world-big-card-icon">{meta.label}</span>
                   )}
                 </div>
                 <div className="world-big-card-body">
                   <p className="world-kicker">{section.eyebrow}</p>
                   <h2>{section.title}</h2>
                   <p>{section.desc}</p>
-                  <div className="world-tag-row">
-                    {section.tags.map((tag) => (
-                      <span key={tag}>{tag}</span>
-                    ))}
-                  </div>
+                  {section.tags?.length ? (
+                    <div className="world-tag-row">
+                      {section.tags.map((tag) => (
+                        <span key={tag}>{tag}</span>
+                      ))}
+                    </div>
+                  ) : null}
                   <Link href={meta.href} className="pink-text-link">
                     {meta.cta}
                   </Link>

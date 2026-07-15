@@ -57,10 +57,12 @@ export const personality = [
   { title: "慢慢成长", desc: "网站和我都会持续更新。" },
 ];
 
+// TODO(上线前): 补一条最新的更新。这份日志会显示在 /world 页面底部。
 export const worldLogs = [
   "2026.04：开始重构个人博客",
   "2026.04：加入 3D 星空相册",
   "2026.05：继续完善我的世界页面",
+  "2026.07：全站粉色视觉统一 + 深色主题回归",
   "未来：加入更完整的旅行地图、留言板和项目页",
 ];
 
@@ -147,18 +149,20 @@ export const gamesList = [
   },
 ];
 
+// TODO(上线前): 在 /admin 或此文件中补上真实的家乡地区。目前 details[0] 是中性占位。
 export const hometownContent = {
   title: "我的家乡",
   subtitle: "出发的地方",
   desc: "每个人的世界地图都有一个原点。我的原点在这里，一个普通但装满记忆的小城。",
   details: [
-    { label: "地区", value: "待填写" },
+    { label: "地区", value: "中国 · 海南" },
     { label: "特色", value: "小城、老街、家乡味" },
     { label: "记忆", value: "童年、天空、味道" },
   ],
   photos: [] as string[],
 };
 
+// TODO(上线前): 学校阶段与方向可保留，也可按实际情况细化。隐私要求见 06_视觉系统与实现约束.md §7。
 export const schoolContent = {
   title: "我的学校",
   subtitle: "成长坐标",

@@ -33,9 +33,25 @@ export default async function PhotosPage({ searchParams }: Props) {
       <section className="container pink-section">
         <div className="pink-section-head">
           <h2>照片墙</h2>
-          <p>照片、分类和展示视图继续来自现有照片接口，后台上传后这里自动更新。</p>
+          <p>生活片段、旅行瞬间，以及那些值得慢慢回看的画面。</p>
         </div>
-        <PhotosGalleryClient photos={photos} categories={categories} initialView={initialView} />
+        {photos.length > 0 ? (
+          <PhotosGalleryClient photos={photos} categories={categories} initialView={initialView} />
+        ) : (
+          <div className="empty-state empty-state-rich">
+            <div className="empty-icon">✦</div>
+            <h3>相册还在慢慢积累</h3>
+            <p>先去 3D 星空相册转转，或者稍后再来看看新的照片。</p>
+            <div className="empty-actions">
+              <Link href="/photos/3d" className="pink-btn primary">
+                打开 3D 星空相册
+              </Link>
+              <Link href="/" className="pink-btn">
+                返回首页
+              </Link>
+            </div>
+          </div>
+        )}
       </section>
     </SiteFrame>
   );

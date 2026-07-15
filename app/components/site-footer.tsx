@@ -5,7 +5,10 @@ export function SiteFooter() {
     <footer className="site-footer pink-footer">
       <div className="container footer-inner">
         <div className="footer-brand">
-          <span className="footer-logo">LQPP World</span>
+          <span className="footer-logo pink-brand">
+            <span className="pink-brand-mark" />
+            <span>LQPP World</span>
+          </span>
           <p className="footer-tagline">
             一个记录生活、技术、旅行与游戏的个人数字花园。
           </p>
@@ -26,19 +29,18 @@ export function SiteFooter() {
             <Link href="/photos/3d">3D 星空相册</Link>
             <Link href="/world/travel-map">旅行地图</Link>
             <Link href="/projects">项目</Link>
-            <Link href="/admin">后台入口</Link>
+            <Link href="/guestbook">留言板</Link>
           </div>
           <div className="footer-col">
-            <strong>联系</strong>
-            <span>Email</span>
-            <span>GitHub</span>
-            <span>社交平台</span>
+            <strong>后台</strong>
+            <Link href="/admin">管理入口</Link>
+            <span className="footer-note">不在主导航公开</span>
           </div>
         </div>
       </div>
 
       <div className="container footer-bottom">
-        <p>© {new Date().getFullYear()} LQPP World. Built with curiosity and code.</p>
+        <p>© {new Date().getFullYear()} LQPP World · Built with curiosity and code.</p>
       </div>
     </footer>
   );

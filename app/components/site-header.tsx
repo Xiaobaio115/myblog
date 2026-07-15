@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { ThemeToggle } from "./theme-toggle";
 
 type SiteHeaderProps = {
   profileName?: string;
@@ -15,12 +16,12 @@ type SiteHeaderProps = {
 };
 
 const NAV_ITEMS = [
-  { href: "/", label: "首页", icon: "Home" },
-  { href: "/articles", label: "文章", icon: "Posts" },
-  { href: "/world", label: "我的世界", icon: "World" },
-  { href: "/photos", label: "相册", icon: "Photos" },
-  { href: "/about", label: "关于我", icon: "About" },
-  { href: "/guestbook", label: "留言", icon: "Guestbook" },
+  { href: "/", label: "首页", icon: "⌂" },
+  { href: "/articles", label: "文章", icon: "✎" },
+  { href: "/world", label: "我的世界", icon: "◈" },
+  { href: "/photos", label: "相册", icon: "✦" },
+  { href: "/about", label: "关于我", icon: "◎" },
+  { href: "/guestbook", label: "留言", icon: "✉" },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -117,6 +118,7 @@ export function SiteHeader({
             >
               <SearchIcon />
             </button>
+            <ThemeToggle />
             <button
               type="button"
               className="mobile-menu-button"

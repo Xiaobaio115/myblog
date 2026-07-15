@@ -127,9 +127,9 @@ export default async function AboutPage() {
 
           <section className="pink-panel">
             <h2>一些关于我的关键词</h2>
-            <div className="personality-grid">
+            <div className="personality-grid pink-keyword-grid">
               {personality.map((item) => (
-                <div key={item.title} className="world-node-card">
+                <div key={item.title} className="world-node-card pink-keyword-card">
                   <strong>{item.title}</strong>
                   <p>{item.desc}</p>
                 </div>
@@ -140,12 +140,12 @@ export default async function AboutPage() {
           <section className="pink-panel">
             <h2>找到我</h2>
             <p>如果你想交流技术、博客、游戏、旅行，或者只是想打个招呼，可以通过下面的方式找到我。</p>
-            <div className="portal-grid">
+            <div className="portal-grid pink-contact-grid">
               {socials.map((item) => (
                 <a
                   key={item.label}
                   href={item.href}
-                  className="portal-card"
+                  className="portal-card pink-contact-card"
                   target="_blank"
                   rel="noopener noreferrer"
                 >

@@ -68,12 +68,15 @@ export default async function GuestbookPage() {
         <div className="pink-about-stack">
           <div className="pink-panel">
             <h2>留言板</h2>
-            <p>留言提交后会进入审核，通过后展示在这里。接口保留限流、防刷和审核逻辑。</p>
+            <p>留言提交后会进入审核，通过后展示在这里。欢迎一句简单的你好。</p>
             <GuestbookForm />
           </div>
 
           <div className="guestbook-messages">
-            <h3 className="section-title">大家说的话</h3>
+            <div className="pink-section-head compact" style={{ textAlign: "left", margin: "8px 0 18px" }}>
+              <h2 style={{ fontSize: "1.35rem" }}>大家说的话</h2>
+              <p>审核通过后会出现在这里。</p>
+            </div>
             {messages.length > 0 ? (
               <div className="guestbook-list">
                 {messages.map((item) => (
@@ -95,9 +98,10 @@ export default async function GuestbookPage() {
                 ))}
               </div>
             ) : (
-              <div className="empty-state">
-                <div className="empty-icon">LQ</div>
-                <p>还没有公开留言，等第一条审核通过后会显示在这里。</p>
+              <div className="empty-state empty-state-rich">
+                <div className="empty-icon">✉</div>
+                <h3>还没有公开留言</h3>
+                <p>等第一条审核通过后会显示在这里。你也可以先从侧边栏找到我。</p>
               </div>
             )}
           </div>

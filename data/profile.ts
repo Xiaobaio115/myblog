@@ -1,22 +1,30 @@
+// ⚠️ 这些是"数据默认值"。上线前应该在 /admin 后台覆盖，
+// 或直接改这里；被 lib/settings.ts 里的 getProfileSetting()/getSocialsSetting()/getSkillsSetting()/getEducationSetting() 读取。
+
 export const profile = {
-  name: "甘蔗甜不甜",
+  // TODO(上线前): 换成你想公开显示的昵称
+  name: "LQPP",
   siteName: "LQPP World",
   tagline: "Stay hungry, stay foolish.",
   intro:
     "你好，我是 LQPP。这里记录我的生活、技术、家乡、学校、旅行、游戏，以及一些慢慢长大的想法。",
   status: "正在逃早八中",
   location: "中国 · 海南",
+  // TODO(上线前): 填头像 URL，留空时首页/关于我会显示昵称首字母
   avatarUrl: "",
+  // TODO(上线前): 确认这个邮箱是可以公开的
   email: "3559078927@qq.com",
-  githubUrl: "https://github.com/yourname",
+  // TODO(上线前): 替换成真实 GitHub 主页，留空则不显示
+  githubUrl: "",
   tags: ["学生", "博客作者", "代码学习者", "旅行探索者", "游戏玩家"],
 };
 
+// TODO(上线前): 只保留真正启用的社交入口。href 为空或 "#" 的会在 UI 层被过滤。
 export const socials = [
-  { label: "Email", value: profile.email, href: `mailto:${profile.email}` },
+  { label: "Email", value: profile.email, href: profile.email ? `mailto:${profile.email}` : "" },
   { label: "GitHub", value: "GitHub", href: profile.githubUrl },
-  { label: "B 站", value: "Bilibili", href: "#" },
-  { label: "微博", value: "Weibo", href: "#" },
+  { label: "B 站", value: "Bilibili", href: "" },
+  { label: "微博", value: "Weibo", href: "" },
 ];
 
 export const skills = [
@@ -56,11 +64,12 @@ export const skills = [
   },
 ];
 
+// TODO(上线前): 替换成你的真实教育经历。可以只写阶段和方向，不写精确班级/学校（doc 06 §7 隐私建议）。
 export const education = [
   {
-    time: "202X - 至今",
-    title: "学校名称 / 专业方向",
-    desc: "在这里我开始系统学习技术，也逐渐意识到自己想把兴趣、记录和作品结合起来。这个网站就是其中一个长期项目。",
+    time: "TODO · 年份 - 至今",
+    title: "TODO · 学校 / 专业",
+    desc: "TODO · 这一阶段的关键词、你在做的事、以及它是怎么带你到今天的。",
     tags: ["编程", "课程", "成长", "项目"],
   },
   {

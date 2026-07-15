@@ -1,16 +1,27 @@
+"use client";
+
 /* eslint-disable @next/next/no-img-element */
 
+import { useState } from "react";
 import Link from "next/link";
 import type { Photo } from "@/lib/content";
 
 export function PhotoCard({ photo }: { photo: Photo }) {
+  const [broken, setBroken] = useState(false);
+  const showImage = Boolean(photo.url) && !broken;
+
   const cardBody = (
     <>
-      {photo.url ? (
-        <img src={photo.url} alt={photo.caption} className="photo-media" />
+      {showImage ? (
+        <img
+          src={photo.url}
+          alt={photo.caption}
+          className="photo-media"
+          onError={() => setBroken(true)}
+        />
       ) : (
         <div className="photo-fallback">
-          <span>{photo.emoji || "📷"}</span>
+          <span>{photo.emoji || "✦"}</span>
         </div>
       )}
 

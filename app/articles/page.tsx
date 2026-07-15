@@ -94,9 +94,28 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
               ))}
             </div>
           ) : (
-            <div className="empty-state">
-              <div className="empty-icon">LQ</div>
-              <p>没有找到符合条件的文章，可以换个关键词，或者回到全部文章。</p>
+            <div className="empty-state empty-state-rich">
+              <div className="empty-icon">✎</div>
+              <h3>{query || selectedTag ? "没有匹配的文章" : "还没有发布文章"}</h3>
+              <p>
+                {query || selectedTag
+                  ? "可以换个关键词，或者回到全部文章继续浏览。"
+                  : "第一篇思考碎片很快就会出现在这里。"}
+              </p>
+              <div className="empty-actions">
+                {query || selectedTag ? (
+                  <Link href="/articles" className="pink-btn primary">
+                    查看全部文章
+                  </Link>
+                ) : (
+                  <Link href="/world" className="pink-btn primary">
+                    先去看看我的世界
+                  </Link>
+                )}
+                <Link href="/" className="pink-btn">
+                  返回首页
+                </Link>
+              </div>
             </div>
           )}
         </div>
