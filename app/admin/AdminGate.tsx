@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { ThemeToggle } from "@/app/components/theme-toggle";
 
 const navGroups = [
   {
@@ -250,6 +251,7 @@ export default function AdminGate({
             <span>{currentModule.desc}</span>
           </div>
           <div className="admin-topbar-actions">
+            <ThemeToggle />
             <Link href="/" className="secondary-link">
               预览站点
             </Link>

@@ -93,7 +93,22 @@ export function SiteHeader({
       <nav className="nav pink-nav">
         <div className="container nav-inner">
           <Link href="/" className="nav-logo pink-brand">
-            <span className="pink-brand-mark" />
+            <span className="pink-brand-mark" aria-hidden="true">
+              <svg
+                viewBox="0 0 32 32"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="16" cy="16" r="7.2" fill="rgba(255,255,255,0.16)" stroke="none" />
+                <path d="M9.5 8c-2.4 2.6-4.1 5.6-4.1 8.4 0 5.7 4.7 10.3 10.5 10.3 2.7 0 5.1-1 6.9-2.6" />
+                <circle cx="22.5" cy="9.5" r="1.4" fill="currentColor" stroke="none" />
+                <path d="M25.5 4.5v3M27 6h-3" />
+              </svg>
+            </span>
             <span>LQPP World</span>
           </Link>
 

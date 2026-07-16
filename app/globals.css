@@ -5870,14 +5870,15 @@ html, body {
   justify-content: center;
   border-radius: 50%;
   background: transparent;
-  font-size: 24px;
-  line-height: 1;
   color: #fff;
   filter: drop-shadow(0 1px 3px rgba(0,0,0,0.2));
 }
+.assistant-avatar-face svg {
+  width: 56%;
+  height: 56%;
+}
 .assistant-avatar-face::after {
-  content: '💬';
-  font-size: 24px;
+  content: none;
 }
 
 .assistant-eye,
@@ -6564,7 +6565,7 @@ html, body {
 }
 
 /* Pink complete frontend implementation */
-:root,
+:root:not([data-theme="dark"]),
 [data-theme="light"] {
   --pink-bg: #fff7fb;
   --pink-bg-soft: #fff1f7;
@@ -6585,7 +6586,7 @@ html, body {
   --border: rgba(23, 32, 51, 0.10);
 }
 
-body {
+:root:not([data-theme="dark"]) body {
   background:
     radial-gradient(circle at 75% 0%, rgba(255, 79, 163, 0.14), transparent 28%),
     radial-gradient(circle at 8% 10%, rgba(255, 214, 232, 0.72), transparent 26%),
@@ -6614,11 +6615,21 @@ body {
 }
 
 .pink-brand-mark {
+  display: inline-grid;
+  place-items: center;
   width: 34px;
   height: 34px;
   border-radius: 12px;
   background: linear-gradient(135deg, var(--pink-accent), var(--pink-purple));
-  box-shadow: 0 12px 28px rgba(255, 79, 163, 0.26);
+  box-shadow: 0 10px 24px rgba(255, 79, 163, 0.22);
+  color: #fff;
+  overflow: hidden;
+}
+
+.pink-brand-mark svg {
+  width: 22px;
+  height: 22px;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.18));
 }
 
 .pink-search-button {
@@ -10225,39 +10236,13 @@ body {
 }
 
 .assistant-avatar-face::after {
-  content: "";
+  content: none;
 }
 
-.assistant-eye,
-.assistant-mouth {
-  display: block;
-}
-
-.assistant-eye {
-  position: absolute;
-  top: 23px;
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: #fff;
-}
-
-.assistant-eye.left {
-  left: 21px;
-}
-
-.assistant-eye.right {
-  right: 21px;
-}
-
-.assistant-mouth {
-  position: absolute;
-  left: 24px;
-  bottom: 19px;
-  width: 14px;
-  height: 7px;
-  border-bottom: 3px solid #fff;
-  border-radius: 0 0 999px 999px;
+.assistant-avatar-face svg {
+  width: 30px;
+  height: 30px;
+  filter: drop-shadow(0 2px 4px rgba(46, 18, 34, 0.22));
 }
 
 .assistant-status-dot {
@@ -10608,7 +10593,7 @@ body {
    Admin pages keep their own surfaces.
    ═══════════════════════════════════════════════════════ */
 
-:root,
+:root:not([data-theme="dark"]),
 [data-theme="light"] {
   --pink-bg: #fff7fb;
   --pink-bg-soft: #fff1f7;
@@ -10643,8 +10628,8 @@ body {
   --link-readable: var(--pink-accent-strong);
 }
 
-/* Soft pink page atmosphere */
-body {
+/* Soft pink page atmosphere (light mode only) */
+:root:not([data-theme="dark"]) body {
   background:
     radial-gradient(circle at 75% 0%, rgba(255, 79, 163, 0.14), transparent 28%),
     radial-gradient(circle at 8% 10%, rgba(255, 214, 232, 0.72), transparent 26%),
@@ -10652,24 +10637,24 @@ body {
   color: var(--pink-ink);
 }
 
-/* Shared public card language */
-.article-card,
-.pink-panel,
-.pink-module,
-.pink-filter-panel,
-.pink-world-card,
-.world-big-card,
-.world-node-card,
-.about-highlight-card,
-.portal-card,
-.glass-panel,
-.project-card,
-.guestbook-item,
-.empty-state,
-.empty-state-rich,
-.contact-panel,
-.comment-shell,
-.comment-placeholder {
+/* Shared public card language (light only — dark theme keeps its own surfaces) */
+:root:not([data-theme="dark"]) .article-card,
+:root:not([data-theme="dark"]) .pink-panel,
+:root:not([data-theme="dark"]) .pink-module,
+:root:not([data-theme="dark"]) .pink-filter-panel,
+:root:not([data-theme="dark"]) .pink-world-card,
+:root:not([data-theme="dark"]) .world-big-card,
+:root:not([data-theme="dark"]) .world-node-card,
+:root:not([data-theme="dark"]) .about-highlight-card,
+:root:not([data-theme="dark"]) .portal-card,
+:root:not([data-theme="dark"]) .glass-panel,
+:root:not([data-theme="dark"]) .project-card,
+:root:not([data-theme="dark"]) .guestbook-item,
+:root:not([data-theme="dark"]) .empty-state,
+:root:not([data-theme="dark"]) .empty-state-rich,
+:root:not([data-theme="dark"]) .contact-panel,
+:root:not([data-theme="dark"]) .comment-shell,
+:root:not([data-theme="dark"]) .comment-placeholder {
   border-radius: var(--radius-card) !important;
   border: 1px solid var(--pink-line) !important;
   background: var(--pink-card) !important;
@@ -10677,19 +10662,19 @@ body {
   color: var(--pink-ink);
 }
 
-.article-card:hover,
-.pink-module:hover,
-.world-big-card:hover,
-.portal-card:hover,
-.project-card:hover {
+:root:not([data-theme="dark"]) .article-card:hover,
+:root:not([data-theme="dark"]) .pink-module:hover,
+:root:not([data-theme="dark"]) .world-big-card:hover,
+:root:not([data-theme="dark"]) .portal-card:hover,
+:root:not([data-theme="dark"]) .project-card:hover {
   border-color: rgba(255, 79, 163, 0.24) !important;
   box-shadow: var(--pink-shadow-lg) !important;
   transform: translateY(-3px);
 }
 
-/* Nav + brand */
-.pink-nav.nav,
-.nav.pink-nav {
+/* Nav + brand (light only — dark theme has its own nav bg) */
+:root:not([data-theme="dark"]) .pink-nav.nav,
+:root:not([data-theme="dark"]) .nav.pink-nav {
   background: rgba(255, 250, 252, 0.88) !important;
   border-bottom: 1px solid rgba(255, 79, 163, 0.12) !important;
   backdrop-filter: blur(18px);
@@ -10709,12 +10694,21 @@ body {
 }
 
 .pink-brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 34px;
   height: 34px;
   border-radius: 12px;
   background: linear-gradient(135deg, var(--pink-accent), var(--pink-purple));
   box-shadow: 0 12px 28px rgba(255, 79, 163, 0.26);
+  color: #fff;
   flex-shrink: 0;
+}
+
+.pink-brand-mark svg {
+  width: 22px;
+  height: 22px;
 }
 
 .nav-btn {
