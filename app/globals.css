@@ -713,6 +713,28 @@ img {
   color: var(--muted);
 }
 
+select.admin-input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 18px) 55%, calc(100% - 12px) 55%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  padding-right: 34px;
+}
+
+select.admin-input option {
+  background: var(--field-readable-bg, #ffffff);
+  color: var(--field-readable-text, #111827);
+}
+
+[data-theme="dark"] select.admin-input option,
+[data-theme="blue"] select.admin-input option {
+  background: #111827;
+  color: #f8fafc;
+}
+
 .search-input::placeholder,
 .admin-input::placeholder,
 .admin-textarea::placeholder {
@@ -9263,7 +9285,8 @@ html, body {
 }
 
 .photo-admin-media {
-  background: var(--surface-readable-soft);
+  display: block;
+  background: transparent;
 }
 
 .photo-admin-actions {
