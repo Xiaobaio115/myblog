@@ -110,7 +110,22 @@ export default function VirtualAssistant() {
         <div className="assistant-panel" role="dialog" aria-label="甘蔗小助手">
           <div className="assistant-header">
             <div className="assistant-title-row">
-              <span className="assistant-mini-avatar">甘</span>
+              <span className="assistant-mini-avatar" aria-hidden="true">
+                <svg
+                  viewBox="0 0 32 32"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M6 12.5C6 9.46 8.91 7 12.5 7h7C23.09 7 26 9.46 26 12.5v4c0 3.04-2.91 5.5-6.5 5.5h-6l-4.2 3.3c-.66.52-1.63.05-1.63-.79V21.6C7.86 20.6 6 18.72 6 16.5v-4z" />
+                  <circle cx="12.5" cy="14.5" r="1.2" fill="currentColor" stroke="none" />
+                  <circle cx="16" cy="14.5" r="1.2" fill="currentColor" stroke="none" />
+                  <circle cx="19.5" cy="14.5" r="1.2" fill="currentColor" stroke="none" />
+                </svg>
+              </span>
               <div>
                 <strong>甘蔗小助手</strong>
                 <span>{sending ? "正在思考你的问题..." : "文章、相册、旅行地图都可以问我"}</span>

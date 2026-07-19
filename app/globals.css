@@ -1977,6 +1977,38 @@ select.admin-input option {
   min-height: 42px;
   padding: 0 14px;
   font-size: 0.84rem;
+  color: var(--text) !important;
+  background: var(--surface-readable-solid, #ffffff) !important;
+  border: 1px solid var(--border-strong) !important;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08) !important;
+  font-weight: 700 !important;
+}
+
+.markdown-tool:hover {
+  border-color: var(--pink-500, #f0328d) !important;
+  color: var(--pink-500, #f0328d) !important;
+  transform: translateY(-1px);
+}
+
+[data-theme="dark"] .markdown-tool,
+[data-theme="blue"] .markdown-tool {
+  color: #f8fafc !important;
+  background: rgba(30, 41, 59, 0.85) !important;
+  border-color: rgba(148, 163, 184, 0.35) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+}
+
+[data-theme="dark"] .markdown-tool:hover,
+[data-theme="blue"] .markdown-tool:hover {
+  background: rgba(59, 130, 246, 0.22) !important;
+  border-color: rgba(255, 79, 163, 0.7) !important;
+  color: #ffe4f0 !important;
+}
+
+.markdown-tool:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
 }
 
 .markdown-hint {
@@ -10311,6 +10343,13 @@ html, body {
   color: #fff;
   background: linear-gradient(135deg, #ff4fa3, #a855f7);
   font-weight: 900;
+  flex-shrink: 0;
+  box-shadow: 0 8px 20px rgba(168, 85, 247, 0.24);
+}
+
+.assistant-mini-avatar svg {
+  width: 24px;
+  height: 24px;
 }
 
 .assistant-quick-actions {
