@@ -6694,7 +6694,13 @@ html, body {
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.18));
 }
 
-.pink-search-button {
+.pink-brand-mark img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  display: block;
+}
   color: var(--pink-accent-strong);
   background: rgba(255, 255, 255, 0.72);
   border-color: rgba(255, 79, 163, 0.16);
@@ -9671,8 +9677,8 @@ html, body {
 
 .admin-system-link small {
   overflow: hidden;
-  color: var(--muted);
-  font-size: 0.72rem;
+  color: var(--text-soft);
+  font-size: 0.74rem;
   font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -9684,11 +9690,11 @@ html, body {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
   background: var(--surface-readable-soft);
-  color: var(--muted);
-  font-size: 0.7rem;
+  color: var(--text-soft);
+  font-size: 0.72rem;
   font-weight: 900;
 }
 
@@ -10795,6 +10801,14 @@ html, body {
 .pink-brand-mark svg {
   width: 22px;
   height: 22px;
+}
+
+.pink-brand-mark img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  display: block;
 }
 
 .nav-btn {
