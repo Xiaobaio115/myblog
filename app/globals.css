@@ -5931,6 +5931,14 @@ html, body {
   width: 56%;
   height: 56%;
 }
+
+.assistant-avatar-face img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
 .assistant-avatar-face::after {
   content: none;
 }
@@ -10300,6 +10308,14 @@ html, body {
   filter: drop-shadow(0 2px 4px rgba(46, 18, 34, 0.22));
 }
 
+.assistant-avatar-face img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
 .assistant-status-dot {
   position: absolute;
   right: 4px;
@@ -10350,6 +10366,14 @@ html, body {
 .assistant-mini-avatar svg {
   width: 24px;
   height: 24px;
+}
+
+.assistant-mini-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  display: block;
 }
 
 .assistant-quick-actions {
