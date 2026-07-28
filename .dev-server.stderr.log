@@ -1,0 +1,304 @@
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:232:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getPublishedPosts (lib\content.ts:231:10)
+    at SiteFrame (app\components\site-frame.tsx:10:22)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:586:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getStoredPhotos (lib\content.ts:585:10)
+    at getLatestPhotos (lib\content.ts:604:30)
+    at SiteFrame (app\components\site-frame.tsx:11:20)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:232:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getPublishedPosts (lib\content.ts:231:10)
+    at getLatestPhotos (lib\content.ts:610:23)
+    at async SiteFrame (app\components\site-frame.tsx:8:36)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:232:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getPublishedPosts (lib\content.ts:231:10)
+    at SiteFrame (app\components\site-frame.tsx:10:22)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:586:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getStoredPhotos (lib\content.ts:585:10)
+    at getLatestPhotos (lib\content.ts:604:30)
+    at SiteFrame (app\components\site-frame.tsx:11:20)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:232:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getPublishedPosts (lib\content.ts:231:10)
+    at getLatestPhotos (lib\content.ts:610:23)
+    at async SiteFrame (app\components\site-frame.tsx:8:36)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:232:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getPublishedPosts (lib\content.ts:231:10)
+    at SiteFrame (app\components\site-frame.tsx:10:22)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:586:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getStoredPhotos (lib\content.ts:585:10)
+    at getLatestPhotos (lib\content.ts:604:30)
+    at SiteFrame (app\components\site-frame.tsx:11:20)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:232:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getPublishedPosts (lib\content.ts:231:10)
+    at getLatestPhotos (lib\content.ts:610:23)
+    at async SiteFrame (app\components\site-frame.tsx:8:36)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+⚠ Blocked cross-origin request to Next.js dev resource /_next/webpack-hmr from "127.0.0.1".
+Cross-origin access to Next.js dev resources is blocked by default for safety.
+
+To allow this host in development, add it to "allowedDevOrigins" in next.config.js and restart the dev server:
+
+// next.config.js
+module.exports = {
+  allowedDevOrigins: ['127.0.0.1'],
+}
+
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:232:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getPublishedPosts (lib\content.ts:231:10)
+    at SiteFrame (app\components\site-frame.tsx:10:22)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:586:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getStoredPhotos (lib\content.ts:585:10)
+    at getLatestPhotos (lib\content.ts:604:30)
+    at SiteFrame (app\components\site-frame.tsx:11:20)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:232:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getPublishedPosts (lib\content.ts:231:10)
+    at getLatestPhotos (lib\content.ts:610:23)
+    at async SiteFrame (app\components\site-frame.tsx:8:36)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:232:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getPublishedPosts (lib\content.ts:231:10)
+    at HomePage (app\page.tsx:14:22)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:586:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getStoredPhotos (lib\content.ts:585:10)
+    at getLatestPhotos (lib\content.ts:604:30)
+    at HomePage (app\page.tsx:15:20)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:232:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getPublishedPosts (lib\content.ts:231:10)
+    at getLatestPhotos (lib\content.ts:610:23)
+    at async HomePage (app\page.tsx:13:44)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:232:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getPublishedPosts (lib\content.ts:231:10)
+    at SiteFrame (app\components\site-frame.tsx:10:22)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:586:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getStoredPhotos (lib\content.ts:585:10)
+    at getLatestPhotos (lib\content.ts:604:30)
+    at SiteFrame (app\components\site-frame.tsx:11:20)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:232:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getPublishedPosts (lib\content.ts:231:10)
+    at getLatestPhotos (lib\content.ts:610:23)
+    at async SiteFrame (app\components\site-frame.tsx:8:36)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+An empty string ("") was passed to the src attribute. This may cause the browser to download the whole page again over the network. To fix this, either do not render the element at all or pass null to src instead of an empty string.
+An empty string ("") was passed to the src attribute. This may cause the browser to download the whole page again over the network. To fix this, either do not render the element at all or pass null to src instead of an empty string.
+An empty string ("") was passed to the src attribute. This may cause the browser to download the whole page again over the network. To fix this, either do not render the element at all or pass null to src instead of an empty string.
+An empty string ("") was passed to the src attribute. This may cause the browser to download the whole page again over the network. To fix this, either do not render the element at all or pass null to src instead of an empty string.
+An empty string ("") was passed to the src attribute. This may cause the browser to download the whole page again over the network. To fix this, either do not render the element at all or pass null to src instead of an empty string.
+An empty string ("") was passed to the src attribute. This may cause the browser to download the whole page again over the network. To fix this, either do not render the element at all or pass null to src instead of an empty string.
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:232:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getPublishedPosts (lib\content.ts:231:10)
+    at SiteFrame (app\components\site-frame.tsx:10:22)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:586:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getStoredPhotos (lib\content.ts:585:10)
+    at getLatestPhotos (lib\content.ts:604:30)
+    at SiteFrame (app\components\site-frame.tsx:11:20)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {
+content query failed: Error: Missing MONGODB_URI
+    at getDb (lib\mongodb.ts:10:11)
+    at <unknown> (lib\content.ts:232:27)
+    at safeQuery (lib\content.ts:205:18)
+    at getPublishedPosts (lib\content.ts:231:10)
+    at getLatestPhotos (lib\content.ts:610:23)
+    at async SiteFrame (app\components\site-frame.tsx:8:36)
+   8 |
+   9 |   if (!uri) {
+> 10 |     throw new Error("Missing MONGODB_URI");
+     |           ^
+  11 |   }
+  12 |
+  13 |   if (!clientPromise) {

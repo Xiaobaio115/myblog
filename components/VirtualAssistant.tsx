@@ -3,6 +3,7 @@
 /* eslint-disable react-hooks/immutability */
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -47,7 +48,10 @@ export default function VirtualAssistant() {
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: nextMessages }),
+        body: JSON.stringify({
+          messages: nextMessages,
+          pageUrl: window.location.href,
+        }),
       });
 
       if (!response.ok) {
@@ -111,7 +115,13 @@ export default function VirtualAssistant() {
           <div className="assistant-header">
             <div className="assistant-title-row">
               <span className="assistant-mini-avatar" aria-hidden="true">
-                <img src="/assistant-avatar.png" alt="" draggable={false} />
+                <Image
+                  src="/assistant-avatar.png"
+                  alt=""
+                  width={1254}
+                  height={1254}
+                  draggable={false}
+                />
               </span>
               <div>
                 <strong>甘蔗小助手</strong>
@@ -177,7 +187,13 @@ export default function VirtualAssistant() {
       >
         <span className="assistant-status-dot" />
         <div className="assistant-avatar-face" aria-hidden="true">
-          <img src="/assistant-avatar.png" alt="" draggable={false} />
+          <Image
+            src="/assistant-avatar.png"
+            alt=""
+            width={1254}
+            height={1254}
+            draggable={false}
+          />
         </div>
 
         <span className="assistant-bubble">{open ? "收起" : "问甘蔗"}</span>

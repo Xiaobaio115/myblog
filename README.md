@@ -20,6 +20,16 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## 手机聊天通知
+
+右下角聊天已支持将访客发送的消息同步通知到站长手机：
+
+1. 推荐使用 [Server酱](https://sct.ftqq.com/)：绑定微信并把 SendKey 配置为 `SERVERCHAN_SEND_KEY`。
+2. 也可以配置 `CHAT_WEBHOOK_URL` 使用任意通用 Webhook；需要 Bearer 鉴权时再配置 `CHAT_WEBHOOK_TOKEN`。
+3. 复制 `.env.example` 为 `.env.local`，填写配置后重启开发服务器。部署到 Vercel 时，应在项目 Environment Variables 中填写，不能把密钥写入源码或 `NEXT_PUBLIC_*` 变量。
+
+通知是服务端异步发送的，不会阻塞访客看到 AI 回复。QQ 个人号没有适合本场景的稳定官方推送入口，如需 QQ 通知，建议让 `CHAT_WEBHOOK_URL` 指向你自己已授权的 QQ 机器人服务。
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

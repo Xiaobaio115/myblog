@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
+import { notifyOwnerOfChatMessage } from "@/lib/chat-notify";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -136,16 +137,33 @@ export async function POST(request: Request) {
       );
     }
 
-    const localReply = getLocalReply(userText);
-    if (localReply) return streamLocalText(localReply);
-
     const limit = await checkDailyLimit(request);
     if (!limit.allowed) {
       return NextResponse.json(
-        { error: `今天 AI 聊天次数已经用完了。每位访客每天最多 ${limit.dailyLimit} 次。` },
+        { error: `今天聊天次数已经用完了。每位访客每天最多 ${limit.dailyLimit} 次。` },
         { status: 429 }
       );
     }
+
+    const pageUrl =
+      typeof body.pageUrl === "string" ? body.pageUrl.slice(0, 500) : undefined;
+    const userAgent = request.headers.get("user-agent") || undefined;
+    const notificationsEnabled =
+      Boolean(process.env.SERVERCHAN_SEND_KEY?.trim()) ||
+      Boolean(process.env.CHAT_WEBHOOK_URL?.trim());
+
+    if (notificationsEnabled) {
+      after(() =>
+        notifyOwnerOfChatMessage({
+          message: userText,
+          pageUrl,
+          userAgent,
+        })
+      );
+    }
+
+    const localReply = getLocalReply(userText);
+    if (localReply) return streamLocalText(localReply);
 
     const apiKey = process.env.AI_API_KEY;
     const baseUrl = process.env.AI_BASE_URL;

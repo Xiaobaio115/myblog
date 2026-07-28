@@ -181,23 +181,36 @@ export default function ChinaTravelMap({ data }: Props) {
     renderFrame();
   }, [data, geoToScreen]);
 
-  // ---- CSS 漂移动画 ----
-  const panToProvince = useCallback((coord: [number, number]) => {
-    const container = containerRef.current;
-    if (!container) return;
-    const mapCenterLng = 104.19;
-    const mapCenterLat = 35.86;
-    const lngDiff = coord[0] - mapCenterLng;
-    const latDiff = coord[1] - mapCenterLat;
-    const pxPerDegLng = window.innerWidth / 150;
-    const pxPerDegLat = window.innerHeight / 100;
-    let offsetX = -lngDiff * pxPerDegLng * 0.35;
-    let offsetY = latDiff * pxPerDegLat * 0.2;
-    const maxOff = Math.min(window.innerWidth, window.innerHeight) * 0.08;
-    offsetX = Math.max(-maxOff, Math.min(maxOff, offsetX));
-    offsetY = Math.max(-maxOff, Math.min(maxOff, offsetY));
-    container.style.transition = "transform 0.8s cubic-bezier(0.4, 0, 0.2, 1)";
-    container.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+  // ---- 将经纬度换算成 geo3D 的真实世界坐标 ----
+  const getGeo3DCenter = useCallback((coord: [number, number]): [number, number, number] => {
+    const chart = chartRef.current;
+
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const component = (chart as any)?.getModel()?.getComponent("geo3D");
+      const point = component?.coordinateSystem?.dataToPoint([coord[0], coord[1], 0]);
+      if (point?.every((value: number) => Number.isFinite(value))) {
+        const root = containerRef.current?.closest(".tmap-root");
+        const panel = root?.querySelector<HTMLElement>(".tmap-detail-panel");
+        const sidebar = root?.querySelector<HTMLElement>(".tmap-sidebar");
+        const mobile = isMobileViewport();
+        const visibleWidth = root?.clientWidth || window.innerWidth;
+        const panelWidth = !mobile && activeKeyRef.current && panel
+          ? panel.getBoundingClientRect().width
+          : 0;
+        const sidebarWidth = !mobile && sidebar ? sidebar.getBoundingClientRect().width : 0;
+        const usableWidth = Math.max(1, visibleWidth - panelWidth - sidebarWidth);
+        // Shift the camera target toward the wider overlay so the selected
+        // province appears in the center of the unobscured map area.
+        const sideOffset = mobile ? 0 : ((panelWidth - sidebarWidth) / usableWidth) * 20;
+
+        return [point[0] + sideOffset, point[1], point[2]];
+      }
+    } catch {
+      // Use the neutral center until the chart coordinate system is ready.
+    }
+
+    return [0, 0, 0];
   }, []);
 
   // ---- 创建/重置图表 ----
@@ -211,10 +224,10 @@ export default function ChinaTravelMap({ data }: Props) {
       const echarts = (window as any).echarts;
       if (!echarts) return;
 
-      if (chartRef.current) {
-        chartRef.current.dispose();
-        chartRef.current = null;
-      }
+      const focusCenter = vc.targetCoord
+        ? getGeo3DCenter(vc.targetCoord)
+        : [0, 0, 0];
+
       const container = containerRef.current;
       if (!container) return;
 
@@ -223,7 +236,7 @@ export default function ChinaTravelMap({ data }: Props) {
         container.style.transform = "";
       }
 
-      const chart = echarts.init(container);
+      const chart = chartRef.current || echarts.init(container);
       chartRef.current = chart;
 
       // all pins
@@ -235,6 +248,18 @@ export default function ChinaTravelMap({ data }: Props) {
           }
         }
       }
+
+      const regionStyleByKey = new Map(
+        regions.map((region) => [region.name, region.itemStyle]),
+      );
+      const normalizedRegions = Object.keys(data).map((key) => ({
+        name: keyToGeoRef.current[key] || key,
+        itemStyle: {
+          color: "#0f1f3d",
+          opacity: 1,
+          ...regionStyleByKey.get(key),
+        },
+      }));
 
       chart.setOption({
         backgroundColor: "transparent",
@@ -253,8 +278,12 @@ export default function ChinaTravelMap({ data }: Props) {
             distance: vc.distance,
             alpha: vc.alpha,
             beta: vc.beta,
+            center: focusCenter,
+            animation: true,
+            animationDurationUpdate: 800,
+            animationEasingUpdate: "cubicOut",
           },
-          regions: regions.map(r => ({ ...r, name: keyToGeoRef.current[r.name] || r.name })),
+          regions: normalizedRegions,
         },
         // hidden 2D geo for convertToPixel fallback
         geo: {
@@ -283,11 +312,8 @@ export default function ChinaTravelMap({ data }: Props) {
         ],
       });
 
-      if (!isInit && vc.targetCoord) {
-        panToProvince(vc.targetCoord);
-      }
-
-      // click handler
+      // Rebind after option updates so one click only runs one focus action.
+      chart.off("click");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       chart.on("click", (params: any) => {
         let targetKey: string | null = null;
@@ -300,14 +326,12 @@ export default function ChinaTravelMap({ data }: Props) {
         }
       });
     },
-    [data, panToProvince],
+    [data, getGeo3DCenter],
   );
 
   // ---- 聚焦省份 ----
   const doFocusProvince = useCallback(
     (provKey: string) => {
-      if (activeKeyRef.current === provKey) return;
-
       cancelAnimationFrame(animFrameRef.current);
       clearTimeout(timeoutRef.current);
       if (svgRef.current) svgRef.current.innerHTML = "";

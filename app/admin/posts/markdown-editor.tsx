@@ -9,6 +9,15 @@ type MarkdownEditorProps = {
   disabled?: boolean;
 };
 
+const TEXT_COLORS = [
+  { label: "樱粉", className: "md-color-pink", color: "#f0328d" },
+  { label: "莓红", className: "md-color-red", color: "#e5484d" },
+  { label: "琥珀", className: "md-color-amber", color: "#d97706" },
+  { label: "青绿", className: "md-color-green", color: "#059669" },
+  { label: "天蓝", className: "md-color-blue", color: "#0284c7" },
+  { label: "香芋", className: "md-color-purple", color: "#9333ea" },
+] as const;
+
 async function parseJsonSafely(response: Response) {
   const text = await response.text();
 
@@ -207,6 +216,29 @@ export function MarkdownEditor({
         >
           斜体
         </button>
+        <div className="markdown-color-tools" role="group" aria-label="文字颜色">
+          <span className="markdown-color-label">文字颜色</span>
+          {TEXT_COLORS.map((color) => (
+            <button
+              key={color.className}
+              type="button"
+              className="markdown-color-tool"
+              style={{ "--tool-color": color.color } as React.CSSProperties}
+              onClick={() =>
+                wrapSelection(
+                  `<span class="${color.className}">`,
+                  "</span>",
+                  "彩色文字"
+                )
+              }
+              disabled={disabled || uploading}
+              title={`将选中文字设为${color.label}`}
+              aria-label={`${color.label}文字`}
+            >
+              A
+            </button>
+          ))}
+        </div>
         <button
           type="button"
           className="secondary-link markdown-tool"
@@ -337,7 +369,7 @@ export function MarkdownEditor({
       </div>
 
       <div className="markdown-hint">
-        保持当前 linear 主题不变，编辑区新增了实时预览和常用 Markdown 快捷按钮。
+        选中文字后点击颜色圆点即可插入彩色文字标签；文章前台与实时预览会保持一致。
       </div>
 
       <div className="markdown-stats">
