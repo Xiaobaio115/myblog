@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PoeticPageHero } from "@/app/components/poetic-page-hero";
 import { SiteFrame } from "@/app/components/site-frame";
 import { getGamesSetting, getProfileSetting } from "@/lib/settings";
 import { getLatestPhotos, getPublishedPosts } from "@/lib/content";
@@ -18,6 +19,13 @@ export default async function GamesPage() {
 
   return (
     <SiteFrame>
+      <PoeticPageHero
+        eyebrow="游境 · GAMES"
+        title="在另一重世界里漫游"
+        description="收藏并肩作战的夜晚，也收藏屏幕之外的回声。"
+        background="games"
+      />
+
       <div className="world-sub-breadcrumb container">
         <Link href="/world">我的世界</Link>
         <span>/</span>

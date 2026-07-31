@@ -16,6 +16,8 @@ export default function ChinaTravelMap({ data }: Props) {
   const chartRef = useRef<ReturnType<typeof import("echarts").init> | null>(null);
   const animFrameRef = useRef<number>(0);
   const timeoutRef = useRef<number>(0);
+  const mobilePinFrameRef = useRef<number>(0);
+  const mobilePinRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const activeKeyRef = useRef<string | null>(null);
   const focusProvinceRef = useRef<(provKey: string) => void>(() => {});
   const geoJsonRef = useRef<unknown>(null);
@@ -24,9 +26,8 @@ export default function ChinaTravelMap({ data }: Props) {
 
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
-
-  // ---- 调试标记 ----
-  const debugDoneRef = useRef(false);
+  const [mapStatus, setMapStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [retryKey, setRetryKey] = useState(0);
 
   // ---- 3D 坐标 → 屏幕像素 ----
   const geoToScreen = useCallback((lng: number, lat: number): [number, number] | null => {
@@ -48,44 +49,6 @@ export default function ChinaTravelMap({ data }: Props) {
         const cam = cs.viewGL?.camera as any;
         const pt: number[] | null = cs.dataToPoint([lng, lat, 2]);
         if (pt && cam) {
-          // 一次性调试日志
-          if (!debugDoneRef.current) {
-            debugDoneRef.current = true;
-            const tm: Float64Array = cs.transform;
-            console.log("[geo3D] dataToPoint:", pt);
-            console.log("[geo3D] transform:", Array.from(tm));
-            console.log("[geo3D] cam pos:", cam.position.x, cam.position.y, cam.position.z);
-
-            // 测试：不带 transform，直接投影
-            const vm2: Float64Array = cam.viewMatrix.array;
-            const pm2: Float64Array = cam.projectionMatrix.array;
-            const cases: [string, number, number, number][] = [
-              ["raw", pt[0], pt[1], pt[2] || 0],
-              ["transformed",
-                tm[0]*pt[0] + tm[4]*pt[1] + tm[8]*pt[2] + tm[12],
-                tm[1]*pt[0] + tm[5]*pt[1] + tm[9]*pt[2] + tm[13],
-                tm[2]*pt[0] + tm[6]*pt[1] + tm[10]*pt[2] + tm[14],
-              ],
-            ];
-            for (const c of cases) {
-              const label = c[0], wx = c[1], wy = c[2], wz = c[3];
-              const vx = vm2[0]*wx + vm2[4]*wy + vm2[8]*wz + vm2[12];
-              const vy = vm2[1]*wx + vm2[5]*wy + vm2[9]*wz + vm2[13];
-              const vz = vm2[2]*wx + vm2[6]*wy + vm2[10]*wz + vm2[14];
-              const vw = vm2[3]*wx + vm2[7]*wy + vm2[11]*wz + vm2[15];
-              const cx = pm2[0]*vx + pm2[4]*vy + pm2[8]*vz + pm2[12]*vw;
-              const cy = pm2[1]*vx + pm2[5]*vy + pm2[9]*vz + pm2[13]*vw;
-              const cw = pm2[3]*vx + pm2[7]*vy + pm2[11]*vz + pm2[15]*vw;
-              if (cw > 0.01) {
-                const ndcX = cx / cw, ndcY = cy / cw;
-                const cW = chart.getDom().clientWidth, cH = chart.getDom().clientHeight;
-                console.log(`[geo3D] ${label}: world(${wx.toFixed(1)},${wy.toFixed(1)},${wz.toFixed(1)}) NDC(${ndcX.toFixed(3)},${ndcY.toFixed(3)}) screen(${((ndcX+1)*0.5*cW).toFixed(0)},${((1-ndcY)*0.5*cH).toFixed(0)})`);
-              } else {
-                console.log(`[geo3D] ${label}: BEHIND CAMERA cw=${cw.toFixed(3)}`);
-              }
-            }
-          }
-
           // 尝试两种方式
           const tm: Float64Array = cs.transform;
           for (const useTransform of [true, false]) {
@@ -125,15 +88,6 @@ export default function ChinaTravelMap({ data }: Props) {
       }
     } catch { /* ignore */ }
 
-    // 再备用：通过隐藏 scatter series
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const px = (chart as any).convertToPixel({ seriesIndex: 1 }, [lng, lat]);
-      if (px && !isNaN(px[0]) && !isNaN(px[1])) {
-        return [rect.left + px[0], rect.top + px[1]];
-      }
-    } catch { /* ignore */ }
-
     return null;
   }, []);
 
@@ -142,7 +96,6 @@ export default function ChinaTravelMap({ data }: Props) {
     const svg = svgRef.current;
     if (!svg || !activeKeyRef.current) return;
 
-    let firstFrame = true;
     function renderFrame() {
       if (!activeKeyRef.current || !svg) return;
       const prov = data[activeKeyRef.current];
@@ -153,8 +106,6 @@ export default function ChinaTravelMap({ data }: Props) {
         if (!place.coord) return;
         const pos = geoToScreen(place.coord[0], place.coord[1]);
         if (!pos) return;
-        if (firstFrame) console.log("[tracking]", place.name, "screen:", pos[0].toFixed(0), pos[1].toFixed(0));
-
         const gridDOM = document.getElementById(`tmap-grid-${idx}`);
         if (!gridDOM) return;
         const gRect = gridDOM.getBoundingClientRect();
@@ -174,7 +125,6 @@ export default function ChinaTravelMap({ data }: Props) {
 <circle class="tmap-conn-dot-start" cx="${startX}" cy="${startY}" r="4" />`;
       });
 
-      firstFrame = false;
       svg.innerHTML = svgHtml;
       animFrameRef.current = requestAnimationFrame(renderFrame);
     }
@@ -285,14 +235,6 @@ export default function ChinaTravelMap({ data }: Props) {
           },
           regions: normalizedRegions,
         },
-        // hidden 2D geo for convertToPixel fallback
-        geo: {
-          map: "china", roam: false, silent: true,
-          left: 0, top: 0, right: 0, bottom: 0,
-          itemStyle: { opacity: 0 },
-          emphasis: { itemStyle: { opacity: 0 } },
-          label: { show: false },
-        },
         series: [
           {
             type: "scatter3D",
@@ -304,11 +246,14 @@ export default function ChinaTravelMap({ data }: Props) {
             label: {
               show: true,
               formatter: "{b}",
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              textStyle: { color: "#fff", fontSize: 13, fontWeight: "bold", backgroundColor: "rgba(2,6,23,0.8)", padding: [6, 10], borderRadius: 6 } as any,
+              color: "#fff",
+              fontSize: 13,
+              fontWeight: "bold",
+              backgroundColor: "rgba(2,6,23,0.8)",
+              padding: [6, 10],
+              borderRadius: 6,
             },
           },
-          { type: "scatter", coordinateSystem: "geo", data: allPins, silent: true, symbolSize: 0 },
         ],
       });
 
@@ -335,8 +280,6 @@ export default function ChinaTravelMap({ data }: Props) {
       cancelAnimationFrame(animFrameRef.current);
       clearTimeout(timeoutRef.current);
       if (svgRef.current) svgRef.current.innerHTML = "";
-      debugDoneRef.current = false;
-
       const prevKey = activeKeyRef.current;
       activeKeyRef.current = provKey;
       setActiveKey(provKey);
@@ -368,6 +311,102 @@ export default function ChinaTravelMap({ data }: Props) {
   useEffect(() => {
     focusProvinceRef.current = doFocusProvince;
   }, [doFocusProvince]);
+
+  // echarts-gl 的 3D 拾取在部分移动浏览器上不会稳定触发 click。
+  // 用屏幕坐标补一层触摸命中，同时保留拖动地图的手势。
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let pointerStart: { x: number; y: number; id: number } | null = null;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!isMobileViewport() || !event.isPrimary) return;
+      pointerStart = { x: event.clientX, y: event.clientY, id: event.pointerId };
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      if (!isMobileViewport() || !pointerStart || pointerStart.id !== event.pointerId) return;
+
+      const movement = Math.hypot(
+        event.clientX - pointerStart.x,
+        event.clientY - pointerStart.y,
+      );
+      pointerStart = null;
+      if (movement > 14) return;
+
+      let nearest: { key: string; distance: number } | null = null;
+      for (const [key, province] of Object.entries(data)) {
+        for (const place of province.places) {
+          if (!place.coord) continue;
+          const position = geoToScreen(place.coord[0], place.coord[1]);
+          if (!position) continue;
+          const distance = Math.hypot(
+            event.clientX - position[0],
+            event.clientY - position[1],
+          );
+          if (distance <= 46 && (!nearest || distance < nearest.distance)) {
+            nearest = { key, distance };
+          }
+        }
+      }
+
+      if (nearest) focusProvinceRef.current(nearest.key);
+    };
+
+    const cancelPointer = () => {
+      pointerStart = null;
+    };
+
+    container.addEventListener("pointerdown", handlePointerDown, true);
+    container.addEventListener("pointerup", handlePointerUp, true);
+    container.addEventListener("pointercancel", cancelPointer, true);
+    return () => {
+      container.removeEventListener("pointerdown", handlePointerDown, true);
+      container.removeEventListener("pointerup", handlePointerUp, true);
+      container.removeEventListener("pointercancel", cancelPointer, true);
+    };
+  }, [data, geoToScreen]);
+
+  // Mobile browsers do not consistently expose scatter3D points to ECharts'
+  // click picker. Keep accessible HTML hit targets aligned with each pin.
+  useEffect(() => {
+    if (mapStatus !== "ready") return;
+
+    const root = containerRef.current?.closest<HTMLElement>(".tmap-root");
+    if (!root) return;
+
+    const updateTargets = () => {
+      const rootRect = root.getBoundingClientRect();
+      const mobile = isMobileViewport();
+
+      for (const [provinceKey, province] of Object.entries(data)) {
+        province.places.forEach((place, placeIndex) => {
+          const target = mobilePinRefs.current[`${provinceKey}:${placeIndex}`];
+          if (!target) return;
+
+          if (!mobile || !place.coord) {
+            target.style.display = "none";
+            return;
+          }
+
+          const position = geoToScreen(place.coord[0], place.coord[1]);
+          if (!position) {
+            target.style.display = "none";
+            return;
+          }
+
+          target.style.display = "block";
+          target.style.transform = `translate3d(${position[0] - rootRect.left - 32}px, ${position[1] - rootRect.top - 32}px, 0)`;
+        });
+      }
+
+      mobilePinFrameRef.current = requestAnimationFrame(updateTargets);
+    };
+
+    updateTargets();
+    return () => cancelAnimationFrame(mobilePinFrameRef.current);
+  }, [data, geoToScreen, mapStatus]);
 
   // ---- 返回总览 ----
   const resetView = useCallback(() => {
@@ -403,34 +442,29 @@ export default function ChinaTravelMap({ data }: Props) {
     let mounted = true;
 
     async function init() {
-      const echarts = await import("echarts");
-      await import("echarts-gl");
-      if (!mounted || !containerRef.current) return;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).echarts = echarts;
+      setMapStatus("loading");
 
-      // fetch china.json — 多源回退，确保国内可用
-      const cdnUrls = [
-        "https://registry.npmmirror.com/echarts/4.9.0/files/map/json/china.json",
-        "https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/json/china.json",
-        "https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json",
-      ];
-      let geoJson: unknown = null;
-      for (const url of cdnUrls) {
-        try {
-          const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
-          if (res.ok) {
-            geoJson = await res.json();
-            break;
-          }
-        } catch {
-          console.warn("[ChinaTravelMap] cdn failed:", url);
-        }
-      }
-      if (!geoJson) {
-        console.error("[ChinaTravelMap] All china.json sources failed");
-        return;
-      }
+      try {
+        const echarts = await import("echarts");
+        await import("echarts-gl");
+        if (!mounted || !containerRef.current) return;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window as any).echarts = echarts;
+
+        const cdnUrls = [
+          "https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json",
+          "https://registry.npmmirror.com/echarts/4.9.0/files/map/json/china.json",
+          "https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/json/china.json",
+        ];
+        const geoJson = await Promise.any(
+          cdnUrls.map(async (url) => {
+            const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return response.json() as Promise<unknown>;
+          }),
+        );
+
+        if (!mounted) return;
       echarts.registerMap("china", geoJson as Parameters<typeof echarts.registerMap>[1]);
       geoJsonRef.current = geoJson;
 
@@ -461,6 +495,11 @@ export default function ChinaTravelMap({ data }: Props) {
         [],
         true,
       );
+        setMapStatus("ready");
+      } catch (error) {
+        console.error("[ChinaTravelMap] map initialization failed:", error);
+        if (mounted) setMapStatus("error");
+      }
     }
 
     init();
@@ -474,7 +513,7 @@ export default function ChinaTravelMap({ data }: Props) {
         chartRef.current = null;
       }
     };
-  }, [applyFullOption, data]);
+  }, [applyFullOption, data, retryKey]);
 
   // ---- 窗口缩放 ----
   useEffect(() => {
@@ -519,11 +558,43 @@ export default function ChinaTravelMap({ data }: Props) {
 
   return (
     <div className={`tmap-root${detailOpen ? " detail-open" : ""}`}>
+      {mapStatus !== "ready" && (
+        <div className="tmap-load-state" role="status">
+          <strong>{mapStatus === "loading" ? "地图加载中" : "地图加载失败"}</strong>
+          {mapStatus === "error" && (
+            <button type="button" onClick={() => setRetryKey((value) => value + 1)}>
+              重新加载
+            </button>
+          )}
+        </div>
+      )}
       {/* 3D 地图容器 */}
       <div ref={containerRef} className="tmap-container" />
 
       {/* SVG 连线层 */}
       <svg ref={svgRef} className="tmap-svg-layer" />
+
+      <div className="tmap-mobile-pin-layer" aria-label="地图地点快捷定位">
+        {Object.entries(data).flatMap(([provinceKey, province]) =>
+          province.places.map((place, placeIndex) =>
+            place.coord ? (
+              <button
+                key={`${provinceKey}:${placeIndex}`}
+                ref={(node) => {
+                  mobilePinRefs.current[`${provinceKey}:${placeIndex}`] = node;
+                }}
+                type="button"
+                className={`tmap-mobile-pin-hit${activeKey === provinceKey ? " active" : ""}`}
+                aria-label={`查看${province.shortName}的${place.name}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  doFocusProvince(provinceKey);
+                }}
+              />
+            ) : null,
+          ),
+        )}
+      </div>
 
       {/* 左侧省份列表 */}
       <div className="tmap-sidebar">
@@ -536,6 +607,7 @@ export default function ChinaTravelMap({ data }: Props) {
               key={key}
               className={`tmap-prov-btn${activeKey === key ? " active" : ""}`}
               onClick={() => doFocusProvince(key)}
+              aria-pressed={activeKey === key}
             >
               {data[key].shortName}
             </button>
@@ -549,7 +621,7 @@ export default function ChinaTravelMap({ data }: Props) {
           <>
             <div className="tmap-panel-header">
               <h2 className="tmap-panel-title">{activeProv.shortName}</h2>
-              <button className="tmap-close-btn" onClick={resetView}>
+              <button className="tmap-close-btn" onClick={resetView} aria-label="关闭省份详情并返回全国视图">
                 ✕
               </button>
             </div>

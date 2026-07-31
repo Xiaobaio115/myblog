@@ -1,3 +1,7 @@
+import "server-only";
+
+import { getEffectiveChatNotificationSettings } from "@/lib/chat-notification-settings";
+
 type ChatNotification = {
   message: string;
   pageUrl?: string;
@@ -47,6 +51,8 @@ async function postWithTimeout(url: string, init: RequestInit) {
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
+
+    return response;
   } finally {
     clearTimeout(timeoutId);
   }
@@ -58,7 +64,7 @@ async function sendServerChan(notification: ChatNotification, sendKey: string) {
     desp: formatNotification(notification),
   });
 
-  await postWithTimeout(
+  const response = await postWithTimeout(
     `https://sctapi.ftqq.com/${encodeURIComponent(sendKey)}.send`,
     {
       method: "POST",
@@ -66,11 +72,21 @@ async function sendServerChan(notification: ChatNotification, sendKey: string) {
       body,
     }
   );
+  const result = (await response.json().catch(() => null)) as {
+    code?: number;
+    message?: string;
+  } | null;
+
+  if (result && typeof result.code === "number" && result.code !== 0) {
+    throw new Error(result.message || `Server酱返回错误码 ${result.code}`);
+  }
 }
 
-async function sendGenericWebhook(notification: ChatNotification, webhookUrl: string) {
-  const token = process.env.CHAT_WEBHOOK_TOKEN?.trim();
-
+async function sendGenericWebhook(
+  notification: ChatNotification,
+  webhookUrl: string,
+  token: string,
+) {
   await postWithTimeout(webhookUrl, {
     method: "POST",
     headers: {
@@ -89,17 +105,23 @@ async function sendGenericWebhook(notification: ChatNotification, webhookUrl: st
   });
 }
 
-export async function notifyOwnerOfChatMessage(notification: ChatNotification) {
-  const serverChanKey = process.env.SERVERCHAN_SEND_KEY?.trim();
-  const webhookUrl = process.env.CHAT_WEBHOOK_URL?.trim();
+async function dispatchChatNotification(
+  notification: ChatNotification,
+  throwOnFailure = false,
+) {
+  const {
+    serverChanSendKey,
+    webhookUrl,
+    webhookToken,
+  } = await getEffectiveChatNotificationSettings();
   const tasks: Promise<void>[] = [];
 
-  if (serverChanKey) {
-    tasks.push(sendServerChan(notification, serverChanKey));
+  if (serverChanSendKey) {
+    tasks.push(sendServerChan(notification, serverChanSendKey));
   }
 
   if (webhookUrl) {
-    tasks.push(sendGenericWebhook(notification, webhookUrl));
+    tasks.push(sendGenericWebhook(notification, webhookUrl, webhookToken));
   }
 
   if (tasks.length === 0) {
@@ -107,9 +129,34 @@ export async function notifyOwnerOfChatMessage(notification: ChatNotification) {
   }
 
   const results = await Promise.allSettled(tasks);
+  const failures = results.filter((result) => result.status === "rejected");
   results.forEach((result) => {
     if (result.status === "rejected") {
       console.error("Chat notification failed:", result.reason);
     }
   });
+
+  if (throwOnFailure && failures.length > 0) {
+    throw new Error("通知服务返回失败，请检查密钥、Webhook 地址和服务端日志。");
+  }
+}
+
+export async function notifyOwnerOfChatMessage(notification: ChatNotification) {
+  await dispatchChatNotification(notification);
+}
+
+export async function sendChatNotificationTest() {
+  const settings = await getEffectiveChatNotificationSettings();
+  if (!settings.serverChanSendKey && !settings.webhookUrl) {
+    throw new Error("请先配置 Server酱或通用 Webhook。");
+  }
+
+  await dispatchChatNotification(
+    {
+      message: "这是一条来自博客后台的聊天通知测试消息。",
+      pageUrl: "https://example.invalid/admin/chat-notifications",
+      userAgent: "LQPP Admin Test",
+    },
+    true,
+  );
 }

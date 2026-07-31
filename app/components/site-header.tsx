@@ -127,8 +127,8 @@ export function SiteHeader({
               aria-label="打开导航菜单"
               onClick={() => setMenuOpen(true)}
             >
-              <span style={{ fontSize: "15px", lineHeight: 1 }}>☰</span>
-              <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.04em" }}>
+              <span className="mobile-menu-icon" aria-hidden="true">☰</span>
+              <span className="mobile-menu-label">
                 菜单
               </span>
             </button>
@@ -171,7 +171,7 @@ export function SiteHeader({
                     <span>照片</span>
                   </div>
                   {profileLocation && (
-                    <div style={{ fontSize: "0.7rem", color: "#94a3b8" }}>
+                    <div className="mobile-nav-location">
                       {profileLocation}
                     </div>
                   )}

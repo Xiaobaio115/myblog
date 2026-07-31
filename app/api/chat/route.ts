@@ -1,6 +1,7 @@
 import { after, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { notifyOwnerOfChatMessage } from "@/lib/chat-notify";
+import { getEffectiveChatNotificationSettings } from "@/lib/chat-notification-settings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -148,26 +149,22 @@ export async function POST(request: Request) {
     const pageUrl =
       typeof body.pageUrl === "string" ? body.pageUrl.slice(0, 500) : undefined;
     const userAgent = request.headers.get("user-agent") || undefined;
-    const notificationsEnabled =
-      Boolean(process.env.SERVERCHAN_SEND_KEY?.trim()) ||
-      Boolean(process.env.CHAT_WEBHOOK_URL?.trim());
-
-    if (notificationsEnabled) {
-      after(() =>
-        notifyOwnerOfChatMessage({
-          message: userText,
-          pageUrl,
-          userAgent,
-        })
-      );
-    }
+    after(() =>
+      notifyOwnerOfChatMessage({
+        message: userText,
+        pageUrl,
+        userAgent,
+      })
+    );
 
     const localReply = getLocalReply(userText);
     if (localReply) return streamLocalText(localReply);
 
-    const apiKey = process.env.AI_API_KEY;
-    const baseUrl = process.env.AI_BASE_URL;
-    const model = process.env.AI_MODEL;
+    const {
+      aiApiKey: apiKey,
+      aiBaseUrl: baseUrl,
+      aiModel: model,
+    } = await getEffectiveChatNotificationSettings();
 
     if (!apiKey || !baseUrl || !model) {
       return NextResponse.json({ error: "服务端 AI 配置不完整。" }, { status: 500 });
@@ -177,23 +174,30 @@ export async function POST(request: Request) {
     const timeoutId = setTimeout(() => controller.abort(), 60000);
     const url = `${baseUrl.replace(/\/$/, "")}/chat/completions`;
 
-    const aiResponse = await fetch(url, {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: "system", content: ASSISTANT_SYSTEM_PROMPT }, ...normalizeMessages(rawMessages)],
-        max_tokens: MAX_OUTPUT_TOKENS,
-        temperature: 0.7,
-        stream: true,
-      }),
-    }).finally(() => clearTimeout(timeoutId));
+    let aiResponse: Response;
+    try {
+      aiResponse = await fetch(url, {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "system", content: ASSISTANT_SYSTEM_PROMPT }, ...normalizeMessages(rawMessages)],
+          max_tokens: MAX_OUTPUT_TOKENS,
+          temperature: 0.7,
+          stream: true,
+        }),
+      });
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
 
     if (!aiResponse.ok || !aiResponse.body) {
+      clearTimeout(timeoutId);
       const errorText = await aiResponse.text().catch(() => "");
       console.error("AI provider error:", errorText);
       return NextResponse.json({ error: "AI 服务暂时不可用。" }, { status: 502 });
@@ -242,6 +246,8 @@ export async function POST(request: Request) {
           console.error("chat stream error:", error);
           streamController.enqueue(encoder.encode("\n\n回复中断了，请稍后再试。"));
           streamController.close();
+        } finally {
+          clearTimeout(timeoutId);
         }
       },
     });

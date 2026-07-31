@@ -4,6 +4,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 type ChatMessage = {
   role: "user" | "assistant";
@@ -17,6 +18,7 @@ const quickPrompts = [
 ];
 
 export default function VirtualAssistant() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -108,8 +110,10 @@ export default function VirtualAssistant() {
     }
   }
 
+  if (pathname.startsWith("/admin")) return null;
+
   return (
-    <div className="virtual-assistant">
+    <div className={`virtual-assistant${pathname === "/world/travel-map" ? " is-map-page" : ""}`}>
       {open && (
         <div className="assistant-panel" role="dialog" aria-label="甘蔗小助手">
           <div className="assistant-header">

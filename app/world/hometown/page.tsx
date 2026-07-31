@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PoeticPageHero } from "@/app/components/poetic-page-hero";
 import { SiteFrame } from "@/app/components/site-frame";
 import { getProfileSetting, getWorldSectionsSetting } from "@/lib/settings";
 import { getLatestPhotos, getPublishedPosts } from "@/lib/content";
@@ -24,6 +25,13 @@ export default async function HometownPage({ searchParams }: Props) {
 
   return (
     <SiteFrame>
+      <PoeticPageHero
+        eyebrow="故土 · HOMETOWN"
+        title="从故乡出发"
+        description="山川有旧识，草木记归途。"
+        background="hometown"
+      />
+
       <div className="world-sub-breadcrumb container">
         <Link href="/world">我的世界</Link>
         <span>/</span>

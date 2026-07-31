@@ -1,10 +1,10 @@
 import Link from "next/link";
 
 const metrics = [
-  { label: "内容模块", value: "6", hint: "文章 / 相册 / 留言 / 地图" },
+  { label: "内容模块", value: "7", hint: "文章 / 相册 / 留言 / 地图 / 聊天" },
   { label: "公开工作流", value: "3", hint: "编辑、审核、发布" },
-  { label: "快捷入口", value: "8", hint: "侧栏常用操作" },
-  { label: "主题模式", value: "3", hint: "浅色 / 深色 / 蓝色" },
+  { label: "快捷入口", value: "9", hint: "侧栏常用操作" },
+  { label: "主题模式", value: "2", hint: "浅色 / 深色" },
 ];
 
 const tasks = [
@@ -27,6 +27,12 @@ const tasks = [
     action: "查看留言",
   },
   {
+    href: "/admin/chat-notifications",
+    title: "配置 AI 聊天与通知",
+    desc: "设置 AI 模型连接、Server酱和通用 Webhook。",
+    action: "打开配置",
+  },
+  {
     href: "/admin/settings",
     title: "维护站点资料",
     desc: "更新个人信息、项目、社交链接和首页展示内容。",
@@ -38,6 +44,7 @@ const modules = [
   { name: "文章管理", status: "内容生产", href: "/admin/posts" },
   { name: "相册管理", status: "媒体资产", href: "/admin/photos" },
   { name: "留言审核", status: "访客互动", href: "/admin/guestbook" },
+  { name: "AI 聊天与通知", status: "模型与手机转发", href: "/admin/chat-notifications" },
   { name: "旅行地图", status: "世界内容", href: "/admin/travel-map" },
   { name: "站点设置", status: "全局配置", href: "/admin/settings" },
 ];

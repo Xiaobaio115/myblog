@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import VirtualAssistant from "@/components/VirtualAssistant";
 import { ThemeProvider } from "@/app/components/theme-provider";
 import "./globals.css";
+import "./poetic-theme.css";
 
 export const metadata: Metadata = {
   title: "LQPP World - 个人博客与数字花园",

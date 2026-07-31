@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export function SiteFooter() {
   return (
@@ -6,11 +7,13 @@ export function SiteFooter() {
       <div className="container footer-inner">
         <div className="footer-brand">
           <span className="footer-logo pink-brand">
-            <span className="pink-brand-mark" />
+            <span className="pink-brand-mark" aria-hidden="true">
+              <Image src="/brand-mark.png" alt="" width={36} height={36} />
+            </span>
             <span>LQPP World</span>
           </span>
           <p className="footer-tagline">
-            一个记录生活、技术、旅行与游戏的个人数字花园。
+            在代码、远方与星光之间，收藏缓慢发亮的日子。
           </p>
         </div>
 
@@ -40,7 +43,7 @@ export function SiteFooter() {
       </div>
 
       <div className="container footer-bottom">
-        <p>© {new Date().getFullYear()} LQPP World · Built with curiosity and code.</p>
+        <p>© {new Date().getFullYear()} LQPP World · 写给时间，也写给远方。</p>
       </div>
     </footer>
   );

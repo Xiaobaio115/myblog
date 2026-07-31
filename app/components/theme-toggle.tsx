@@ -38,17 +38,17 @@ const MoonIcon = () => (
 );
 
 export function ThemeToggle() {
-  const { theme, toggle } = useTheme();
-  const isDark = theme === "dark";
+  const { toggle } = useTheme();
   return (
     <button
       type="button"
       className="theme-toggle pink-search-button pink-theme-toggle"
-      aria-label={isDark ? "切换为浅色模式" : "切换为深色模式"}
-      title={isDark ? "切换为浅色模式" : "切换为深色模式"}
+      aria-label="切换浅色或深色主题"
+      title="切换主题"
       onClick={toggle}
     >
-      {isDark ? <SunIcon /> : <MoonIcon />}
+      <span className="theme-icon theme-icon-sun"><SunIcon /></span>
+      <span className="theme-icon theme-icon-moon"><MoonIcon /></span>
     </button>
   );
 }

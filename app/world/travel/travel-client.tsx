@@ -106,15 +106,21 @@ export function TravelClient({ destinations, profile, postCount, photoCount }: P
             </div>
 
             <div className={`world-tag-row${hasBlocks ? " is-filter" : ""}`}>
-              {selected.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className={activeTag === tag ? "active" : undefined}
-                  onClick={hasBlocks ? () => setActiveTag(activeTag === tag ? null : tag) : undefined}
-                >
-                  {tag}
-                </span>
-              ))}
+              {selected.tags.map((tag) =>
+                hasBlocks ? (
+                  <button
+                    key={tag}
+                    type="button"
+                    className={activeTag === tag ? "active" : undefined}
+                    aria-pressed={activeTag === tag}
+                    onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                  >
+                    {tag}
+                  </button>
+                ) : (
+                  <span key={tag}>{tag}</span>
+                ),
+              )}
             </div>
 
             {allBlocks.length > 0 ? (

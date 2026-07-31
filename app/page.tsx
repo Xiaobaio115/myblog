@@ -3,6 +3,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArticleCard } from "@/app/components/article-card";
 import { HomePhotoItem } from "@/app/components/home-photo-item";
 import { SiteFrame } from "@/app/components/site-frame";
@@ -18,7 +19,12 @@ export default async function HomePage() {
   ]);
 
   const latestPosts = posts.slice(0, 4);
-  const featuredPhotos = photos.slice(0, 8);
+  const featuredPhotos = photos
+    .flatMap((photo) => {
+      const url = String(photo.url || "").trim();
+      return url ? [{ ...photo, url }] : [];
+    })
+    .slice(0, 8);
   const displayName = profile.name || "LQPP";
 
   const stats = [
@@ -39,21 +45,31 @@ export default async function HomePage() {
 
   return (
     <SiteFrame>
-      <section className="pink-home-hero container">
+      <section className="pink-home-hero">
+        <Image
+          className="pink-home-visual"
+          src="/poetic-images/hero-home.jpg"
+          alt=""
+          fill
+          sizes="100vw"
+          preload
+        />
+        <div className="pink-home-shade" aria-hidden="true" />
+        <div className="container pink-home-content">
         <div className="pink-home-copy">
-          <p className="eyebrow">Personal Digital Garden</p>
-          <h1>Hi，我是 {displayName}</h1>
+          <p className="eyebrow">LQPP / Personal Digital Garden</p>
+          <h1>在代码与远方之间，收藏缓慢发光的日子</h1>
           <p className="pink-home-status">{profile.status}</p>
           <p className="pink-home-intro">{profile.intro}</p>
           <div className="pink-home-actions">
             <Link href="/world" className="pink-btn primary">
-              探索我的世界
+              走进我的世界
             </Link>
             <Link href="/articles" className="pink-btn">
-              查看文章
+              读一页近作
             </Link>
             <Link href="/photos/3d" className="pink-btn">
-              进入星空相册
+              漫游星空相册
             </Link>
           </div>
         </div>
@@ -88,12 +104,13 @@ export default async function HomePage() {
             <Link href="/about">查看完整档案</Link>
           </div>
         </div>
+        </div>
       </section>
 
       <section className="container pink-section">
         <div className="pink-section-head">
-          <h2>从这里开始探索</h2>
-          <p>文章、旅行地图、相册和 3D 星空墙，都是这个数字花园的一部分。</p>
+          <h2>沿着微光，走进我的世界</h2>
+          <p>文字、远方与照片，在这里长成一座可以慢慢散步的数字花园。</p>
         </div>
 
         <div className="pink-module-grid pink-module-grid-4">
@@ -129,8 +146,8 @@ export default async function HomePage() {
 
       <section className="container pink-section">
         <div className="pink-section-head">
-          <h2>当前状态</h2>
-          <p>正在做什么、在哪儿、以及最近在琢磨的事。</p>
+          <h2>此刻，风正吹向哪里</h2>
+          <p>正在做的事、身处的地方，以及最近悄悄发芽的念头。</p>
         </div>
         <div className="pink-now-grid">
           <div className="pink-now-card pink-now-card-primary">
@@ -178,8 +195,8 @@ export default async function HomePage() {
 
       <section className="container pink-section">
         <div className="pink-section-head">
-          <h2>我的工具箱</h2>
-          <p>正在用、正在学、想继续探索的技术，一份轻量预览。</p>
+          <h2>用这些工具，搭一座数字花园</h2>
+          <p>正在使用、学习与继续探索的技术，都是构筑这里的一砖一瓦。</p>
         </div>
         {featuredSkills.length > 0 ? (
           <>
@@ -210,8 +227,8 @@ export default async function HomePage() {
 
       <section className="container pink-section">
         <div className="pink-section-head">
-          <h2>最新文章</h2>
-          <p>最近写下的想法与记录，持续更新中。</p>
+          <h2>新近落下的文字</h2>
+          <p>把来不及说完的想法，写成可以再次抵达的坐标。</p>
         </div>
         {latestPosts.length > 0 ? (
           <div className="cards-grid">
@@ -238,15 +255,15 @@ export default async function HomePage() {
 
       <section className="container pink-section">
         <div className="pink-section-head">
-          <h2>精选相册</h2>
-          <p>截取一些值得留下的瞬间。</p>
+          <h2>被光留下的片刻</h2>
+          <p>有些瞬间不必解释，只需要被好好收藏。</p>
         </div>
         {featuredPhotos.length > 0 ? (
           <div className="home-photo-grid pink-photo-grid">
             {featuredPhotos.map((photo) => (
               <HomePhotoItem
                 key={photo._id}
-                url={photo.url ?? ""}
+                url={photo.url}
                 caption={photo.caption || "精选瞬间"}
               />
             ))}

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PoeticPageHero } from "@/app/components/poetic-page-hero";
 import { SiteFrame } from "@/app/components/site-frame";
 import { getDb } from "@/lib/mongodb";
 import { getSocialsSetting } from "@/lib/settings";
@@ -39,11 +40,12 @@ export default async function GuestbookPage() {
 
   return (
     <SiteFrame>
-      <section className="container pink-page-hero">
-        <p className="eyebrow">Guestbook</p>
-        <h1>给我留句话</h1>
-        <p>无论是技术、博客、旅行、游戏，还是一句简单的你好，都欢迎留下。</p>
-      </section>
+      <PoeticPageHero
+        eyebrow="Open Letters / 留言"
+        title="留一句话，让相遇有迹可循"
+        description="写下你的名字与想说的话；审核通过后，它会留在这面留言墙上。"
+        background="photos"
+      />
 
       <section className="container pink-guestbook-shell">
         <aside className="pink-panel">

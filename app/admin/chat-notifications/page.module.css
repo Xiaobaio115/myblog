@@ -1,0 +1,203 @@
+.page {
+  max-width: 1180px;
+}
+
+.message {
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.success {
+  color: var(--success-text);
+  background: color-mix(in srgb, var(--success-text) 9%, transparent);
+}
+
+.error {
+  color: var(--danger-text);
+  background: color-mix(in srgb, var(--danger-text) 9%, transparent);
+}
+
+.channels {
+  border-top: 1px solid var(--border);
+}
+
+.channel {
+  padding: 28px 0 30px;
+  border-bottom: 1px solid var(--border);
+}
+
+.channelHead,
+.channelHead > div,
+.footerActions {
+  display: flex;
+  align-items: center;
+}
+
+.channelHead {
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 22px;
+}
+
+.channelHead > div {
+  gap: 14px;
+}
+
+.channelHead h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.2rem;
+  letter-spacing: 0;
+}
+
+.index {
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.status i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.status.active {
+  color: var(--success-text);
+}
+
+.status.active i {
+  background: currentColor;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+}
+
+.field :global(.admin-input) {
+  min-height: 46px;
+  border-radius: 6px;
+  color-scheme: light dark;
+}
+
+.field :global(.admin-input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.field > span,
+.host,
+.footerActions > span {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.host {
+  margin: -8px 0 16px 36px;
+}
+
+.channelNote {
+  margin: -8px 0 18px 36px;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  line-height: 1.65;
+}
+
+.webhookFields {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.6fr);
+  gap: 14px;
+}
+
+.aiFields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(180px, 0.65fr);
+  gap: 14px;
+}
+
+.channelActions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 14px;
+}
+
+.inlineTest {
+  min-height: 38px;
+  padding: 0 16px !important;
+  font-size: 0.78rem !important;
+}
+
+.clearButton {
+  margin-top: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--danger-text);
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.clearButton:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.channelActions .clearButton {
+  margin-top: 0;
+}
+
+.footerActions {
+  gap: 18px;
+  padding-top: 26px;
+}
+
+@media (max-width: 720px) {
+  .channelHead {
+    align-items: flex-start;
+  }
+
+  .aiFields,
+  .webhookFields {
+    grid-template-columns: 1fr;
+  }
+
+  .channelActions {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .footerActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .footerActions :global(.admin-button) {
+    width: 100%;
+  }
+
+  .host,
+  .channelNote {
+    margin-left: 0;
+  }
+}

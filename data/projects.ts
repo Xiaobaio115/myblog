@@ -22,9 +22,9 @@ export const projects = [
   },
   {
     title: "旅行地图",
-    status: "想探索",
-    desc: "把旅行城市、照片、文章和记忆点连接起来，形成个人探索轨迹。",
-    stack: ["Map", "Photos", "Timeline"],
-    href: "/photos",
+    status: "已上线",
+    desc: "在 3D 中国地图上点亮去过的省份，把城市、照片与旅行记忆连接起来。",
+    stack: ["ECharts GL", "GeoJSON", "Photos"],
+    href: "/world/travel-map",
   },
 ];

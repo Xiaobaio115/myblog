@@ -2,6 +2,7 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PoeticPageHero } from "@/app/components/poetic-page-hero";
 import { SiteFrame } from "@/app/components/site-frame";
 import { personality } from "@/data/world";
 import {
@@ -32,11 +33,12 @@ export default async function AboutPage() {
 
   return (
     <SiteFrame>
-      <section className="container pink-page-hero">
-        <p className="eyebrow">LQPP Profile</p>
-        <h1>我的档案</h1>
-        <p>这里放着我的状态、技能、经历和一些慢慢长大的想法。</p>
-      </section>
+      <PoeticPageHero
+        eyebrow="Portrait / 关于我"
+        title="关于我，和正在生长的世界"
+        description="我是 LQPP，一名仍在学习和出发的创作者。这里收录我的经历、工具与正在靠近的方向。"
+        background="world"
+      />
 
       <section className="container pink-about-layout">
         <aside className="pink-about-card">

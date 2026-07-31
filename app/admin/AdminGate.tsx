@@ -20,6 +20,7 @@ const navGroups = [
     title: "站点配置",
     items: [
       { href: "/admin/settings", label: "站点设置", desc: "资料与模块", code: "ST" },
+      { href: "/admin/chat-notifications", label: "聊天通知", desc: "手机转发", code: "NT" },
       { href: "/admin/travel-map", label: "旅行地图", desc: "城市与照片", code: "MP" },
       { href: "/", label: "前台预览", desc: "打开网站", code: "PV" },
       { href: "/photos", label: "相册预览", desc: "查看前台", code: "AL" },

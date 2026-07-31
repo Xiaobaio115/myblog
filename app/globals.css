@@ -3549,6 +3549,17 @@ html, body {
   white-space: nowrap;
 }
 
+.mobile-menu-icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.mobile-menu-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
 @media (max-width: 960px) {
   .mobile-menu-button {
     display: flex;
@@ -8069,6 +8080,31 @@ html, body {
   }
 }
 
+.tmap-load-state {
+  position: absolute;
+  z-index: 80;
+  top: 50%;
+  left: 50%;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  transform: translate(-50%, -50%);
+  color: #cbd5e1;
+  font-size: 0.88rem;
+}
+
+.tmap-load-state button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgba(56, 189, 248, 0.42);
+  border-radius: 6px;
+  background: rgba(56, 189, 248, 0.12);
+  color: #7dd3fc;
+  font-size: 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 /* ── 我的世界 — 旅行地图入口卡片 ── */
 .world-travel-map-card {
   display: block;
@@ -8529,11 +8565,14 @@ html, body {
 
   .tmap-prov-btn {
     flex: 0 0 auto;
+    width: auto;
+    min-width: max-content;
     min-height: 38px;
     padding: 0 14px;
     font-size: 13px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.06);
+    touch-action: manipulation;
   }
 
   .tmap-prov-btn.active {
@@ -10386,6 +10425,11 @@ html, body {
 
 .assistant-quick-actions {
   overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.assistant-quick-actions::-webkit-scrollbar {
+  display: none;
 }
 
 .assistant-quick-actions button {
@@ -12425,11 +12469,34 @@ html, body {
 
   .nav-inner {
     min-height: 64px;
+    min-width: 0;
+    gap: 10px;
   }
 
   .pink-brand {
     max-width: calc(100vw - 150px);
     font-size: 0.82rem;
+    min-width: 0;
+  }
+
+  .nav-actions {
+    flex: 0 0 auto;
+    margin-left: 0;
+  }
+
+  .mobile-menu-button {
+    width: 38px;
+    padding: 0;
+    border-radius: 50%;
+  }
+
+  .mobile-menu-label {
+    display: none;
+  }
+
+  .mobile-menu-icon {
+    font-size: 16px;
+    line-height: 1;
   }
 
   .pink-brand-mark {
@@ -12568,10 +12635,277 @@ html, body {
   }
 }
 
+/* Homepage: image-led, editorial hero and restrained motion. */
+.pink-home-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  justify-content: center;
+  min-height: min(700px, calc(100svh - var(--header-height)));
+  overflow: hidden;
+  padding: 0;
+  background: #05070b;
+  color: #fff;
+}
+
+.pink-home-visual {
+  z-index: -3;
+  object-fit: cover;
+  object-position: center;
+  animation: homeImageBreath 14s ease-in-out infinite alternate;
+}
+
+.pink-home-shade {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  background: rgba(3, 5, 12, 0.7);
+}
+
+.pink-home-content {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 34px;
+  padding: 72px 0 58px;
+}
+
+.pink-home-hero .pink-home-copy h1 {
+  max-width: 920px;
+  color: #fff !important;
+  font-size: 4.5rem;
+  font-weight: 650;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+.pink-home-hero .pink-home-copy .eyebrow {
+  color: #f9a8d4 !important;
+}
+
+.pink-home-hero .pink-home-status {
+  color: #f9a8d4 !important;
+}
+
+.pink-home-hero .pink-home-intro {
+  color: rgba(255, 255, 255, 0.76) !important;
+}
+
+.pink-home-hero .pink-btn.primary {
+  background: #ec4899 !important;
+  box-shadow: 0 16px 36px rgba(236, 72, 153, 0.3) !important;
+}
+
+.pink-home-hero .pink-btn:not(.primary) {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: none !important;
+  color: #fff !important;
+  backdrop-filter: blur(12px);
+}
+
+.pink-home-hero .pink-home-profile-bar {
+  width: min(900px, 100%);
+  padding: 16px 0;
+  border: 0 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #fff !important;
+  backdrop-filter: none;
+}
+
+.pink-home-hero .pink-home-profile-bar .name,
+.pink-home-hero .pink-home-profile-bar .stats strong {
+  color: #fff;
+}
+
+.pink-home-hero .pink-home-profile-bar .tagline,
+.pink-home-hero .pink-home-profile-bar .stats {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.pink-home-copy > * {
+  animation: homeCopyIn 680ms ease-out both;
+}
+
+.pink-home-copy > :nth-child(2) { animation-delay: 80ms; }
+.pink-home-copy > :nth-child(3) { animation-delay: 150ms; }
+.pink-home-copy > :nth-child(4) { animation-delay: 220ms; }
+.pink-home-copy > :nth-child(5) { animation-delay: 290ms; }
+
+.pink-home-profile-bar {
+  animation: homeProfileIn 700ms 360ms ease-out both;
+}
+
+@keyframes homeImageBreath {
+  from { transform: scale(1); }
+  to { transform: scale(1.045); }
+}
+
+@keyframes homeCopyIn {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes homeProfileIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes homeSectionReveal {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@supports (animation-timeline: view()) {
+  .pink-section-head,
+  .pink-module-grid,
+  .pink-now-grid,
+  .pink-skill-preview,
+  .cards-grid,
+  .pink-photo-grid {
+    animation: homeSectionReveal linear both;
+    animation-timeline: view();
+    animation-range: entry 5% cover 28%;
+  }
+}
+
+@media (max-width: 900px) {
+  .pink-home-hero .pink-home-copy h1 {
+    font-size: 3.5rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .pink-home-content.container,
+  .pink-section.container {
+    width: calc(100% - 32px);
+    max-width: none;
+    margin-inline: auto;
+  }
+
+  .pink-home-hero {
+    min-height: min(670px, calc(100svh - var(--header-height)));
+  }
+
+  .pink-home-content {
+    gap: 20px;
+    padding-top: 38px;
+    padding-bottom: 44px;
+  }
+
+  .pink-home-copy .eyebrow {
+    margin-bottom: 12px;
+    font-size: 0.68rem;
+  }
+
+  .pink-home-copy h1 {
+    font-size: 2.55rem !important;
+    line-height: 1.08;
+  }
+
+  .pink-home-status {
+    margin-top: 12px;
+    font-size: 1rem;
+  }
+
+  .pink-home-intro {
+    margin-top: 12px;
+    font-size: 0.9rem;
+    line-height: 1.72;
+    overflow-wrap: anywhere;
+  }
+
+  .pink-home-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    width: 100%;
+    margin-top: 22px;
+  }
+
+  .pink-home-actions .pink-btn {
+    width: auto;
+    min-height: 44px;
+    padding: 0 12px;
+    font-size: 0.84rem;
+  }
+
+  .pink-home-actions .pink-btn.primary {
+    grid-column: 1 / -1;
+  }
+
+  .pink-home-profile-bar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    justify-content: stretch;
+    gap: 10px 14px;
+    width: 100%;
+    padding: 16px;
+    border-radius: 18px;
+    text-align: left;
+  }
+
+  .pink-home-profile-bar .divider {
+    display: none;
+  }
+
+  .pink-home-profile-bar .stats,
+  .pink-home-profile-bar .meta-links {
+    grid-column: 1 / -1;
+  }
+
+  .pink-home-profile-bar .stats {
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 79, 163, 0.14);
+  }
+
+  .pink-home-profile-bar .meta-links {
+    justify-content: flex-end;
+  }
+
+  .pink-section {
+    padding: 48px 0;
+  }
+
+  .pink-section-head {
+    margin-bottom: 24px;
+    text-align: left;
+  }
+
+  .pink-section-head h2 {
+    font-size: 1.6rem;
+  }
+
+  .pink-section-head p {
+    margin-left: 0;
+    line-height: 1.7;
+  }
+
+  .pink-module {
+    min-height: 0;
+    padding: 20px;
+    border-radius: 14px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .pink-home-visual,
+  .pink-home-copy > *,
+  .pink-home-profile-bar,
+  .pink-section-head,
+  .pink-module-grid,
+  .pink-now-grid,
+  .pink-skill-preview,
+  .cards-grid,
+  .pink-photo-grid,
   .project-art-card::before,
   .project-card-link span,
   .markdown-color-tool {
+    animation: none !important;
     transition: none;
   }
 }

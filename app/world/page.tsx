@@ -2,6 +2,7 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PoeticPageHero } from "@/app/components/poetic-page-hero";
 import { SiteFrame } from "@/app/components/site-frame";
 import { personality, worldLogs, worldSections as defaultWorldSections } from "@/data/world";
 import { getWorldSectionsSetting } from "@/lib/settings";
@@ -14,31 +15,31 @@ export const metadata: Metadata = {
 
 const SECTION_META: Record<
   string,
-  { href: string; cta: string; label: string; tone: string }
+  { href: string; cta: string; tone: string; fallbackCover: string }
 > = {
   hometown: {
     href: "/world/hometown",
     cta: "进入家乡页面",
-    label: "Home",
     tone: "tone-home",
+    fallbackCover: "/poetic-images/world-hometown.jpg",
   },
   school: {
     href: "/world/school",
     cta: "进入学校页面",
-    label: "School",
     tone: "tone-school",
+    fallbackCover: "/poetic-images/world-school.jpg",
   },
   travel: {
     href: "/world/travel",
     cta: "进入旅行探索",
-    label: "Travel",
     tone: "tone-travel",
+    fallbackCover: "/poetic-images/world-travel.jpg",
   },
   games: {
     href: "/world/games",
     cta: "进入游戏世界",
-    label: "Games",
     tone: "tone-games",
+    fallbackCover: "/poetic-images/world-games.jpg",
   },
 };
 
@@ -64,22 +65,22 @@ export default async function WorldPage() {
 
   return (
     <SiteFrame>
-      <section className="container pink-page-hero">
-        <p className="eyebrow">My World Map</p>
-        <h1>我的世界</h1>
-        <p>从家乡出发，在学校成长，去旅行探索，也在游戏里进入另一个宇宙。</p>
-        <div className="pink-home-actions">
-          <a href="#hometown" className="pink-btn primary">
-            看看我的家乡
-          </a>
-          <a href="#travel" className="pink-btn">
-            查看旅行轨迹
-          </a>
-          <a href="#games" className="pink-btn">
-            进入游戏宇宙
-          </a>
-        </div>
-      </section>
+      <PoeticPageHero
+        eyebrow="My World Map"
+        title="我的世界，在山河与星光之间"
+        description="从故乡的一盏灯出发，途经校园、远方与虚拟星河，把走过的路写成自己的坐标。"
+        background="world"
+      >
+        <a href="#hometown" className="pink-btn primary">
+          从家乡出发
+        </a>
+        <a href="#travel" className="pink-btn">
+          沿旅行寻迹
+        </a>
+        <a href="#games" className="pink-btn">
+          去游戏远游
+        </a>
+      </PoeticPageHero>
 
       <section className="container pink-section">
         <div className="pink-section-head">
@@ -92,10 +93,11 @@ export default async function WorldPage() {
             const meta = SECTION_META[section.id] ?? {
               href: "/world",
               cta: "进入",
-              label: section.icon || section.title,
               tone: "tone-default",
+              fallbackCover: "/poetic-images/hero-world.jpg",
             };
             const cover = typeof section.cover === "string" ? section.cover.trim() : "";
+            const visual = cover || meta.fallbackCover;
 
             return (
               <article
@@ -104,11 +106,7 @@ export default async function WorldPage() {
                 className={`world-big-card pink-world-card ${meta.tone}`}
               >
                 <div className={`world-big-card-cover ${meta.tone}`}>
-                  {cover ? (
-                    <img src={cover} alt={section.title} />
-                  ) : (
-                    <span className="world-big-card-icon">{meta.label}</span>
-                  )}
+                  <img src={visual} alt={section.title} loading="lazy" decoding="async" />
                 </div>
                 <div className="world-big-card-body">
                   <p className="world-kicker">{section.eyebrow}</p>

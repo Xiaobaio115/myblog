@@ -1,12 +1,22 @@
 import { NextResponse } from "next/server";
+import { getEffectiveChatNotificationSettings } from "@/lib/chat-notification-settings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const apiKey = process.env.AI_API_KEY;
-  const baseUrl = process.env.AI_BASE_URL;
-  const model = process.env.AI_MODEL;
+export async function GET(request: Request) {
+  if (!process.env.ADMIN_PASSWORD) {
+    return NextResponse.json({ ok: false, error: "服务端尚未配置 ADMIN_PASSWORD。" }, { status: 401 });
+  }
+  if (request.headers.get("x-admin-password") !== process.env.ADMIN_PASSWORD) {
+    return NextResponse.json({ ok: false, error: "密码错误。" }, { status: 401 });
+  }
+
+  const {
+    aiApiKey: apiKey,
+    aiBaseUrl: baseUrl,
+    aiModel: model,
+  } = await getEffectiveChatNotificationSettings();
 
   if (!apiKey) {
     return NextResponse.json(

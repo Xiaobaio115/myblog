@@ -13,14 +13,16 @@ export default async function TravelMapPage() {
 
   return (
     <SiteFrame>
-      <div className="world-sub-breadcrumb container">
-        <Link href="/world">我的世界</Link>
-        <span>/</span>
-        <Link href="/world/travel">旅行探索</Link>
-        <span>/</span>
-        <span>旅行地图</span>
+      <div className="travel-map-page">
+        <div className="world-sub-breadcrumb container">
+          <Link href="/world">我的世界</Link>
+          <span>/</span>
+          <Link href="/world/travel">旅行探索</Link>
+          <span>/</span>
+          <span>旅行地图</span>
+        </div>
+        <ChinaTravelMap data={resolved} />
       </div>
-      <ChinaTravelMap data={resolved} />
     </SiteFrame>
   );
 }

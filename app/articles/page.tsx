@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { ArticleCard } from "@/app/components/article-card";
+import { PoeticPageHero } from "@/app/components/poetic-page-hero";
 import { SiteFrame } from "@/app/components/site-frame";
 import { filterPosts, getAllTags, getPublishedPosts } from "@/lib/content";
 
@@ -37,11 +38,12 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
 
   return (
     <SiteFrame>
-      <section className="container pink-page-hero">
-        <p className="eyebrow">Thinking Fragments</p>
-        <h1>思考碎片</h1>
-        <p>这里放着我的技术笔记、生活随笔、旅行记录和一些突然出现的想法。</p>
-      </section>
+      <PoeticPageHero
+        eyebrow="Field Notes / 文章"
+        title={<>把走过的路，<br />写成可以回望的文字</>}
+        description="技术笔记、生活随笔与旅行记录，按时间留在这里。"
+        background="articles"
+      />
 
       <section className="container pink-content-shell">
         <aside className="pink-filter-panel">

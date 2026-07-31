@@ -204,7 +204,9 @@ async function safeQuery<T>(work: () => Promise<T>, fallback: T): Promise<T> {
   try {
     return await work();
   } catch (error) {
-    console.error("content query failed:", error);
+    if (!(error instanceof Error && error.message === "Missing MONGODB_URI")) {
+      console.error("content query failed:", error);
+    }
     return fallback;
   }
 }

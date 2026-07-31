@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import type { TravelMapData } from "@/data/travel-map";
 import { CITY_COORDS, PROV_COORDS } from "@/data/travel-map";
+import styles from "./page.module.css";
 
 export default function AdminTravelMapPage() {
   const [data, setData] = useState<TravelMapData>({});
@@ -189,42 +190,39 @@ export default function AdminTravelMapPage() {
   if (loading) return <div className="admin-page-head"><p>加载中...</p></div>;
 
   return (
-    <main className="admin-dashboard">
+    <main className={`admin-dashboard ${styles.page}`}>
       <div className="admin-page-head">
         <div>
           <div className="admin-badge">TRAVEL MAP</div>
           <h1>旅行地图管理</h1>
           <p>管理 3D 旅行地图上的省份、地点和照片。</p>
         </div>
-        <Link href="/world/travel-map" style={{ color: "#38bdf8", textDecoration: "underline" }}>
-          查看前台 →
+        <Link href="/world/travel-map" className="secondary-link">
+          查看地图
         </Link>
       </div>
 
       {msg && (
-        <div style={{
-          background: msg.includes("成功") ? "#065f46" : "#7f1d1d",
-          color: "#fff",
-          padding: "12px 20px",
-          borderRadius: "8px",
-          marginBottom: "20px",
-        }}>
+        <div className={`${styles.message} ${msg.includes("成功") ? styles.success : styles.error}`}>
           {msg}
         </div>
       )}
 
-      {/* ======== 添加省份 ======== */}
-      <section className="admin-tips" style={{ marginBottom: "24px" }}>
-        <h2>添加新省份</h2>
-        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "12px" }}>
+      <div className={styles.createGrid}>
+      <section className={styles.createSection}>
+        <div className={styles.sectionHead}>
+          <span>01</span>
+          <h2>添加省份</h2>
+        </div>
+        <div className={styles.formGrid}>
           <select
+            className="admin-input"
             value={newProvKey}
             onChange={(e) => {
               setNewProvKey(e.target.value);
               const short = e.target.value.replace(/(省|市|自治区|壮族|回族|维吾尔|特别行政区)/g, "");
               setNewProvShort(short);
             }}
-            style={{ padding: "10px", borderRadius: "6px", border: "1px solid #334155", background: "#1e293b", color: "#f8fafc", minWidth: "180px" }}
           >
             <option value="">选择省份...</option>
             {provKeys.filter(k => !data[k]).map(k => (
@@ -232,35 +230,38 @@ export default function AdminTravelMapPage() {
             ))}
           </select>
           <input
+            className="admin-input"
             placeholder="简称(如: 四川)"
             value={newProvShort}
             onChange={(e) => setNewProvShort(e.target.value)}
-            style={{ padding: "10px", borderRadius: "6px", border: "1px solid #334155", background: "#1e293b", color: "#f8fafc", width: "120px" }}
           />
           <input
+            className={`admin-input ${styles.wideField}`}
             placeholder="描述(选填)"
             value={newProvDesc}
             onChange={(e) => setNewProvDesc(e.target.value)}
-            style={{ padding: "10px", borderRadius: "6px", border: "1px solid #334155", background: "#1e293b", color: "#f8fafc", flex: "1", minWidth: "200px" }}
           />
           <button
+            type="button"
+            className="admin-button"
             onClick={addProvince}
             disabled={saving}
-            style={{ padding: "10px 20px", borderRadius: "6px", background: "#2563eb", color: "#fff", border: "none", cursor: "pointer", fontWeight: "600" }}
           >
-            + 添加省份
+            添加省份
           </button>
         </div>
       </section>
 
-      {/* ======== 添加地点 ======== */}
-      <section className="admin-tips" style={{ marginBottom: "24px" }}>
-        <h2>添加新地点</h2>
-        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", marginTop: "12px" }}>
+      <section className={styles.createSection}>
+        <div className={styles.sectionHead}>
+          <span>02</span>
+          <h2>添加地点</h2>
+        </div>
+        <div className={styles.formGrid}>
           <select
+            className="admin-input"
             value={newPlaceProv}
             onChange={(e) => setNewPlaceProv(e.target.value)}
-            style={{ padding: "10px", borderRadius: "6px", border: "1px solid #334155", background: "#1e293b", color: "#f8fafc", minWidth: "180px" }}
           >
             <option value="">选择所属省份...</option>
             {Object.keys(data).map(k => (
@@ -268,81 +269,77 @@ export default function AdminTravelMapPage() {
             ))}
           </select>
           <input
+            className="admin-input"
             placeholder="地点名称(如: 成都)"
             value={newPlaceName}
             onChange={(e) => setNewPlaceName(e.target.value)}
-            style={{ padding: "10px", borderRadius: "6px", border: "1px solid #334155", background: "#1e293b", color: "#f8fafc", width: "160px" }}
           />
           <input
+            className={`admin-input ${styles.wideField}`}
             placeholder="地点描述(选填)"
             value={newPlaceDesc}
             onChange={(e) => setNewPlaceDesc(e.target.value)}
-            style={{ padding: "10px", borderRadius: "6px", border: "1px solid #334155", background: "#1e293b", color: "#f8fafc", flex: "1", minWidth: "200px" }}
           />
           <button
+            type="button"
+            className="admin-button"
             onClick={addPlace}
             disabled={saving}
-            style={{ padding: "10px 20px", borderRadius: "6px", background: "#059669", color: "#fff", border: "none", cursor: "pointer", fontWeight: "600" }}
           >
-            + 添加地点
+            添加地点
           </button>
         </div>
         {newPlaceName && !CITY_COORDS[newPlaceName] && (
-          <p style={{ color: "#fbbf24", marginTop: "8px", fontSize: "13px" }}>
+          <p className={styles.coordinateNote}>
             提示: 「{newPlaceName}」不在内置坐标库中，将使用省份中心坐标作为标记位置。
           </p>
         )}
       </section>
+      </div>
 
-      {/* ======== 已有省份列表 ======== */}
-      <section>
-        <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#f8fafc", marginBottom: "16px" }}>
-          已添加省份 ({Object.keys(data).length})
-        </h2>
+      <section className={styles.provinceSection}>
+        <div className={styles.listHead}>
+          <div>
+            <span>PROVINCES</span>
+            <h2>已添加省份</h2>
+          </div>
+          <strong>{String(Object.keys(data).length).padStart(2, "0")}</strong>
+        </div>
         {Object.keys(data).length === 0 && (
-          <p style={{ color: "#94a3b8" }}>还没有添加任何省份，请在上方操作。</p>
+          <p className={styles.empty}>还没有添加任何省份，请在上方操作。</p>
         )}
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div className={styles.provinceList}>
           {Object.entries(data).map(([provKey, prov]) => (
-            <div key={provKey} style={{
-              background: "#1e293b",
-              borderRadius: "12px",
-              border: "1px solid #334155",
-              overflow: "hidden",
-            }}>
-              {/* 省份头 */}
-              <div
-                onClick={() => setExpandedProv(expandedProv === provKey ? null : provKey)}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "16px 20px",
-                  cursor: "pointer",
-                  background: expandedProv === provKey ? "#0f172a" : "transparent",
-                }}
-              >
-                <div>
-                  <strong style={{ fontSize: "16px", color: "#f8fafc" }}>{prov.shortName}</strong>
-                  <span style={{ color: "#64748b", fontSize: "13px", marginLeft: "12px" }}>{provKey}</span>
-                  <span style={{ color: "#38bdf8", fontSize: "13px", marginLeft: "12px" }}>{prov.places.length} 个地点</span>
-                </div>
-                <div style={{ display: "flex", gap: "8px" }}>
+            <article key={provKey} className={`${styles.province} ${expandedProv === provKey ? styles.expanded : ""}`}>
+              <div className={styles.provinceHeader}>
+                <button
+                  type="button"
+                  className={styles.provinceToggle}
+                  onClick={() => setExpandedProv(expandedProv === provKey ? null : provKey)}
+                  aria-expanded={expandedProv === provKey}
+                >
+                  <span className={styles.provinceName}>{prov.shortName}</span>
+                  <span className={styles.provinceKey}>{provKey}</span>
+                  <span className={styles.placeCount}>{prov.places.length} 个地点</span>
+                  <span className={styles.chevron} aria-hidden="true">{expandedProv === provKey ? "−" : "+"}</span>
+                </button>
+                <div className={styles.provinceActions}>
                   <button
+                    type="button"
+                    className={styles.deleteButton}
                     onClick={(e) => { e.stopPropagation(); deleteProvince(provKey); }}
-                    style={{ padding: "6px 12px", borderRadius: "6px", background: "#dc2626", color: "#fff", border: "none", cursor: "pointer", fontSize: "12px" }}
                   >
                     删除
                   </button>
-                  <span style={{ color: "#64748b" }}>{expandedProv === provKey ? "▲" : "▼"}</span>
                 </div>
               </div>
 
-              {/* 展开详情 */}
               {expandedProv === provKey && (
-                <div style={{ padding: "0 20px 20px", borderTop: "1px solid #334155" }}>
-                  <div style={{ display: "flex", gap: "8px", alignItems: "center", margin: "12px 0" }}>
+                <div className={styles.provinceBody}>
+                  <label className={styles.descriptionField}>
+                    <span>省份描述</span>
                     <input
+                      className="admin-input"
                       defaultValue={prov.desc}
                       placeholder="输入省份描述..."
                       onBlur={(e) => {
@@ -351,65 +348,52 @@ export default function AdminTravelMapPage() {
                       onKeyDown={(e) => {
                         if (e.key === "Enter") (e.target as HTMLInputElement).blur();
                       }}
-                      style={{ flex: 1, padding: "8px 12px", borderRadius: "6px", border: "1px solid #334155", background: "#0f172a", color: "#f8fafc", fontSize: "14px" }}
                     />
-                  </div>
+                  </label>
                   {prov.places.length === 0 && (
-                    <p style={{ color: "#64748b", fontSize: "13px" }}>暂无地点，请在上方「添加新地点」中选择此省份。</p>
+                    <p className={styles.empty}>暂无地点，请在上方添加。</p>
                   )}
                   {prov.places.map((place, placeIdx) => (
-                    <div key={placeIdx} style={{
-                      background: "#0f172a",
-                      borderRadius: "8px",
-                      padding: "16px",
-                      marginTop: "12px",
-                      border: "1px solid #1e3a5f",
-                    }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <section key={placeIdx} className={styles.place}>
+                      <div className={styles.placeHead}>
                         <div>
-                          <strong style={{ color: "#f8fafc" }}>{place.name}</strong>
+                          <strong>{place.name}</strong>
                           {CITY_COORDS[place.name] && (
-                            <span style={{ color: "#22c55e", fontSize: "11px", marginLeft: "8px" }}>● 有坐标</span>
+                            <span className={styles.coordinate}>有坐标</span>
                           )}
                         </div>
                         <button
+                          type="button"
+                          className={styles.deleteButton}
                           onClick={() => deletePlace(provKey, placeIdx)}
-                          style={{ padding: "4px 10px", borderRadius: "4px", background: "#991b1b", color: "#fca5a5", border: "none", cursor: "pointer", fontSize: "12px" }}
                         >
                           删除地点
                         </button>
                       </div>
-                      <div style={{ display: "flex", gap: "8px", alignItems: "center", margin: "8px 0" }}>
-                        <input
-                          defaultValue={place.desc}
-                          placeholder="输入地点描述..."
-                          onBlur={(e) => {
-                            if (e.target.value !== place.desc) updatePlaceDesc(provKey, placeIdx, e.target.value);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                          }}
-                          style={{ flex: 1, padding: "8px 12px", borderRadius: "6px", border: "1px solid #334155", background: "#1e293b", color: "#f8fafc", fontSize: "13px" }}
-                        />
-                      </div>
+                      <input
+                        className="admin-input"
+                        defaultValue={place.desc}
+                        placeholder="输入地点描述..."
+                        onBlur={(e) => {
+                          if (e.target.value !== place.desc) updatePlaceDesc(provKey, placeIdx, e.target.value);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                        }}
+                      />
 
-                      {/* 图片网格 */}
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))", gap: "8px", marginTop: "12px" }}>
+                      <div className={styles.imageGrid}>
                         {place.imgs.map((img, imgIdx) => (
-                          <div key={imgIdx} style={{ position: "relative" }}>
+                          <div key={imgIdx} className={styles.imageItem}>
                             <img
                               src={img}
                               alt={place.name}
-                              style={{ width: "100%", height: "80px", objectFit: "cover", borderRadius: "6px" }}
                             />
                             <button
+                              type="button"
+                              className={styles.imageDelete}
                               onClick={() => deleteImage(provKey, placeIdx, imgIdx)}
-                              style={{
-                                position: "absolute", top: "4px", right: "4px",
-                                width: "20px", height: "20px", borderRadius: "50%",
-                                background: "#dc2626", color: "#fff", border: "none",
-                                cursor: "pointer", fontSize: "11px", lineHeight: "1",
-                              }}
+                              aria-label={`删除 ${place.name} 图片`}
                             >
                               ×
                             </button>
@@ -417,12 +401,8 @@ export default function AdminTravelMapPage() {
                         ))}
                       </div>
 
-                      {/* 上传图片 */}
-                      <div style={{ display: "flex", gap: "8px", marginTop: "12px", flexWrap: "wrap" }}>
-                        <label style={{
-                          padding: "8px 14px", borderRadius: "6px", background: "#1d4ed8",
-                          color: "#fff", cursor: "pointer", fontSize: "13px", fontWeight: "500",
-                        }}>
+                      <div className={styles.placeActions}>
+                        <label className={styles.uploadButton}>
                           {uploadingFor?.provKey === provKey && uploadingFor?.placeIdx === placeIdx ? "上传中..." : "上传图片"}
                           <input
                             type="file"
@@ -436,20 +416,21 @@ export default function AdminTravelMapPage() {
                           />
                         </label>
                         <button
+                          type="button"
+                          className="secondary-link"
                           onClick={() => {
                             const url = prompt("输入图片 URL:");
                             if (url) addImageUrl(provKey, placeIdx, url);
                           }}
-                          style={{ padding: "8px 14px", borderRadius: "6px", background: "#334155", color: "#e2e8f0", border: "none", cursor: "pointer", fontSize: "13px" }}
                         >
                           添加外链图片
                         </button>
                       </div>
-                    </div>
+                    </section>
                   ))}
                 </div>
               )}
-            </div>
+            </article>
           ))}
         </div>
       </section>

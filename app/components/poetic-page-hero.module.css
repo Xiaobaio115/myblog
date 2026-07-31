@@ -1,0 +1,133 @@
+.hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-end;
+  min-height: 470px;
+  overflow: hidden;
+  background: #07080c;
+  color: #fff;
+}
+
+.image {
+  z-index: -3;
+  object-fit: cover;
+  object-position: center;
+  animation: heroImageIn 900ms ease-out both;
+}
+
+.shade {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  background: rgba(3, 5, 10, 0.7);
+}
+
+.inner {
+  width: min(1200px, calc(100% - 40px));
+  min-width: 0;
+  margin-inline: auto;
+  padding-top: 92px;
+  padding-bottom: 62px;
+}
+
+.eyebrow {
+  margin: 0 0 14px;
+  color: #f9a8d4;
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  animation: copyIn 620ms 80ms ease-out both;
+}
+
+.inner h1 {
+  width: 100%;
+  max-width: 860px;
+  margin: 0;
+  color: #fff;
+  font-family: "Songti SC", "STSong", "Noto Serif SC", serif;
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+  animation: copyIn 620ms 150ms ease-out both;
+}
+
+.description {
+  max-width: 650px;
+  margin: 20px 0 0;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 1rem;
+  line-height: 1.8;
+  animation: copyIn 620ms 220ms ease-out both;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 26px;
+  animation: copyIn 620ms 290ms ease-out both;
+}
+
+@keyframes heroImageIn {
+  from { opacity: 0; transform: scale(1.035); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes copyIn {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 700px) {
+  .hero {
+    min-height: 410px;
+  }
+
+  .inner {
+    width: calc(100% - 32px);
+    max-width: calc(100% - 32px);
+    min-width: 0;
+    margin-inline: auto;
+    padding-top: 64px;
+    padding-bottom: 44px;
+  }
+
+  .inner h1 {
+    max-width: 100%;
+    font-size: 2.45rem;
+  }
+
+  .description {
+    max-width: 100%;
+    font-size: 0.92rem;
+    line-height: 1.7;
+  }
+
+  .actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+    max-width: 360px;
+  }
+
+  .actions :global(.pink-btn) {
+    width: 100%;
+    max-width: 100%;
+    white-space: normal;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image,
+  .eyebrow,
+  .inner h1,
+  .description,
+  .actions {
+    animation: none;
+  }
+}

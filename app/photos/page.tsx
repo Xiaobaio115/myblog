@@ -1,34 +1,27 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import { PoeticPageHero } from "@/app/components/poetic-page-hero";
 import { SiteFrame } from "@/app/components/site-frame";
 import { getLatestPhotos, getPhotoCategories } from "@/lib/content";
 import { PhotosGalleryClient } from "./PhotosGalleryClient";
 
-type Props = {
-  searchParams?: Promise<{
-    view?: string;
-  }>;
-};
-
-export default async function PhotosPage({ searchParams }: Props) {
-  const resolvedSearchParams = await searchParams;
+export default async function PhotosPage() {
   const photos = await getLatestPhotos(48);
   const categories = getPhotoCategories(photos);
-  const initialView = resolvedSearchParams?.view === "static" ? "static" : null;
 
   return (
     <SiteFrame>
-      <section className="container pink-page-hero">
-        <p className="eyebrow">Memory Atlas</p>
-        <h1>记忆星图</h1>
-        <p>把生活片段放进可以浏览的星空里，同时保留普通相册和 3D 星空相册两种体验。</p>
-        <div className="pink-home-actions">
-          <Link href="/photos/3d" className="pink-btn primary">
-            打开 3D 星空相册
-          </Link>
-        </div>
-      </section>
+      <PoeticPageHero
+        eyebrow="Memory Atlas"
+        title="记忆星图"
+        description="收拢日常的微光与远行的风景，让每一帧都在时间里缓缓显影。"
+        background="photos"
+      >
+        <Link href="/photos/3d" className="pink-btn primary">
+          漫游 3D 星空相册
+        </Link>
+      </PoeticPageHero>
 
       <section className="container pink-section">
         <div className="pink-section-head">
@@ -36,7 +29,7 @@ export default async function PhotosPage({ searchParams }: Props) {
           <p>生活片段、旅行瞬间，以及那些值得慢慢回看的画面。</p>
         </div>
         {photos.length > 0 ? (
-          <PhotosGalleryClient photos={photos} categories={categories} initialView={initialView} />
+          <PhotosGalleryClient photos={photos} categories={categories} initialView="static" />
         ) : (
           <div className="empty-state empty-state-rich">
             <div className="empty-icon">✦</div>
