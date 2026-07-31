@@ -93,7 +93,7 @@
 .field :global(.admin-input) {
   min-height: 46px;
   border-radius: 6px;
-  color-scheme: light dark;
+  color-scheme: inherit;
 }
 
 .field :global(.admin-input:disabled) {

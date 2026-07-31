@@ -33,7 +33,7 @@ const SECTION_META: Record<
     href: "/world/travel",
     cta: "进入旅行探索",
     tone: "tone-travel",
-    fallbackCover: "/poetic-images/world-travel.jpg",
+    fallbackCover: "/poetic-images/hero-home.jpg",
   },
   games: {
     href: "/world/games",
@@ -130,15 +130,23 @@ export default async function WorldPage() {
       </section>
 
       <section className="container pink-section">
-        <Link href="/world/travel-map" className="pink-travel-map-card">
-          <div className="pink-map-visual">
-            <span>Map</span>
+        <Link href="/world/travel-map" className="world-map-feature">
+          <div className="world-map-feature__media">
+            <img
+              src="/poetic-images/world-travel.jpg"
+              alt="山路穿过岩壁，延伸向远方"
+              decoding="async"
+            />
+            <span className="world-map-feature__caption">3D China · Travel Atlas</span>
           </div>
-          <div>
-            <p className="eyebrow">Travel Map</p>
-            <h2>我的旅行地图</h2>
-            <p>用 3D 互动地图记录走过的城市、照片和路线记忆。</p>
-            <span className="pink-btn primary">打开地图</span>
+          <div className="world-map-feature__copy">
+            <p className="eyebrow">山河留痕 · Travel Map</p>
+            <h2>把走过的路，点亮在山河之间</h2>
+            <p>在可旋转的 3D 中国地图上，循着城市坐标重看照片与沿途记忆。</p>
+            <span className="world-map-feature__cta">
+              进入旅行地图
+              <span className="world-map-feature__arrow" aria-hidden="true">→</span>
+            </span>
           </div>
         </Link>
       </section>

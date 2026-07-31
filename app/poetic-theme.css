@@ -1,24 +1,24 @@
 /* Final semantic theme layer for public pages and shared controls. */
-:root,
+:root:not([data-theme="dark"]),
 :root[data-theme="light"] {
-  --poetic-bg: #f4f6f8;
-  --poetic-bg-soft: #edf0f3;
-  --poetic-surface: rgba(255, 255, 255, 0.82);
-  --poetic-surface-solid: #ffffff;
-  --poetic-surface-muted: #e8ecf0;
-  --poetic-text: #20242c;
-  --poetic-text-soft: #626b78;
-  --poetic-muted: #6d7682;
-  --poetic-border: rgba(32, 36, 44, 0.14);
-  --poetic-border-strong: rgba(32, 36, 44, 0.24);
-  --poetic-accent: #cf3f78;
-  --poetic-accent-soft: rgba(207, 63, 120, 0.12);
-  --poetic-gold: #9a6a12;
-  --poetic-control-bg: rgba(255, 255, 255, 0.88);
-  --poetic-control-text: #252a32;
-  --poetic-control-border: rgba(32, 36, 44, 0.18);
-  --poetic-nav: rgba(244, 246, 248, 0.9);
-  --poetic-shadow: 0 18px 54px rgba(32, 36, 44, 0.1);
+  --poetic-bg: #fff8fb;
+  --poetic-bg-soft: #fff2f7;
+  --poetic-surface: rgba(255, 255, 255, 0.78);
+  --poetic-surface-solid: #fffdfd;
+  --poetic-surface-muted: #fbedf3;
+  --poetic-text: #2b2430;
+  --poetic-text-soft: #625966;
+  --poetic-muted: #6b5e69;
+  --poetic-border: rgba(108, 60, 82, 0.14);
+  --poetic-border-strong: rgba(108, 60, 82, 0.24);
+  --poetic-accent: #b92e67;
+  --poetic-accent-soft: rgba(185, 46, 103, 0.1);
+  --poetic-gold: #946200;
+  --poetic-control-bg: rgba(255, 255, 255, 0.9);
+  --poetic-control-text: #2b2430;
+  --poetic-control-border: rgba(108, 60, 82, 0.18);
+  --poetic-nav: rgba(255, 248, 251, 0.9);
+  --poetic-shadow: 0 18px 54px rgba(79, 44, 62, 0.1);
   --poetic-success: #18794e;
   --poetic-danger: #b4233b;
   --poetic-warning: #946200;
@@ -50,6 +50,9 @@
   --control-bg: var(--poetic-control-bg);
   --control-text: var(--poetic-control-text);
   --control-border: var(--poetic-control-border);
+  --surface-readable: var(--poetic-surface);
+  --surface-readable-solid: var(--poetic-surface-solid);
+  --surface-readable-soft: var(--poetic-surface-muted);
   --success-text: var(--poetic-success);
   --danger-text: var(--poetic-danger);
   --warning-text: var(--poetic-warning);
@@ -104,6 +107,9 @@
   --control-bg: var(--poetic-control-bg);
   --control-text: var(--poetic-control-text);
   --control-border: var(--poetic-control-border);
+  --surface-readable: var(--poetic-surface);
+  --surface-readable-solid: var(--poetic-surface-solid);
+  --surface-readable-soft: var(--poetic-surface-muted);
   --success-text: var(--poetic-success);
   --danger-text: var(--poetic-danger);
   --warning-text: var(--poetic-warning);
@@ -114,6 +120,10 @@ body,
 [data-theme="dark"] body {
   background: var(--poetic-bg) !important;
   color: var(--poetic-text) !important;
+}
+
+.admin-login-screen {
+  background: var(--poetic-bg) !important;
 }
 
 ::selection {
@@ -127,6 +137,16 @@ html.theme-switching .site-footer,
 html.theme-switching .mobile-nav-drawer,
 html.theme-switching .search-overlay-box,
 html.theme-switching .assistant-panel,
+html.theme-switching .assistant-header,
+html.theme-switching .assistant-messages,
+html.theme-switching .site-shell,
+html.theme-switching .admin-shell,
+html.theme-switching .admin-sidebar,
+html.theme-switching .admin-main,
+html.theme-switching .admin-system-topbar,
+html.theme-switching .admin-panel,
+html.theme-switching .admin-login-screen,
+html.theme-switching .admin-login-shell,
 html.theme-switching input,
 html.theme-switching textarea,
 html.theme-switching button,
@@ -181,6 +201,25 @@ html.theme-switching aside {
 .guestbook-form input::placeholder,
 .guestbook-form textarea::placeholder {
   color: var(--poetic-muted) !important;
+}
+
+.admin-input:-webkit-autofill,
+.admin-input:-webkit-autofill:hover,
+.admin-input:-webkit-autofill:focus,
+.admin-textarea:-webkit-autofill,
+.admin-textarea:-webkit-autofill:hover,
+.admin-textarea:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--poetic-control-text) !important;
+  caret-color: var(--poetic-control-text);
+  -webkit-box-shadow: 0 0 0 1000px var(--poetic-control-bg) inset !important;
+}
+
+.admin-button {
+  border: 1px solid var(--poetic-accent) !important;
+  border-radius: 6px !important;
+  background: var(--poetic-accent) !important;
+  box-shadow: none !important;
+  color: #fff !important;
 }
 
 .site-shell {
@@ -718,35 +757,111 @@ html.theme-switching aside {
   color: var(--poetic-accent) !important;
 }
 
-.site-shell .pink-travel-map-card {
+.site-shell .world-map-feature {
   display: grid;
-  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr);
-  gap: 46px;
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+  gap: clamp(34px, 5vw, 72px);
+  align-items: center;
+  padding: 14px 0;
   color: var(--poetic-text) !important;
+  text-decoration: none;
 }
 
-.site-shell .pink-map-visual {
-  min-height: 310px;
-  border-radius: 6px;
-  background: #111820 !important;
+.site-shell .world-map-feature:focus-visible {
+  outline: 2px solid var(--poetic-accent);
+  outline-offset: 8px;
 }
 
-.site-shell .pink-travel-map-card > div:last-child {
-  align-self: center;
+.site-shell .world-map-feature__media {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--poetic-surface-muted);
+  box-shadow: var(--poetic-shadow);
 }
 
-.site-shell .pink-travel-map-card h2 {
+.site-shell .world-map-feature__media::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 46%, rgba(12, 10, 14, 0.68));
+  pointer-events: none;
+}
+
+.site-shell .world-map-feature__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 700ms cubic-bezier(0.2, 0.72, 0.2, 1), filter 350ms ease;
+}
+
+.site-shell .world-map-feature__caption {
+  position: absolute;
+  z-index: 1;
+  right: 22px;
+  bottom: 20px;
+  left: 22px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.46);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.site-shell .world-map-feature__copy {
+  max-width: 440px;
+}
+
+.site-shell .world-map-feature h2 {
+  max-width: 10em;
+  margin: 8px 0 16px;
   color: var(--poetic-text) !important;
   font-family: var(--poetic-display);
+  font-size: clamp(2rem, 3.4vw, 3.65rem);
+  line-height: 1.16;
+  letter-spacing: 0;
 }
 
-.site-shell .pink-travel-map-card p:not(.eyebrow) {
+.site-shell .world-map-feature p:not(.eyebrow) {
+  max-width: 34em;
+  margin: 0;
   color: var(--poetic-text-soft) !important;
+  line-height: 1.85;
+}
+
+.site-shell .world-map-feature__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  margin-top: 24px;
+  border-bottom: 1px solid var(--poetic-accent);
+  color: var(--poetic-accent);
+  font-weight: 800;
+}
+
+.site-shell .world-map-feature__arrow {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  transition: transform 260ms ease, background-color 260ms ease, color 260ms ease;
+}
+
+.site-shell .world-map-feature:hover .world-map-feature__media img {
+  filter: saturate(1.06) contrast(1.02);
+  transform: scale(1.035);
+}
+
+.site-shell .world-map-feature:hover .world-map-feature__arrow {
+  background: var(--poetic-accent);
+  color: #fff;
+  transform: translateX(5px);
 }
 
 .site-shell .personality-grid {
@@ -776,8 +891,23 @@ html.theme-switching aside {
   padding: 32px 24px;
   border: 1px solid var(--poetic-border) !important;
   border-radius: 8px;
-  background: #171a21 !important;
+  background: var(--poetic-surface) !important;
+  color: var(--poetic-text) !important;
   box-shadow: none !important;
+}
+
+.site-shell .pink-about-card h2 {
+  color: var(--poetic-text) !important;
+}
+
+.site-shell .pink-about-card p,
+.site-shell .pink-about-card > span {
+  color: var(--poetic-text-soft) !important;
+}
+
+.site-shell .pink-about-tags span {
+  background: var(--poetic-accent-soft) !important;
+  color: var(--poetic-accent) !important;
 }
 
 .site-shell .pink-about-stack {
@@ -1524,9 +1654,24 @@ html:root .site-shell .guestbook-item:hover {
     grid-template-columns: 1fr;
   }
 
-  .site-shell .pink-travel-map-card {
+  .site-shell .world-map-feature {
     grid-template-columns: 1fr;
-    gap: 26px;
+    gap: 24px;
+    padding: 0;
+  }
+
+  .site-shell .world-map-feature__media {
+    min-height: 0;
+    aspect-ratio: 4 / 3;
+  }
+
+  .site-shell .world-map-feature__copy {
+    max-width: none;
+  }
+
+  .site-shell .world-map-feature h2 {
+    max-width: 12em;
+    font-size: 2.15rem;
   }
 
   .site-shell .pink-guestbook-shell {
@@ -1658,6 +1803,8 @@ html:root .site-shell .guestbook-item:hover {
   .site-shell .pink-guestbook-shell,
   .site-shell .world-sub-main,
   .site-shell .article-layout,
+  .site-shell .world-map-feature__media img,
+  .site-shell .world-map-feature__arrow,
   .assistant-avatar,
   .assistant-typing i {
     animation: none !important;
