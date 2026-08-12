@@ -7,13 +7,15 @@ import Image from "next/image";
 import { ArticleCard } from "@/app/components/article-card";
 import { HomePhotoItem } from "@/app/components/home-photo-item";
 import { SiteFrame } from "@/app/components/site-frame";
+import { StatsBar } from "@/app/components/stats-bar";
+import { SkillsPreview } from "@/app/components/skills-preview";
 import { getLatestPhotos, getPublishedPosts } from "@/lib/content";
 import { getProfileSetting, getSkillsSetting } from "@/lib/settings";
 
 export default async function HomePage() {
   const [posts, photos, profile, skills] = await Promise.all([
-    getPublishedPosts(100),
-    getLatestPhotos(48),
+    getPublishedPosts(4),
+    getLatestPhotos(8),
     getProfileSetting(),
     getSkillsSetting(),
   ]);
@@ -27,9 +29,15 @@ export default async function HomePage() {
     .slice(0, 8);
   const displayName = profile.name || "LQPP";
 
+  // 获取总数统计用于显示
+  const [allPosts, allPhotos] = await Promise.all([
+    getPublishedPosts(999),
+    getLatestPhotos(999),
+  ]);
+
   const stats = [
-    { label: "文章", value: posts.length },
-    { label: "照片", value: photos.length },
+    { label: "文章", value: allPosts.length },
+    { label: "照片", value: allPhotos.length },
     { label: "板块", value: 6 },
   ];
 
@@ -56,12 +64,12 @@ export default async function HomePage() {
         />
         <div className="pink-home-shade" aria-hidden="true" />
         <div className="container pink-home-content">
-        <div className="pink-home-copy">
-          <p className="eyebrow">LQPP / Personal Digital Garden</p>
-          <h1>在代码与远方之间，收藏缓慢发光的日子</h1>
-          <p className="pink-home-status">{profile.status}</p>
-          <p className="pink-home-intro">{profile.intro}</p>
-          <div className="pink-home-actions">
+        <div className="pink-home-copy animate-fade-in-up">
+          <p className="eyebrow animate-fade-in delay-100">LQPP / Personal Digital Garden</p>
+          <h1 className="animate-fade-in-up delay-200">在代码与远方之间，收藏缓慢发光的日子</h1>
+          <p className="pink-home-status animate-fade-in delay-300">{profile.status}</p>
+          <p className="pink-home-intro animate-fade-in delay-400">{profile.intro}</p>
+          <div className="pink-home-actions animate-scale-in delay-500">
             <Link href="/world" className="pink-btn primary">
               走进我的世界
             </Link>
@@ -74,8 +82,8 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="pink-home-profile-bar">
-          <div className="avatar">
+        <div className="pink-home-profile-bar animate-slide-in-right delay-300">
+          <div className="avatar float-animate">
             {profile.avatarUrl ? (
               <img src={profile.avatarUrl} alt={displayName} />
             ) : (
@@ -87,13 +95,7 @@ export default async function HomePage() {
             {profile.tagline ? <span className="tagline">{profile.tagline}</span> : null}
           </div>
           <div className="divider" aria-hidden="true" />
-          <div className="stats">
-            {stats.map((item) => (
-              <span key={item.label}>
-                <strong>{item.value}</strong> {item.label}
-              </span>
-            ))}
-          </div>
+          <StatsBar stats={stats} />
           <div className="divider" aria-hidden="true" />
           <div className="meta-links">
             {profile.githubUrl ? (
@@ -113,7 +115,7 @@ export default async function HomePage() {
           <p>文字、远方与照片，在这里长成一座可以慢慢散步的数字花园。</p>
         </div>
 
-        <div className="pink-module-grid pink-module-grid-4">
+        <div className="pink-module-grid pink-module-grid-4 stagger-children">
           <Link href="/world" className="pink-module">
             <span className="pink-module-kicker">World Map</span>
             <h3>我的世界</h3>
@@ -200,18 +202,7 @@ export default async function HomePage() {
         </div>
         {featuredSkills.length > 0 ? (
           <>
-            <div className="pink-skill-preview">
-              {featuredSkills.map((skill) => (
-                <span key={skill.name} className="pink-skill-chip">
-                  {skill.iconUrl ? (
-                    <img src={skill.iconUrl} alt="" width={18} height={18} loading="lazy" />
-                  ) : (
-                    <span className="pink-skill-dot" aria-hidden="true" />
-                  )}
-                  {skill.name}
-                </span>
-              ))}
-            </div>
+            <SkillsPreview skills={featuredSkills} />
             <div className="pink-skill-more">
               <Link href="/about#skills" className="pink-text-link">
                 查看完整技术栈 →

@@ -2,6 +2,7 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { PoeticPageHero } from "@/app/components/poetic-page-hero";
 import { SiteFrame } from "@/app/components/site-frame";
 import { personality } from "@/data/world";
@@ -41,9 +42,20 @@ export default async function AboutPage() {
       />
 
       <section className="container pink-about-layout">
-        <aside className="pink-about-card">
-          <div className="pink-profile-avatar">
-            {profile.avatarUrl ? <img src={profile.avatarUrl} alt={profile.name} /> : <span>LQ</span>}
+        <aside className="pink-about-card animate-fade-in-up">
+          <div className="pink-profile-avatar float-animate">
+            {profile.avatarUrl ? (
+              <Image
+                src={profile.avatarUrl}
+                alt={profile.name}
+                width={120}
+                height={120}
+                loading="eager"
+                quality={90}
+              />
+            ) : (
+              <span>LQ</span>
+            )}
           </div>
           <h2>{profile.name}</h2>
           <p>{profile.status}</p>

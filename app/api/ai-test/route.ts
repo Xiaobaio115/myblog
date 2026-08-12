@@ -44,7 +44,18 @@ export async function GET(request: Request) {
   const timeout = setTimeout(() => controller.abort(), 60000);
 
   try {
-    const url = `${baseUrl.replace(/\/$/, "")}/chat/completions`;
+    // 规范化 baseUrl：如果只是域名（如 https://new.xkool.cfd），自动加 /v1
+    let normalizedUrl = baseUrl.replace(/\/$/, "");
+    if (!normalizedUrl.includes('/v1') && !normalizedUrl.includes('/chat/completions')) {
+      normalizedUrl = `${normalizedUrl}/v1`;
+    }
+
+    // 如果已包含完整路径，直接使用；否则拼接 /chat/completions
+    const url = normalizedUrl.includes('/chat/completions')
+      ? normalizedUrl
+      : `${normalizedUrl}/chat/completions`;
+
+    console.log("[ai-test] calling AI:", { originalBaseUrl: baseUrl, url, model, keyLen: apiKey?.length || 0 });
 
     const res = await fetch(url, {
       method: "POST",

@@ -1,14 +1,21 @@
-/* eslint-disable @next/next/no-img-element */
-
 import Link from "next/link";
+import Image from "next/image";
 import type { Post } from "@/lib/content";
 
 export function ArticleCard({ post }: { post: Post }) {
   return (
-    <Link href={`/posts/${post.slug}`} className="article-card">
+    <Link href={`/posts/${post.slug}`} className="article-card animate-fade-in-up">
       <div className="article-cover-wrap">
         {post.coverUrl ? (
-          <img src={post.coverUrl} alt={post.title} className="article-cover" />
+          <Image
+            src={post.coverUrl}
+            alt={post.title}
+            className="article-cover"
+            width={800}
+            height={500}
+            loading="lazy"
+            quality={85}
+          />
         ) : (
           <div className="article-cover article-cover-fallback">LQ</div>
         )}
