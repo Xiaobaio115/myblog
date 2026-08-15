@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArticleCard } from "@/app/components/article-card";
 import { PoeticPageHero } from "@/app/components/poetic-page-hero";
 import { SiteFrame } from "@/app/components/site-frame";
+import { ScrollAnimatedList } from "@/app/components/scroll-animated-list";
 import { filterPosts, getAllTags, getPublishedPosts } from "@/lib/content";
 
 type ArticlesPageProps = {
@@ -91,9 +92,11 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
 
           {filteredPosts.length > 0 ? (
             <div className="article-list-stack">
-              {filteredPosts.map((post) => (
-                <ArticleCard key={post._id} post={post} />
-              ))}
+              <ScrollAnimatedList staggerDelay={80}>
+                {filteredPosts.map((post) => (
+                  <ArticleCard key={post._id} post={post} />
+                ))}
+              </ScrollAnimatedList>
             </div>
           ) : (
             <div className="empty-state empty-state-rich">

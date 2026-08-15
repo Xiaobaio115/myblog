@@ -71,10 +71,10 @@ export default async function ProjectsPage() {
       <section id="project-index" className={styles.indexSection}>
         <header className={styles.sectionHead}>
           <div>
-            <span>WORK INDEX</span>
+            <span>SCROLL-DRIVEN ANIMATION · STICKY SCROLLING</span>
             <h2>持续更新中的创作档案</h2>
           </div>
-          <p>从真实页面进入每个项目。</p>
+          <p>滚动浏览项目，左侧索引会停留在视线中，右侧内容逐项展开。</p>
         </header>
 
         <div className={styles.projectGrid}>

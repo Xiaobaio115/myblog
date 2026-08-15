@@ -102,12 +102,16 @@
 }
 
 .sectionHead {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 30px;
-  padding-bottom: 26px;
+  position: sticky;
+  top: 104px;
+  z-index: 2;
+  display: grid;
+  align-self: start;
+  gap: 24px;
+  min-height: 300px;
+  padding: 0 28px 26px 0;
   border-bottom: 1px solid var(--border);
+  background: var(--bg);
 }
 
 .sectionHead > div {
@@ -129,18 +133,35 @@
   letter-spacing: 0;
 }
 
+.sectionHead::after {
+  content: "SCROLL TO EXPLORE";
+  align-self: end;
+  color: var(--text-soft);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
 .sectionHead p {
   margin: 0;
   color: var(--text-soft);
   font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.indexSection {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.34fr) minmax(0, 1fr);
+  align-items: start;
+  column-gap: 64px;
 }
 
 .projectGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 28px;
-  row-gap: 64px;
-  padding-top: 34px;
+  grid-template-columns: minmax(0, 1fr);
+  row-gap: 88px;
+  padding-top: 0;
 }
 
 .project {
@@ -160,6 +181,14 @@
 .projectImage img {
   object-fit: cover;
   transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@supports (animation-timeline: view()) {
+  .projectImage img {
+    animation: projectImageDrift linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 70%;
+  }
 }
 
 .project:hover .projectImage img {
@@ -245,6 +274,11 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes projectImageDrift {
+  from { transform: scale(1.06) translateY(14px); }
+  to { transform: scale(1) translateY(0); }
+}
+
 @supports (animation-timeline: view()) {
   .project {
     animation: projectReveal linear both;
@@ -261,6 +295,11 @@
 
   .heroMeta {
     display: none;
+  }
+
+  .indexSection {
+    grid-template-columns: minmax(180px, 0.3fr) minmax(0, 1fr);
+    column-gap: 36px;
   }
 }
 
@@ -281,6 +320,10 @@
   .indexSection {
     width: calc(100% - 32px);
     max-width: calc(100vw - 32px);
+  }
+
+  .indexSection {
+    display: block;
   }
 
   .heroInner {
@@ -309,9 +352,16 @@
   }
 
   .sectionHead {
+    position: static;
+    min-height: 0;
     align-items: flex-start;
     flex-direction: column;
     gap: 12px;
+    padding: 0 0 20px;
+  }
+
+  .sectionHead::after {
+    display: none;
   }
 
   .sectionHead h2 {
@@ -320,7 +370,7 @@
 
   .projectGrid {
     grid-template-columns: 1fr;
-    row-gap: 46px;
+    row-gap: 52px;
     padding-top: 24px;
   }
 
@@ -340,5 +390,9 @@
   .openIcon,
   .heroLink span {
     transition: none;
+  }
+
+  .projectImage img {
+    animation: none;
   }
 }
