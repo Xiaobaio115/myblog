@@ -6,15 +6,13 @@ import type { Photo } from "@/lib/content";
 type Props = {
   photos: Photo[];
   categories: string[];
-  initialView?: "static" | null;
 };
 
-export function PhotosGalleryClient({ photos, categories, initialView = null }: Props) {
+export function PhotosGalleryClient({ photos, categories }: Props) {
   return (
     <PhotosViewSwitcher
       photos={photos}
       categories={categories}
-      initialView={initialView}
     />
   );
 }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/mongodb";
+import { getDb, isMongoConfigured } from "@/lib/mongodb";
+import { verifyAdminPassword } from "@/lib/admin-session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ async function requireAdmin(request: Request) {
 
   const adminPassword = request.headers.get("x-admin-password");
 
-  if (adminPassword !== process.env.ADMIN_PASSWORD) {
+  if (!verifyAdminPassword(adminPassword)) {
     return NextResponse.json(
       { error: "未授权，后台密码错误" },
       { status: 401 }
@@ -28,7 +29,34 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get("category");
-    const onlyPublic = searchParams.get("public") === "1";
+    const adminHeader = request.headers.get("x-admin-password");
+    const hasAdminHeader = Boolean(adminHeader);
+
+    if (hasAdminHeader && !process.env.ADMIN_PASSWORD) {
+      return NextResponse.json(
+        { error: "服务器未配置 ADMIN_PASSWORD" },
+        { status: 503 }
+      );
+    }
+
+    if (hasAdminHeader && !verifyAdminPassword(adminHeader)) {
+      return NextResponse.json(
+        { error: "未授权，后台密码错误" },
+        { status: 401 }
+      );
+    }
+
+    const isAdmin = hasAdminHeader && verifyAdminPassword(adminHeader);
+
+    if (!isMongoConfigured()) {
+      return isAdmin
+        ? NextResponse.json(
+            { error: "服务器未配置 MONGODB_URI" },
+            { status: 503 }
+          )
+        : NextResponse.json([]);
+    }
+
     const db = await getDb();
     const query: Record<string, unknown> = {};
 
@@ -36,7 +64,7 @@ export async function GET(request: Request) {
       query.category = category;
     }
 
-    if (onlyPublic) {
+    if (!isAdmin || searchParams.get("public") === "1") {
       query.isPrivate = { $ne: true };
     }
 
@@ -71,6 +99,8 @@ export async function POST(request: Request) {
     let pathname = "";
     let caption = "我的照片";
     let category = "日常";
+    let location = "";
+    let date = "";
     let isPrivate = false;
 
     if (contentType.includes("application/json")) {
@@ -79,6 +109,8 @@ export async function POST(request: Request) {
       pathname = String(body.pathname || "").trim();
       caption = String(body.caption || "我的照片").trim();
       category = String(body.category || "日常").trim();
+      location = String(body.location || "").trim();
+      date = String(body.date || "").trim();
       isPrivate = Boolean(body.isPrivate);
     } else {
       const formData = await request.formData();
@@ -86,11 +118,17 @@ export async function POST(request: Request) {
       pathname = String(formData.get("pathname") || "").trim();
       caption = String(formData.get("caption") || "我的照片").trim();
       category = String(formData.get("category") || "日常").trim();
+      location = String(formData.get("location") || "").trim();
+      date = String(formData.get("date") || "").trim();
       isPrivate = String(formData.get("isPrivate") || "") === "true";
     }
 
     if (!url) {
       return NextResponse.json({ error: "缺少图片地址" }, { status: 400 });
+    }
+
+    if (caption.length > 240 || category.length > 80 || location.length > 120 || date.length > 40) {
+      return NextResponse.json({ error: "照片说明、分类、地点或日期过长。" }, { status: 400 });
     }
 
     const now = new Date();
@@ -99,8 +137,9 @@ export async function POST(request: Request) {
       pathname,
       caption,
       category,
+      location,
       isPrivate,
-      date: now.toLocaleDateString("zh-CN"),
+      date: date || now.toLocaleDateString("zh-CN"),
       createdAt: now,
       updatedAt: now,
     };

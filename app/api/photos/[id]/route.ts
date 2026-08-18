@@ -2,6 +2,7 @@ import { del } from "@vercel/blob";
 import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
+import { verifyAdminPassword } from "@/lib/admin-session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +17,7 @@ async function requireAdmin(request: Request) {
 
   const adminPassword = request.headers.get("x-admin-password");
 
-  if (adminPassword !== process.env.ADMIN_PASSWORD) {
+  if (!verifyAdminPassword(adminPassword)) {
     return NextResponse.json(
       { error: "未授权，后台密码错误" },
       { status: 401 }
@@ -59,6 +60,23 @@ export async function PATCH(
 
     if ("category" in body) {
       updates.category = String(body.category || "").trim();
+    }
+
+    if ("location" in body) {
+      updates.location = String(body.location || "").trim();
+    }
+
+    if ("date" in body) {
+      updates.date = String(body.date || "").trim();
+    }
+
+    if (
+      (typeof updates.caption === "string" && updates.caption.length > 240) ||
+      (typeof updates.category === "string" && updates.category.length > 80) ||
+      (typeof updates.location === "string" && updates.location.length > 120) ||
+      (typeof updates.date === "string" && updates.date.length > 40)
+    ) {
+      return NextResponse.json({ error: "照片说明、分类、地点或日期过长。" }, { status: 400 });
     }
 
     if ("isPrivate" in body) {

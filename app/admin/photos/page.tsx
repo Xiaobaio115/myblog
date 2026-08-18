@@ -2,7 +2,9 @@
 "use client";
 
 import { upload } from "@vercel/blob/client";
-import { startTransition, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { adminFetch, getAdminPassword } from "@/lib/admin-api";
+import styles from "./admin-photos.module.css";
 
 type Photo = {
   _id: string;
@@ -10,6 +12,8 @@ type Photo = {
   pathname?: string;
   caption: string;
   category: string;
+  location?: string;
+  date?: string;
   isPrivate?: boolean;
   showIn3d?: boolean;
 };
@@ -20,33 +24,23 @@ const THREE_D_FILTER = "3D 展示";
 const PRIVATE_FILTER = "私密";
 const UNCATEGORIZED = "未分类";
 
-async function parseJsonSafely(response: Response) {
-  const text = await response.text();
-
-  if (!text.trim()) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(text) as Record<string, unknown>;
-  } catch {
-    return { error: text };
-  }
-}
-
 export default function AdminPhotosPage() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [caption, setCaption] = useState("");
   const [category, setCategory] = useState("日常");
+  const [location, setLocation] = useState("");
+  const [photoDate, setPhotoDate] = useState("");
   const [customCategory, setCustomCategory] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [isPrivate, setIsPrivate] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [loadingPhotos, setLoadingPhotos] = useState(true);
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState("");
   const [busyPhotoId, setBusyPhotoId] = useState("");
   const [activeFilter, setActiveFilter] = useState<string>(ALL_FILTER);
+  const [photoDrafts, setPhotoDrafts] = useState<Record<string, { caption: string; category: string; location: string; date: string }>>({});
 
   const categories = useMemo(() => {
     const fromPhotos = photos.map((photo) => photo.category).filter(Boolean);
@@ -86,55 +80,37 @@ export default function AdminPhotosPage() {
     };
   }, [previews]);
 
-  async function loadPhotos() {
-    const response = await fetch("/api/photos", { cache: "no-store" });
-
-    if (!response.ok) {
-      const data = await parseJsonSafely(response);
-      throw new Error(
-        typeof data?.error === "string" ? data.error : "读取照片失败。"
-      );
+  const loadPhotos = useCallback(async () => {
+    setLoadingPhotos(true);
+    try {
+      const nextPhotos = await adminFetch<Photo[]>("/api/photos", {
+        fallbackError: "读取照片失败。",
+      });
+      setPhotos(Array.isArray(nextPhotos) ? nextPhotos : []);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "读取照片失败。");
+    } finally {
+      setLoadingPhotos(false);
     }
-
-    setPhotos((await response.json()) as Photo[]);
-  }
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void (async () => {
-      try {
-        const response = await fetch("/api/photos", { cache: "no-store" });
-
-        if (!response.ok) {
-          const data = await parseJsonSafely(response);
-          throw new Error(
-            typeof data?.error === "string" ? data.error : "读取照片失败。"
-          );
-        }
-
-        const nextPhotos = (await response.json()) as Photo[];
-
-        if (!cancelled) {
-          startTransition(() => {
-            setPhotos(nextPhotos);
-          });
-        }
-      } catch (error) {
-        if (!cancelled) {
-          startTransition(() => {
-            setMessage(error instanceof Error ? error.message : "读取照片失败。");
-          });
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
+  useEffect(() => {
+    queueMicrotask(() => void loadPhotos());
+  }, [loadPhotos]);
+
   function handleFileChange(nextFiles: File[]) {
+    const invalidFile = nextFiles.find((file) => !file.type.startsWith("image/"));
+    const oversizedFile = nextFiles.find((file) => file.size > 20 * 1024 * 1024);
+
+    if (invalidFile) {
+      setMessage(`“${invalidFile.name}”不是受支持的图片文件。`);
+      return;
+    }
+    if (oversizedFile) {
+      setMessage(`“${oversizedFile.name}”超过 20 MB，请压缩后上传。`);
+      return;
+    }
+
     previews.forEach((preview) => URL.revokeObjectURL(preview));
     setFiles(nextFiles);
     setPreviews(nextFiles.map((nextFile) => URL.createObjectURL(nextFile)));
@@ -154,7 +130,7 @@ export default function AdminPhotosPage() {
       return;
     }
 
-    const password = localStorage.getItem("admin_password") || "";
+    const password = getAdminPassword();
 
     if (!password) {
       setMessage("后台密码已丢失，请重新进入后台。");
@@ -182,13 +158,10 @@ export default function AdminPhotosPage() {
           },
         });
 
-        const metaResponse = await fetch("/api/photos", {
+        await adminFetch("/api/photos", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-admin-password": password,
-          },
-          body: JSON.stringify({
+          password,
+          json: {
             url: uploaded.url,
             pathname: uploaded.pathname,
             caption:
@@ -197,22 +170,18 @@ export default function AdminPhotosPage() {
                 ? currentFile.name.replace(/\.[^/.]+$/, "")
                 : "我的照片"),
             category: finalCategory,
+            location: location.trim(),
+            date: photoDate.trim(),
             isPrivate,
-          }),
+          },
+          fallbackError: "保存照片信息失败。",
         });
-        const metaData = await parseJsonSafely(metaResponse);
-
-        if (!metaResponse.ok) {
-          throw new Error(
-            typeof metaData?.error === "string"
-              ? metaData.error
-              : "保存照片信息失败。"
-          );
-        }
       }
 
       setCaption("");
       setCategory("日常");
+      setLocation("");
+      setPhotoDate("");
       setCustomCategory("");
       setIsPrivate(false);
       handleFileChange([]);
@@ -233,7 +202,7 @@ export default function AdminPhotosPage() {
       return;
     }
 
-    const password = localStorage.getItem("admin_password") || "";
+    const password = getAdminPassword();
 
     if (!password) {
       setMessage("后台密码已丢失，请重新进入后台。");
@@ -244,19 +213,11 @@ export default function AdminPhotosPage() {
     setMessage("");
 
     try {
-      const response = await fetch(`/api/photos/${photo._id}`, {
+      await adminFetch(`/api/photos/${photo._id}`, {
         method: "DELETE",
-        headers: {
-          "x-admin-password": password,
-        },
+        password,
+        fallbackError: "删除照片失败。",
       });
-      const data = await parseJsonSafely(response);
-
-      if (!response.ok) {
-        throw new Error(
-          typeof data?.error === "string" ? data.error : "删除照片失败。"
-        );
-      }
 
       setPhotos((current) => current.filter((item) => item._id !== photo._id));
       setMessage("照片已删除。");
@@ -268,7 +229,7 @@ export default function AdminPhotosPage() {
   }
 
   async function togglePrivate(photo: Photo) {
-    const password = localStorage.getItem("admin_password") || "";
+    const password = getAdminPassword();
 
     if (!password) {
       setMessage("后台密码已丢失，请重新进入后台。");
@@ -279,23 +240,14 @@ export default function AdminPhotosPage() {
     setMessage("");
 
     try {
-      const response = await fetch(`/api/photos/${photo._id}`, {
+      await adminFetch(`/api/photos/${photo._id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-password": password,
-        },
-        body: JSON.stringify({
+        password,
+        json: {
           isPrivate: !photo.isPrivate,
-        }),
+        },
+        fallbackError: "更新可见性失败。",
       });
-      const data = await parseJsonSafely(response);
-
-      if (!response.ok) {
-        throw new Error(
-          typeof data?.error === "string" ? data.error : "更新可见性失败。"
-        );
-      }
 
       setPhotos((current) =>
         current.map((item) =>
@@ -304,6 +256,7 @@ export default function AdminPhotosPage() {
             : item
         )
       );
+      setMessage(photo.isPrivate ? "照片已设为公开。" : "照片已设为私密。");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "更新可见性失败。");
     } finally {
@@ -312,7 +265,7 @@ export default function AdminPhotosPage() {
   }
 
   async function toggle3d(photo: Photo) {
-    const password = localStorage.getItem("admin_password") || "";
+    const password = getAdminPassword();
 
     if (!password) {
       setMessage("后台密码已丢失，请重新进入后台。");
@@ -323,23 +276,14 @@ export default function AdminPhotosPage() {
     setMessage("");
 
     try {
-      const response = await fetch(`/api/photos/${photo._id}`, {
+      await adminFetch(`/api/photos/${photo._id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-password": password,
-        },
-        body: JSON.stringify({
+        password,
+        json: {
           showIn3d: !photo.showIn3d,
-        }),
+        },
+        fallbackError: "更新 3D 展示状态失败。",
       });
-      const data = await parseJsonSafely(response);
-
-      if (!response.ok) {
-        throw new Error(
-          typeof data?.error === "string" ? data.error : "更新 3D 展示状态失败。"
-        );
-      }
 
       setPhotos((current) =>
         current.map((item) =>
@@ -348,8 +292,52 @@ export default function AdminPhotosPage() {
             : item
         )
       );
+      setMessage(photo.showIn3d ? "照片已移出 3D 相册。" : "照片已加入 3D 相册。");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "更新 3D 展示状态失败。");
+    } finally {
+      setBusyPhotoId("");
+    }
+  }
+
+  async function updatePhotoMetadata(photo: Photo) {
+    const draft = photoDrafts[photo._id] || {
+      caption: photo.caption || "",
+      category: photo.category || "",
+      location: photo.location || "",
+      date: photo.date || "",
+    };
+    const nextCaption = draft.caption.trim();
+    const nextCategory = draft.category.trim();
+    const nextLocation = draft.location.trim();
+    const nextDate = draft.date.trim();
+
+    if (!nextCategory) {
+      setMessage("照片分类不能为空。");
+      return;
+    }
+
+    setBusyPhotoId(photo._id);
+    setMessage("");
+    try {
+      await adminFetch(`/api/photos/${photo._id}`, {
+        method: "PATCH",
+        json: { caption: nextCaption, category: nextCategory, location: nextLocation, date: nextDate },
+        fallbackError: "更新照片信息失败。",
+      });
+      setPhotos((current) => current.map((item) => (
+        item._id === photo._id
+          ? { ...item, caption: nextCaption, category: nextCategory, location: nextLocation, date: nextDate }
+          : item
+      )));
+      setPhotoDrafts((current) => {
+        const next = { ...current };
+        delete next[photo._id];
+        return next;
+      });
+      setMessage("照片说明、分类、地点和日期已保存。");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "更新照片信息失败。");
     } finally {
       setBusyPhotoId("");
     }
@@ -370,7 +358,7 @@ export default function AdminPhotosPage() {
         <div className="photo-admin-body">
           <div className="photo-admin-meta">
             <strong>{photo.caption || "未命名图片"}</strong>
-            <span>{photo.category || UNCATEGORIZED}</span>
+            <span>{photo.category || UNCATEGORIZED}{photo.location ? ` · ${photo.location}` : ""}</span>
           </div>
           <div className="photo-admin-tags">
             <span className={`post-visit-chip ${photo.isPrivate ? "post-visit-chip-muted" : ""}`}>
@@ -378,6 +366,90 @@ export default function AdminPhotosPage() {
             </span>
             {photo.showIn3d ? <span className="post-visit-chip">3D 展示中</span> : null}
           </div>
+          <details className={styles.metadataEditor}>
+            <summary>编辑说明、分类与地点</summary>
+            <div className={styles.metadataFields}>
+              <label>
+                <span>照片说明</span>
+                <input
+                  className="admin-input"
+                  value={photoDrafts[photo._id]?.caption ?? photo.caption ?? ""}
+                  onChange={(event) => setPhotoDrafts((current) => ({
+                    ...current,
+                    [photo._id]: {
+                      caption: event.target.value,
+                      category: current[photo._id]?.category ?? photo.category ?? "",
+                      location: current[photo._id]?.location ?? photo.location ?? "",
+                      date: current[photo._id]?.date ?? photo.date ?? "",
+                    },
+                  }))}
+                  disabled={busy || uploading}
+                />
+              </label>
+              <label>
+                <span>分类</span>
+                <input
+                  className="admin-input"
+                  list="photo-category-options"
+                  value={photoDrafts[photo._id]?.category ?? photo.category ?? ""}
+                  onChange={(event) => setPhotoDrafts((current) => ({
+                    ...current,
+                    [photo._id]: {
+                      caption: current[photo._id]?.caption ?? photo.caption ?? "",
+                      category: event.target.value,
+                      location: current[photo._id]?.location ?? photo.location ?? "",
+                      date: current[photo._id]?.date ?? photo.date ?? "",
+                    },
+                  }))}
+                  disabled={busy || uploading}
+                />
+              </label>
+              <label>
+                <span>地点</span>
+                <input
+                  className="admin-input"
+                  placeholder="例如：海口 / 三亚 / 家"
+                  value={photoDrafts[photo._id]?.location ?? photo.location ?? ""}
+                  onChange={(event) => setPhotoDrafts((current) => ({
+                    ...current,
+                    [photo._id]: {
+                      caption: current[photo._id]?.caption ?? photo.caption ?? "",
+                      category: current[photo._id]?.category ?? photo.category ?? "",
+                      location: event.target.value,
+                      date: current[photo._id]?.date ?? photo.date ?? "",
+                    },
+                  }))}
+                  disabled={busy || uploading}
+                />
+              </label>
+              <label>
+                <span>拍摄日期</span>
+                <input
+                  className="admin-input"
+                  placeholder="例如：2026-08-18"
+                  value={photoDrafts[photo._id]?.date ?? photo.date ?? ""}
+                  onChange={(event) => setPhotoDrafts((current) => ({
+                    ...current,
+                    [photo._id]: {
+                      caption: current[photo._id]?.caption ?? photo.caption ?? "",
+                      category: current[photo._id]?.category ?? photo.category ?? "",
+                      location: current[photo._id]?.location ?? photo.location ?? "",
+                      date: event.target.value,
+                    },
+                  }))}
+                  disabled={busy || uploading}
+                />
+              </label>
+              <button
+                type="button"
+                className="secondary-link"
+                onClick={() => void updatePhotoMetadata(photo)}
+                disabled={busy || uploading || !photoDrafts[photo._id]}
+              >
+                {busy ? "保存中..." : "保存信息"}
+              </button>
+            </div>
+          </details>
           <div className="photo-admin-actions">
             <button
               type="button"
@@ -417,8 +489,8 @@ export default function AdminPhotosPage() {
           <h1>相册管理</h1>
           <p>上传照片、设置分类、控制公开状态，并挑选进入 3D 相册的内容。</p>
         </div>
-        <button type="button" className="secondary-link" onClick={() => void loadPhotos()}>
-          刷新图片库
+        <button type="button" className="secondary-link" onClick={() => void loadPhotos()} disabled={loadingPhotos}>
+          {loadingPhotos ? "读取中..." : "刷新图片库"}
         </button>
       </div>
 
@@ -441,7 +513,11 @@ export default function AdminPhotosPage() {
         </div>
       </section>
 
-      {message ? <div className="status-banner">{message}</div> : null}
+      {message ? <div className="status-banner" role="status" aria-live="polite">{message}</div> : null}
+
+      <datalist id="photo-category-options">
+        {categories.map((item) => <option key={item} value={item} />)}
+      </datalist>
 
       <section className="photo-admin-layout">
         <div className="photo-upload-card">
@@ -489,6 +565,23 @@ export default function AdminPhotosPage() {
               placeholder="图片说明，可选"
               value={caption}
               onChange={(event) => setCaption(event.target.value)}
+              disabled={uploading}
+            />
+
+            <input
+              className="admin-input"
+              placeholder="地点，可选，例如：海口"
+              value={location}
+              onChange={(event) => setLocation(event.target.value)}
+              disabled={uploading}
+            />
+
+            <input
+              className="admin-input"
+              type="date"
+              aria-label="拍摄日期"
+              value={photoDate}
+              onChange={(event) => setPhotoDate(event.target.value)}
               disabled={uploading}
             />
 
@@ -562,7 +655,9 @@ export default function AdminPhotosPage() {
             </div>
           </div>
 
-          {photos.length > 0 ? (
+          {loadingPhotos && photos.length === 0 ? (
+            <div className="photo-library-empty" role="status">正在读取图片库...</div>
+          ) : photos.length > 0 ? (
             <>
               <div className="photo-library-filters">
                 {filterTabs.map((tab) => (

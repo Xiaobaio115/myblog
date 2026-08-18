@@ -28,9 +28,10 @@ export default async function ThreeDPhotosPage() {
     result = [];
   }
 
+  const hasExplicitSelection = result.some((photo) => Object.prototype.hasOwnProperty.call(photo, "showIn3d"));
   const selectedCount = result.filter((photo) => Boolean(photo.showIn3d)).length;
   const selected =
-    selectedCount > 0
+    selectedCount > 0 || hasExplicitSelection
       ? result.filter((photo) => Boolean(photo.showIn3d))
       : result;
 

@@ -5,13 +5,19 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import type { TravelMapData } from "@/data/travel-map";
 import { CITY_COORDS, PROV_COORDS } from "@/data/travel-map";
+import { adminFetch } from "@/lib/admin-api";
 import styles from "./page.module.css";
+
+function cloneMapData(value: TravelMapData): TravelMapData {
+  return JSON.parse(JSON.stringify(value)) as TravelMapData;
+}
 
 export default function AdminTravelMapPage() {
   const [data, setData] = useState<TravelMapData>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  const [loadError, setLoadError] = useState("");
   const [expandedProv, setExpandedProv] = useState<string | null>(null);
 
   // 新增省份 form
@@ -27,15 +33,18 @@ export default function AdminTravelMapPage() {
   // 新增图片
   const [uploadingFor, setUploadingFor] = useState<{ provKey: string; placeIdx: number } | null>(null);
 
-  const password = typeof window !== "undefined" ? localStorage.getItem("admin_password") || "" : "";
-
   const fetchData = useCallback(async () => {
+    setLoadError("");
     try {
-      const res = await fetch("/api/travel-map");
-      const json = await res.json();
+      const json = await adminFetch<{ data?: TravelMapData }>("/api/travel-map", {
+        auth: false,
+        fallbackError: "读取旅行地图失败。",
+      });
       if (json.data) setData(json.data);
     } catch (e) {
-      console.error(e);
+      const message = e instanceof Error ? e.message : "读取旅行地图失败。";
+      setLoadError(message);
+      setMsg(message);
     } finally {
       setLoading(false);
     }
@@ -46,15 +55,15 @@ export default function AdminTravelMapPage() {
   }, [fetchData]);
 
   const save = async (newData: TravelMapData) => {
+    if (saving) return;
     setSaving(true);
     setMsg("");
     try {
-      const res = await fetch("/api/travel-map", {
+      const json = await adminFetch<{ success?: boolean; error?: string }>("/api/travel-map", {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "x-admin-password": password },
-        body: JSON.stringify({ data: newData }),
+        json: { data: newData },
+        fallbackError: "保存旅行地图失败。",
       });
-      const json = await res.json();
       if (json.success) {
         setMsg("保存成功！");
         setData(newData);
@@ -62,7 +71,7 @@ export default function AdminTravelMapPage() {
         setMsg(`保存失败: ${json.error}`);
       }
     } catch (e) {
-      setMsg(`保存出错: ${e}`);
+      setMsg(e instanceof Error ? e.message : "保存旅行地图失败。");
     } finally {
       setSaving(false);
     }
@@ -78,7 +87,7 @@ export default function AdminTravelMapPage() {
       setMsg("该省份已存在");
       return;
     }
-    const newData = { ...data };
+    const newData = cloneMapData(data);
     newData[newProvKey] = {
       shortName: newProvShort,
       desc: newProvDesc || `${newProvShort}的旅行记忆`,
@@ -93,7 +102,7 @@ export default function AdminTravelMapPage() {
   // ---- 删除省份 ----
   const deleteProvince = (provKey: string) => {
     if (!confirm(`确认删除「${data[provKey]?.shortName || provKey}」及其所有地点？`)) return;
-    const newData = { ...data };
+    const newData = cloneMapData(data);
     delete newData[provKey];
     save(newData);
     if (expandedProv === provKey) setExpandedProv(null);
@@ -105,7 +114,7 @@ export default function AdminTravelMapPage() {
       setMsg("请选择省份并填写地点名称");
       return;
     }
-    const newData = { ...data };
+    const newData = cloneMapData(data);
     const prov = newData[newPlaceProv];
     if (!prov) return;
     prov.places.push({
@@ -123,7 +132,7 @@ export default function AdminTravelMapPage() {
     const place = data[provKey]?.places[placeIdx];
     if (!place) return;
     if (!confirm(`确认删除地点「${place.name}」？`)) return;
-    const newData = { ...data };
+    const newData = cloneMapData(data);
     newData[provKey].places.splice(placeIdx, 1);
     save(newData);
   };
@@ -134,14 +143,13 @@ export default function AdminTravelMapPage() {
     const formData = new FormData();
     formData.append("file", file);
     try {
-      const res = await fetch("/api/upload", {
+      const json = await adminFetch<{ url?: string; error?: string }>("/api/upload", {
         method: "POST",
-        headers: { "x-admin-password": password },
         body: formData,
+        fallbackError: "上传旅行照片失败。",
       });
-      const json = await res.json();
       if (json.url) {
-        const newData = { ...data };
+        const newData = cloneMapData(data);
         newData[provKey].places[placeIdx].imgs.push(json.url);
         save(newData);
         setMsg("图片上传成功");
@@ -149,7 +157,7 @@ export default function AdminTravelMapPage() {
         setMsg(`上传失败: ${json.error}`);
       }
     } catch (e) {
-      setMsg(`上传出错: ${e}`);
+      setMsg(e instanceof Error ? e.message : "上传旅行照片失败。");
     } finally {
       setUploadingFor(null);
     }
@@ -158,28 +166,28 @@ export default function AdminTravelMapPage() {
   // ---- 添加外部图片链接 ----
   const addImageUrl = (provKey: string, placeIdx: number, url: string) => {
     if (!url.trim()) return;
-    const newData = { ...data };
+    const newData = cloneMapData(data);
     newData[provKey].places[placeIdx].imgs.push(url);
     save(newData);
   };
 
   // ---- 更新地点描述 ----
   const updatePlaceDesc = (provKey: string, placeIdx: number, desc: string) => {
-    const newData = { ...data };
+    const newData = cloneMapData(data);
     newData[provKey].places[placeIdx].desc = desc;
     save(newData);
   };
 
   // ---- 更新省份描述 ----
   const updateProvDesc = (provKey: string, desc: string) => {
-    const newData = { ...data };
+    const newData = cloneMapData(data);
     newData[provKey].desc = desc;
     save(newData);
   };
 
   // ---- 删除图片 ----
   const deleteImage = (provKey: string, placeIdx: number, imgIdx: number) => {
-    const newData = { ...data };
+    const newData = cloneMapData(data);
     newData[provKey].places[placeIdx].imgs.splice(imgIdx, 1);
     save(newData);
   };
@@ -187,7 +195,7 @@ export default function AdminTravelMapPage() {
   // ---- 省份列表键
   const provKeys = Object.keys(PROV_COORDS);
 
-  if (loading) return <div className="admin-page-head"><p>加载中...</p></div>;
+  if (loading) return <div className="admin-page-head" role="status"><p>加载中...</p></div>;
 
   return (
     <main className={`admin-dashboard ${styles.page}`}>
@@ -203,10 +211,11 @@ export default function AdminTravelMapPage() {
       </div>
 
       {msg && (
-        <div className={`${styles.message} ${msg.includes("成功") ? styles.success : styles.error}`}>
+        <div role="status" className={`${styles.message} ${msg.includes("成功") ? styles.success : styles.error}`}>
           {msg}
         </div>
       )}
+      {loadError ? <button type="button" className="secondary-link" onClick={() => void fetchData()}>重新读取地图</button> : null}
 
       <div className={styles.createGrid}>
       <section className={styles.createSection}>

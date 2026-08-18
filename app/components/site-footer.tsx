@@ -22,6 +22,7 @@ export function SiteFooter() {
             <strong>快速导航</strong>
             <Link href="/">首页</Link>
             <Link href="/articles">文章</Link>
+            <Link href="/series">系列</Link>
             <Link href="/photos">相册</Link>
             <Link href="/world">我的世界</Link>
             <Link href="/about">关于我</Link>

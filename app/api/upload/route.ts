@@ -1,5 +1,6 @@
 import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
+import { verifyAdminPassword } from "@/lib/admin-session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (adminPassword !== process.env.ADMIN_PASSWORD) {
+    if (!verifyAdminPassword(adminPassword)) {
       return NextResponse.json(
         { error: "未授权，后台密码错误" },
         { status: 401 }

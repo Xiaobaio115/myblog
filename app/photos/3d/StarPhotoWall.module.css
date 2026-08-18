@@ -6,6 +6,65 @@
   color: #fff;
 }
 
+.hud {
+  position: fixed;
+  top: 86px;
+  left: clamp(18px, 4vw, 58px);
+  z-index: 32;
+  display: flex;
+  align-items: flex-end;
+  gap: 24px;
+  color: #fff;
+  pointer-events: none;
+}
+
+.hud > div {
+  display: grid;
+  gap: 3px;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.72);
+}
+
+.hud span,
+.emptyState > span {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+}
+
+.hud strong {
+  font-family: Georgia, "Noto Serif SC", serif;
+  font-size: clamp(1.55rem, 3vw, 2.5rem);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.hud small {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.74rem;
+}
+
+.hud button {
+  min-height: 38px;
+  padding: 0 15px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(5, 5, 8, 0.45);
+  color: rgba(255, 255, 255, 0.82);
+  font: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+  pointer-events: auto;
+  backdrop-filter: blur(12px);
+}
+
+.hud button:hover,
+.hud button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.54);
+  color: #fff;
+  outline: none;
+}
+
 .canvas {
   position: absolute;
   inset: 0;
@@ -21,6 +80,8 @@
   z-index: 2;
   perspective: 1400px;
   cursor: grab;
+  touch-action: none;
+  overscroll-behavior: contain;
 }
 
 .scene:active {
@@ -47,7 +108,7 @@
   top: 50%;
   margin-left: -74px;
   margin-top: -53px;
-  object-fit: contain;
+  padding: 0;
   user-select: none;
   -webkit-user-drag: none;
   cursor: pointer;
@@ -60,6 +121,43 @@
   z-index: 5;
   transform-origin: center center;
   transition: transform 0.2s ease;
+}
+
+.photoCard img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+.photoFallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px;
+  color: rgba(255, 255, 255, 0.72);
+  background:
+    radial-gradient(circle at 70% 24%, rgba(255,255,255,0.12), transparent 28%),
+    #101014;
+}
+
+.photoFallback b {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.photoFallback small {
+  width: 100%;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.42);
+  font-size: 0.6rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .photoCard:hover {
@@ -108,6 +206,47 @@
   max-width: 90vw;
   text-align: center;
   line-height: 1.4;
+}
+
+.emptyState {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 28;
+  width: min(440px, calc(100vw - 40px));
+  padding: 30px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(6, 6, 9, 0.74);
+  color: #fff;
+  text-align: center;
+  backdrop-filter: blur(18px);
+}
+
+.emptyState strong {
+  display: block;
+  margin-top: 12px;
+  font-family: Georgia, "Noto Serif SC", serif;
+  font-size: 1.45rem;
+  font-weight: 500;
+}
+
+.emptyState p {
+  margin: 10px 0 20px;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.86rem;
+  line-height: 1.7;
+}
+
+.emptyState a {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  padding: 0 18px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  color: #fff;
+  font-size: 0.82rem;
+  text-decoration: none;
 }
 
 .debugStrip {
@@ -178,6 +317,7 @@
   gap: 14px;
   min-width: 0;
   max-height: calc(100vh - 64px);
+  touch-action: pan-y;
 }
 
 .lightboxStage img {
@@ -186,6 +326,17 @@
   object-fit: contain;
   border-radius: 16px;
   box-shadow: 0 0 44px rgba(255, 255, 255, 0.18);
+}
+
+.lightboxFallback {
+  display: grid;
+  width: min(720px, 70vw);
+  min-height: min(480px, 52vh);
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.58);
+  background: #101014;
+  font-size: 0.86rem;
 }
 
 .caption {
@@ -359,6 +510,34 @@
   color: #fff;
 }
 
+.close:focus-visible,
+.lightboxNav:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.lightboxNav {
+  position: fixed;
+  top: 50%;
+  z-index: 108;
+  display: grid;
+  width: 44px;
+  height: 54px;
+  padding: 0;
+  transform: translateY(-50%);
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 50%;
+  background: rgba(8, 8, 10, 0.62);
+  color: #fff;
+  font: 300 2rem/1 Georgia, serif;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+}
+
+.previous { left: 18px; }
+.next { right: 18px; }
+
 @keyframes spinHeart {
   0% {
     transform: rotateY(0deg) rotateX(15deg);
@@ -409,6 +588,16 @@
     font-size: 0.95rem;
   }
 
+  .lightboxNav {
+    position: absolute;
+    top: 30vh;
+    width: 40px;
+    height: 48px;
+  }
+
+  .previous { left: 8px; }
+  .next { right: 8px; }
+
   .commentForm input,
   .commentForm textarea {
     font-size: 16px; /* Prevent zoom on iOS */
@@ -416,6 +605,26 @@
 }
 
 @media (max-width: 700px) {
+  .hud {
+    top: 76px;
+    left: 16px;
+    right: 16px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .hud strong {
+    font-size: 1.45rem;
+  }
+
+  .hud small {
+    display: none;
+  }
+
+  .hud button {
+    min-height: 42px;
+  }
+
   .scene {
     perspective: 1200px;
   }
@@ -440,6 +649,17 @@
     width: 36px;
     height: 36px;
     font-size: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heart {
+    animation: none;
+  }
+
+  .photoCard,
+  .hud button {
+    transition: none;
   }
 }
 

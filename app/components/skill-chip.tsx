@@ -21,6 +21,8 @@ export function SkillChip({ name, iconUrl }: SkillChipProps) {
       }}
     >
       {iconUrl ? (
+        // Skill icons are user-managed and may be hosted on arbitrary domains.
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           src={iconUrl}
           alt=""

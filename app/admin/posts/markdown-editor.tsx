@@ -2,6 +2,7 @@
 
 import { marked } from "marked";
 import { useMemo, useRef, useState } from "react";
+import { adminFetch, getAdminPassword } from "@/lib/admin-api";
 
 type MarkdownEditorProps = {
   value: string;
@@ -17,20 +18,6 @@ const TEXT_COLORS = [
   { label: "天蓝", className: "md-color-blue", color: "#0284c7" },
   { label: "香芋", className: "md-color-purple", color: "#9333ea" },
 ] as const;
-
-async function parseJsonSafely(response: Response) {
-  const text = await response.text();
-
-  if (!text.trim()) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(text) as Record<string, unknown>;
-  } catch {
-    return { error: text };
-  }
-}
 
 export function MarkdownEditor({
   value,
@@ -132,7 +119,7 @@ export function MarkdownEditor({
       return;
     }
 
-    const password = localStorage.getItem("admin_password") || "";
+    const password = getAdminPassword();
 
     if (!password) {
       setMessage("后台密码已丢失，请重新进入后台。");
@@ -146,21 +133,12 @@ export function MarkdownEditor({
     setMessage("");
 
     try {
-      const response = await fetch("/api/upload", {
+      const data = await adminFetch<{ url?: string }>("/api/upload", {
         method: "POST",
-        headers: {
-          "x-admin-password": password,
-        },
+        password,
         body: formData,
+        fallbackError: "正文图片上传失败。",
       });
-
-      const data = await parseJsonSafely(response);
-
-      if (!response.ok) {
-        throw new Error(
-          typeof data?.error === "string" ? data.error : "正文图片上传失败。"
-        );
-      }
 
       const imageUrl = typeof data?.url === "string" ? data.url : "";
 

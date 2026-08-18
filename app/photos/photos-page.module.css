@@ -1,0 +1,20 @@
+.intro { width: min(1220px, calc(100% - 2rem)); margin: 0 auto; padding: clamp(1.5rem, 3vw, 2.75rem) 0 clamp(.75rem, 1.5vw, 1.25rem); display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, 310px); align-items: end; gap: .65rem 3rem; }
+.introTopline { grid-column: 1 / -1; display: flex; align-items: center; gap: .8rem; color: #d85f91; font-size: .7rem; letter-spacing: .18em; line-height: 1; text-transform: uppercase; }
+.introRule { display: block; width: min(120px, 14vw); height: 1px; background: currentColor; opacity: .48; }
+.introCopy h1 { margin: 0; max-width: 12ch; font-family: Georgia, "Noto Serif SC", serif; font-size: clamp(2.5rem, 4.2vw, 3.75rem); font-weight: 500; line-height: 1; letter-spacing: 0; }
+.introCopy p { max-width: 30rem; margin: .7rem 0 0; color: color-mix(in srgb, currentColor 62%, transparent); line-height: 1.65; }
+.introAside { justify-self: end; max-width: 18rem; padding-bottom: .25rem; border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent); }
+.introIndex { color: color-mix(in srgb, currentColor 48%, transparent); font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; }
+.introAside p { margin: .7rem 0 .8rem; color: color-mix(in srgb, currentColor 58%, transparent); line-height: 1.7; }
+.empty { width: min(900px, calc(100% - 2rem)); margin: 0 auto; padding: 8rem 0; text-align: center; }
+.empty > span { color: #e977aa; font-size: 1.6rem; }
+.empty h2 { font-family: Georgia, "Noto Serif SC", serif; font-size: 2rem; }
+.empty p { color: color-mix(in srgb, currentColor 60%, transparent); }
+.emptyLink { display: inline-block; margin-top: 1.1rem; padding-bottom: .3rem; border-bottom: 1px solid color-mix(in srgb, currentColor 40%, transparent); color: inherit; text-decoration: none; }
+.emptyLink:hover, .emptyLink:focus-visible { color: var(--editorial-accent, #d85f91); border-bottom-color: currentColor; outline: none; }
+@media (max-width: 720px) {
+  .intro { grid-template-columns: 1fr; gap: .75rem; padding-top: 1.25rem; }
+  .introCopy h1 { max-width: none; font-size: clamp(2.25rem, 10vw, 2.65rem); }
+  .introCopy p { margin-top: .55rem; }
+  .introAside { display: none; }
+}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { adminFetch } from "@/lib/admin-api";
 
 type GuestbookMsg = {
   _id: string;
@@ -26,66 +27,77 @@ function formatDate(value: string) {
 }
 
 export default function AdminGuestbookPage() {
-  const [pw] = useState(() =>
-    typeof window === "undefined" ? "" : localStorage.getItem("admin_password") || ""
-  );
   const [msgs, setMsgs] = useState<GuestbookMsg[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState("");
+  const [busyId, setBusyId] = useState("");
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const load = useCallback(async (password: string) => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/guestbook", {
-        headers: { "x-admin-password": password },
+      const data = await adminFetch<GuestbookMsg[]>("/api/guestbook", {
+        fallbackError: "读取留言失败。",
       });
-      const data = await res.json();
       setMsgs(Array.isArray(data) ? data : []);
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "读取留言失败。");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (pw) queueMicrotask(() => load(pw));
-  }, [load, pw]);
+    queueMicrotask(() => void load());
+  }, [load]);
 
   function showToast(message: string) {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast(message);
-    setTimeout(() => setToast(""), 2500);
+    toastTimer.current = setTimeout(() => setToast(""), 2500);
   }
 
-  async function toggleApprove(id: string, current: boolean) {
-    const res = await fetch("/api/guestbook", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", "x-admin-password": pw },
-      body: JSON.stringify({ id, approved: !current }),
-    });
+  useEffect(() => () => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+  }, []);
 
-    if (res.ok) {
+  async function toggleApprove(id: string, current: boolean) {
+    if (busyId) return;
+    setBusyId(id);
+    try {
+      await adminFetch("/api/guestbook", {
+        method: "PATCH",
+        json: { id, approved: !current },
+        fallbackError: "审核操作失败。",
+      });
       setMsgs((prev) => prev.map((item) => (
         item._id === id ? { ...item, approved: !current } : item
       )));
       showToast(!current ? "已通过审核" : "已取消发布");
-    } else {
-      showToast("操作失败");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "操作失败");
+    } finally {
+      setBusyId("");
     }
   }
 
   async function deleteMsg(id: string) {
+    if (busyId) return;
     if (!confirm("确定要删除这条留言吗？")) return;
 
-    const res = await fetch("/api/guestbook", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json", "x-admin-password": pw },
-      body: JSON.stringify({ id }),
-    });
-
-    if (res.ok) {
+    setBusyId(id);
+    try {
+      await adminFetch("/api/guestbook", {
+        method: "DELETE",
+        json: { id },
+        fallbackError: "删除留言失败。",
+      });
       setMsgs((prev) => prev.filter((item) => item._id !== id));
       showToast("已删除");
-    } else {
-      showToast("删除失败");
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "删除失败");
+    } finally {
+      setBusyId("");
     }
   }
 
@@ -105,12 +117,14 @@ export default function AdminGuestbookPage() {
             （待审核 {pending.length} / 已发布 {approved.length}）。
           </p>
         </div>
-        <button className="admin-button" onClick={() => load(pw)} disabled={loading}>
+        <button className="admin-button" onClick={() => void load()} disabled={loading}>
           {loading ? "加载中..." : "刷新"}
         </button>
       </div>
 
-      {pending.length > 0 && (
+      {loading ? <section className="admin-panel" role="status"><p>正在读取留言...</p></section> : null}
+
+      {!loading && pending.length > 0 && (
         <section className="admin-panel" style={{ marginBottom: 24 }}>
           <h2 style={{ marginBottom: 16, fontSize: "1rem", fontWeight: 700, color: "var(--pink-600)" }}>
             待审核（{pending.length}）
@@ -120,7 +134,8 @@ export default function AdminGuestbookPage() {
               <MsgCard
                 key={message._id}
                 message={message}
-                onApprove={() => toggleApprove(message._id, message.approved)}
+                busy={busyId === message._id}
+                onApprove={() => void toggleApprove(message._id, message.approved)}
                 onDelete={() => deleteMsg(message._id)}
               />
             ))}
@@ -128,7 +143,7 @@ export default function AdminGuestbookPage() {
         </section>
       )}
 
-      <section className="admin-panel">
+      {!loading ? <section className="admin-panel">
         <h2 style={{ marginBottom: 16, fontSize: "1rem", fontWeight: 700 }}>
           已发布（{approved.length}）
         </h2>
@@ -140,13 +155,14 @@ export default function AdminGuestbookPage() {
               <MsgCard
                 key={message._id}
                 message={message}
-                onApprove={() => toggleApprove(message._id, message.approved)}
+                busy={busyId === message._id}
+                onApprove={() => void toggleApprove(message._id, message.approved)}
                 onDelete={() => deleteMsg(message._id)}
               />
             ))}
           </div>
         )}
-      </section>
+      </section> : null}
     </main>
   );
 }
@@ -155,10 +171,12 @@ function MsgCard({
   message,
   onApprove,
   onDelete,
+  busy,
 }: {
   message: GuestbookMsg;
   onApprove: () => void;
   onDelete: () => void;
+  busy: boolean;
 }) {
   const [showUA, setShowUA] = useState(false);
 
@@ -177,11 +195,11 @@ function MsgCard({
           </span>
         </div>
         <div className="admin-guestbook-actions">
-          <button type="button" onClick={onApprove}>
-            {message.approved ? "取消发布" : "通过"}
+          <button type="button" onClick={onApprove} disabled={busy}>
+            {busy ? "处理中..." : message.approved ? "取消发布" : "通过"}
           </button>
-          <button type="button" className="danger" onClick={onDelete}>
-            删除
+          <button type="button" className="danger" onClick={onDelete} disabled={busy}>
+            {busy ? "处理中..." : "删除"}
           </button>
         </div>
       </div>

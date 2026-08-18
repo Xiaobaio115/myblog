@@ -1,0 +1,48 @@
+.card {
+  display: grid;
+  grid-template-columns: minmax(180px, 32%) 1fr;
+  min-height: 190px;
+  color: inherit;
+  text-decoration: none;
+  border-top: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  padding: 1.1rem 0;
+  gap: clamp(1.1rem, 3vw, 2rem);
+}
+
+.media { min-height: 166px; aspect-ratio: 4 / 3; border-radius: 3px; }
+.mediaImage { transition: transform 700ms cubic-bezier(.2,.75,.2,1); }
+.card:hover .mediaImage { transform: scale(1.035); }
+
+.body { display: flex; flex-direction: column; min-width: 0; }
+.meta { display: flex; align-items: center; justify-content: space-between; gap: 1rem; color: color-mix(in srgb, currentColor 57%, transparent); font-size: .78rem; }
+.tags { display: flex; flex-wrap: wrap; gap: .45rem; }
+.tag { color: #e977aa; letter-spacing: 0; }
+.series { color: color-mix(in srgb, currentColor 72%, transparent); font-weight: 650; }
+.series::after { content: " /"; color: color-mix(in srgb, currentColor 38%, transparent); margin-left: .4rem; }
+.title { margin: .72rem 0 .55rem; font-family: var(--editorial-display, Georgia, "Noto Serif SC", serif); font-size: clamp(1.35rem, 2vw, 1.75rem); line-height: 1.3; text-wrap: balance; }
+.excerpt { margin: 0; color: color-mix(in srgb, currentColor 68%, transparent); line-height: 1.75; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.footer { margin-top: auto; padding-top: .8rem; display: flex; justify-content: space-between; color: color-mix(in srgb, currentColor 55%, transparent); font-size: .8rem; }
+.read { color: #e977aa; }
+
+.feature { grid-template-columns: 1fr; border-top: 0; padding-top: 0; }
+.feature .media { min-height: 0; aspect-ratio: 16 / 10; }
+.feature .title { font-size: clamp(2.1rem, 3.7vw, 3.15rem); line-height: 1.12; max-width: 18ch; }
+.feature .excerpt { max-width: 62ch; }
+
+.compact { grid-template-columns: 128px 1fr; min-height: 132px; gap: 1rem; }
+.compact .media { min-height: 110px; aspect-ratio: 4 / 3; }
+.compact .title { font-size: clamp(1.08rem, 1.5vw, 1.3rem); line-height: 1.28; margin-top: .5rem; }
+.compact .excerpt { -webkit-line-clamp: 1; font-size: .88rem; }
+.compact .footer { padding-top: .45rem; }
+
+@media (max-width: 640px) {
+  .card, .compact { grid-template-columns: 1fr; }
+  .media, .compact .media { min-height: 0; aspect-ratio: 16 / 10; }
+  .feature .media { min-height: 0; }
+  .feature .title { font-size: clamp(1.9rem, 8.5vw, 2.55rem); line-height: 1.16; }
+  .meta { align-items: flex-start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mediaImage { transition: none; }
+}

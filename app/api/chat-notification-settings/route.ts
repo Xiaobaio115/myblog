@@ -4,6 +4,7 @@ import {
   updateChatNotificationSettings,
 } from "@/lib/chat-notification-settings";
 import { sendChatNotificationTest } from "@/lib/chat-notify";
+import { verifyAdminPassword } from "@/lib/admin-session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ function authorize(request: Request) {
   if (!process.env.ADMIN_PASSWORD) {
     return "服务端尚未配置 ADMIN_PASSWORD。";
   }
-  if (request.headers.get("x-admin-password") !== process.env.ADMIN_PASSWORD) {
+  if (!verifyAdminPassword(request.headers.get("x-admin-password"))) {
     return "密码错误。";
   }
   return null;

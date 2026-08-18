@@ -1,0 +1,212 @@
+.workspace {
+  border-radius: 8px;
+}
+
+.formSection {
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--editorial-line, rgba(33, 31, 28, 0.16));
+}
+
+.formSection:first-of-type {
+  border-top: 0;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.sectionHeading h2 {
+  margin: 0;
+  font-family: var(--editorial-display, Georgia, serif);
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.sectionHeading p {
+  margin: 0;
+  color: var(--text-soft, #756f66);
+  font-size: 0.82rem;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.field {
+  display: grid;
+  min-width: 0;
+  gap: 0.45rem;
+}
+
+.field > span {
+  color: var(--text-soft, #756f66);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.titleField,
+.wideField,
+.coverField {
+  grid-column: 1 / -1;
+}
+
+.titleField input {
+  min-height: 58px;
+  font-family: var(--editorial-display, Georgia, serif);
+  font-size: clamp(1.08rem, 2vw, 1.35rem);
+}
+
+.slugControl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.625rem;
+}
+
+.slugControl button {
+  min-height: 50px;
+  padding-inline: 1rem;
+  white-space: nowrap;
+}
+
+.fieldHint,
+.fieldWarning {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.fieldHint {
+  color: var(--text-soft, #756f66);
+}
+
+.fieldWarning {
+  color: #b45309;
+}
+
+.coverField {
+  padding-top: 0.25rem;
+}
+
+.stateRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.stateRow label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  gap: 0.55rem;
+  color: var(--text, inherit);
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.stateRow input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--editorial-accent, #d85f91);
+}
+
+.visitorDetails {
+  margin: 0.5rem 0 1.5rem;
+  border-top: 1px solid var(--editorial-line, rgba(33, 31, 28, 0.16));
+  border-bottom: 1px solid var(--editorial-line, rgba(33, 31, 28, 0.16));
+}
+
+.visitorDetails > summary {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--text, inherit);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.visitorDetails > summary::-webkit-details-marker {
+  display: none;
+}
+
+.visitorDetails > summary::after {
+  content: "+";
+  color: var(--editorial-accent, #d85f91);
+  font-size: 1.2rem;
+  font-weight: 400;
+}
+
+.visitorDetails[open] > summary::after {
+  content: "-";
+}
+
+.visitorContent {
+  padding-bottom: 1.25rem;
+}
+
+.actionBar {
+  position: sticky;
+  z-index: 20;
+  bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin: 1.5rem -0.5rem 0;
+  padding: 0.75rem;
+  border: 1px solid var(--editorial-line, rgba(33, 31, 28, 0.16));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-readable-solid, #fff) 92%, transparent);
+  box-shadow: 0 12px 28px rgba(23, 17, 22, 0.12);
+  backdrop-filter: blur(12px);
+}
+
+@media (max-width: 760px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .titleField,
+  .wideField,
+  .coverField {
+    grid-column: auto;
+  }
+
+  .sectionHeading {
+    display: block;
+  }
+
+  .sectionHeading p {
+    margin-top: 0.35rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .slugControl {
+    grid-template-columns: 1fr;
+  }
+
+  .actionBar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .actionBar button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .actionBar {
+    backdrop-filter: none;
+  }
+}

@@ -18,6 +18,7 @@ type SiteHeaderProps = {
 const NAV_ITEMS = [
   { href: "/", label: "首页", icon: "⌂" },
   { href: "/articles", label: "文章", icon: "✎" },
+  { href: "/series", label: "系列", icon: "≋" },
   { href: "/world", label: "我的世界", icon: "◈" },
   { href: "/photos", label: "相册", icon: "✦" },
   { href: "/about", label: "关于我", icon: "◎" },
@@ -78,6 +79,15 @@ export function SiteHeader({
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
+  useEffect(() => {
+    if (!menuOpen && !searchOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [menuOpen, searchOpen]);
+
   const handleSearch = (event: React.FormEvent) => {
     event.preventDefault();
     const keyword = query.trim();
@@ -105,6 +115,7 @@ export function SiteHeader({
                 key={item.href}
                 href={item.href}
                 className={`nav-btn ${isActive(pathname, item.href) ? "active" : ""}`}
+                aria-current={isActive(pathname, item.href) ? "page" : undefined}
               >
                 {item.label}
               </Link>
@@ -115,6 +126,9 @@ export function SiteHeader({
             <button
               className="theme-toggle pink-search-button"
               aria-label="搜索文章"
+              aria-expanded={searchOpen}
+              aria-controls="site-search-dialog"
+              aria-haspopup="dialog"
               onClick={() => setSearchOpen(true)}
               type="button"
             >
@@ -125,6 +139,9 @@ export function SiteHeader({
               type="button"
               className="mobile-menu-button"
               aria-label="打开导航菜单"
+              aria-expanded={menuOpen}
+              aria-controls="mobile-navigation-drawer"
+              aria-haspopup="dialog"
               onClick={() => setMenuOpen(true)}
             >
               <span className="mobile-menu-icon" aria-hidden="true">☰</span>
@@ -138,7 +155,14 @@ export function SiteHeader({
 
       {menuOpen && (
         <div className="mobile-nav-overlay" onClick={() => setMenuOpen(false)}>
-          <aside className="mobile-nav-drawer" onClick={(event) => event.stopPropagation()}>
+          <aside
+            id="mobile-navigation-drawer"
+            className="mobile-nav-drawer"
+            role="dialog"
+            aria-modal="true"
+            aria-label="站点导航"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="mobile-nav-brand">
               <span>LQPP WORLD</span>
               <button type="button" onClick={() => setMenuOpen(false)} aria-label="关闭导航菜单">
@@ -185,6 +209,7 @@ export function SiteHeader({
                   key={item.href}
                   href={item.href}
                   className={`mobile-nav-link ${isActive(pathname, item.href) ? "active" : ""}`}
+                  aria-current={isActive(pathname, item.href) ? "page" : undefined}
                   onClick={() => setMenuOpen(false)}
                 >
                   <span className="mobile-nav-link-icon">{item.icon}</span>
@@ -204,7 +229,14 @@ export function SiteHeader({
             setQuery("");
           }}
         >
-          <div className="search-overlay-box" onClick={(event) => event.stopPropagation()}>
+          <div
+            id="site-search-dialog"
+            className="search-overlay-box"
+            role="dialog"
+            aria-modal="true"
+            aria-label="搜索文章"
+            onClick={(event) => event.stopPropagation()}
+          >
             <form className="search-overlay-form" onSubmit={handleSearch}>
               <span className="search-overlay-icon">
                 <SearchIcon />

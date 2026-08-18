@@ -2,25 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { adminFetch, getAdminPassword } from "@/lib/admin-api";
 
 type DeletePostButtonProps = {
   slug: string;
   postId: string;
 };
-
-async function parseJsonSafely(response: Response) {
-  const text = await response.text();
-
-  if (!text.trim()) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(text) as Record<string, unknown>;
-  } catch {
-    return { error: text };
-  }
-}
 
 export function DeletePostButton({ slug, postId }: DeletePostButtonProps) {
   const router = useRouter();
@@ -35,7 +22,7 @@ export function DeletePostButton({ slug, postId }: DeletePostButtonProps) {
       return;
     }
 
-    const password = window.localStorage.getItem("admin_password") || "";
+    const password = getAdminPassword();
 
     if (!password) {
       window.alert("后台密码已丢失，请重新进入后台。");
@@ -48,20 +35,11 @@ export function DeletePostButton({ slug, postId }: DeletePostButtonProps) {
     try {
       const slugPart = slug || "__no_slug__";
       const idParam = postId ? `?_id=${encodeURIComponent(postId)}` : "";
-      const response = await fetch(`/api/posts/${encodeURIComponent(slugPart)}${idParam}`, {
+      await adminFetch(`/api/posts/${encodeURIComponent(slugPart)}${idParam}`, {
         method: "DELETE",
-        headers: {
-          "x-admin-password": password,
-        },
+        password,
+        fallbackError: "删除文章失败。",
       });
-      const data = await parseJsonSafely(response);
-
-      if (!response.ok) {
-        throw new Error(
-          typeof data?.error === "string" ? data.error : "删除文章失败。"
-        );
-      }
-
       router.refresh();
     } catch (error) {
       window.alert(error instanceof Error ? error.message : "删除文章失败。");

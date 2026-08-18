@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getEffectiveChatNotificationSettings } from "@/lib/chat-notification-settings";
+import { verifyAdminPassword } from "@/lib/admin-session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -8,7 +9,7 @@ export async function GET(request: Request) {
   if (!process.env.ADMIN_PASSWORD) {
     return NextResponse.json({ ok: false, error: "服务端尚未配置 ADMIN_PASSWORD。" }, { status: 401 });
   }
-  if (request.headers.get("x-admin-password") !== process.env.ADMIN_PASSWORD) {
+  if (!verifyAdminPassword(request.headers.get("x-admin-password"))) {
     return NextResponse.json({ ok: false, error: "密码错误。" }, { status: 401 });
   }
 

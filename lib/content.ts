@@ -1,4 +1,4 @@
-import { getDb } from "@/lib/mongodb";
+import { getDb, isMongoConfigurationError } from "@/lib/mongodb";
 
 export type Post = {
   _id: string;
@@ -8,6 +8,8 @@ export type Post = {
   content?: string;
   coverUrl?: string;
   tags?: string[];
+  series?: string;
+  seriesOrder?: number;
   date?: string;
   views?: number;
   published?: boolean;
@@ -60,8 +62,10 @@ export type Photo = {
   emoji?: string;
   sourceHref?: string;
   category?: string;
+  location?: string;
   pathname?: string;
   isPrivate?: boolean;
+  showIn3d?: boolean;
 };
 
 type RawDocument = Record<string, unknown> & {
@@ -79,45 +83,6 @@ type PostVisitInput = {
 const POST_VIEW_DEDUP_WINDOW_MS = 10 * 60 * 1000;
 const TRAFFIC_TIME_ZONE = "Asia/Shanghai";
 
-const FALLBACK_PHOTOS: Photo[] = [
-  {
-    _id: "fallback-1",
-    caption: "凌晨整理博客时的桌面",
-    date: "氛围收藏",
-    emoji: "☕",
-  },
-  {
-    _id: "fallback-2",
-    caption: "周末散步时看到的晚霞",
-    date: "城市片段",
-    emoji: "🌇",
-  },
-  {
-    _id: "fallback-3",
-    caption: "旅行前随手写下的清单",
-    date: "轻松记录",
-    emoji: "📝",
-  },
-  {
-    _id: "fallback-4",
-    caption: "听歌、写字和慢慢发呆",
-    date: "生活切面",
-    emoji: "🎧",
-  },
-  {
-    _id: "fallback-5",
-    caption: "相机里没删掉的一帧风景",
-    date: "取景练习",
-    emoji: "📷",
-  },
-  {
-    _id: "fallback-6",
-    caption: "一个适合写长文的雨天",
-    date: "安静时刻",
-    emoji: "🌧",
-  },
-];
-
 function mapPost(document: RawDocument): Post {
   return {
     _id: String(document._id),
@@ -129,6 +94,12 @@ function mapPost(document: RawDocument): Post {
     tags: Array.isArray(document.tags)
       ? document.tags.map((tag) => String(tag)).filter(Boolean)
       : [],
+    series: document.series ? String(document.series).trim() : "",
+    seriesOrder:
+      typeof document.seriesOrder === "number" &&
+      Number.isFinite(document.seriesOrder)
+        ? document.seriesOrder
+        : undefined,
     date: document.date ? String(document.date) : "",
     views:
       typeof document.views === "number"
@@ -157,7 +128,11 @@ function mapPhoto(document: RawDocument): Photo {
     emoji: document.emoji ? String(document.emoji) : "",
     sourceHref: document.sourceHref ? String(document.sourceHref) : "",
     category: document.category ? String(document.category) : "",
+    location: document.location ? String(document.location) : "",
     isPrivate: Boolean(document.isPrivate),
+    ...(Object.prototype.hasOwnProperty.call(document, "showIn3d")
+      ? { showIn3d: Boolean(document.showIn3d) }
+      : {}),
   };
 }
 
@@ -204,7 +179,7 @@ async function safeQuery<T>(work: () => Promise<T>, fallback: T): Promise<T> {
   try {
     return await work();
   } catch (error) {
-    if (!(error instanceof Error && error.message === "Missing MONGODB_URI")) {
+    if (!isMongoConfigurationError(error)) {
       console.error("content query failed:", error);
     }
     return fallback;
@@ -218,7 +193,7 @@ function sanitizeVisitField(value: string | undefined, fallback: string) {
 
 function getPublicPostQuery() {
   return {
-    published: true,
+    published: { $ne: false },
     isPrivate: { $ne: true },
   };
 }
@@ -244,6 +219,21 @@ export async function getPublishedPosts(limit = 12): Promise<Post[]> {
     const posts = await cursor.toArray();
     return posts.map((post) => mapPost(post as RawDocument));
   }, []);
+}
+
+export async function getPublicContentCounts() {
+  return safeQuery(
+    async () => {
+      const db = await getDb();
+      const [posts, photos] = await Promise.all([
+        db.collection("posts").countDocuments(getPublicPostQuery()),
+        db.collection("photos").countDocuments(getPublicPhotoQuery()),
+      ]);
+
+      return { posts, photos };
+    },
+    { posts: 0, photos: 0 },
+  );
 }
 
 export async function getAdminPosts(limit = 100): Promise<Post[]> {
@@ -626,7 +616,7 @@ export async function getLatestPhotos(limit = 24): Promise<Photo[]> {
     return derivedPhotos;
   }
 
-  return FALLBACK_PHOTOS.slice(0, limit);
+  return [];
 }
 
 export function getPhotoCategories(photos: Photo[]) {
@@ -645,9 +635,25 @@ export function getAllTags(posts: Post[]) {
   );
 }
 
-export function filterPosts(posts: Post[], keyword: string, tag: string) {
+export function getAllSeries(posts: Post[]) {
+  return Array.from(
+    new Set(
+      posts
+        .map((post) => post.series?.trim())
+        .filter((series): series is string => Boolean(series))
+    )
+  );
+}
+
+export function filterPosts(
+  posts: Post[],
+  keyword: string,
+  tag: string,
+  series = ""
+) {
   const normalizedKeyword = keyword.trim().toLowerCase();
   const normalizedTag = tag.trim();
+  const normalizedSeries = series.trim();
 
   return posts.filter((post) => {
     const matchesKeyword =
@@ -660,7 +666,9 @@ export function filterPosts(posts: Post[], keyword: string, tag: string) {
 
     const matchesTag =
       !normalizedTag || (post.tags || []).includes(normalizedTag);
+    const matchesSeries =
+      !normalizedSeries || post.series?.trim() === normalizedSeries;
 
-    return matchesKeyword && matchesTag;
+    return matchesKeyword && matchesTag && matchesSeries;
   });
 }

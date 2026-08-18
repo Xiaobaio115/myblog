@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import VirtualAssistant from "@/components/VirtualAssistant";
 import { ThemeProvider } from "@/app/components/theme-provider";
+import "./design-tokens.css";
 import "./globals.css";
 import "./poetic-theme.css";
 import "./animations.css";

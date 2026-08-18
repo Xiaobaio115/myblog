@@ -7,6 +7,26 @@ export type PostFormShape = {
   content: string;
 };
 
+type ValidatablePostForm = PostFormShape & {
+  series?: string;
+  seriesOrder?: string;
+};
+
+export function getPostFormError(form: ValidatablePostForm) {
+  if (!form.title.trim()) return "请填写文章标题。";
+  if (!form.slug.trim()) return "请填写文章地址。";
+  if (!form.content.trim()) return "请填写文章正文。";
+
+  if (form.series?.trim() && form.seriesOrder) {
+    const order = Number(form.seriesOrder);
+    if (!Number.isInteger(order) || order < 1) {
+      return "系列顺序必须是大于 0 的整数。";
+    }
+  }
+
+  return "";
+}
+
 export function buildSlug(input: string) {
   const ascii = input
     .normalize("NFKC")

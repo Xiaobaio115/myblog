@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { ObjectId, type Db } from "mongodb";
-import { getDb } from "@/lib/mongodb";
+import { getDb, isMongoConfigured } from "@/lib/mongodb";
+import { verifyAdminPassword } from "@/lib/admin-session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -77,14 +78,12 @@ function getAdminPassword() {
 }
 
 function isAdminRequest(request: Request) {
-  const password = getAdminPassword();
-  const header = request.headers.get("x-admin-password") || "";
-  return Boolean(password && header && header === password);
+  return verifyAdminPassword(request.headers.get("x-admin-password"));
 }
 
 function getUnauthorizedResponse() {
   if (!getAdminPassword()) {
-    return NextResponse.json({ error: "服务端尚未配置 ADMIN_PASSWORD。" }, { status: 500 });
+    return NextResponse.json({ error: "服务端尚未配置 ADMIN_PASSWORD。" }, { status: 503 });
   }
   return NextResponse.json({ error: "无权操作。" }, { status: 401 });
 }
@@ -148,13 +147,20 @@ function normalizeWebsite(value: string) {
 
 export async function GET(request: Request) {
   try {
-    const db = await getDb();
     const hasAdminHeader = Boolean(request.headers.get("x-admin-password"));
     const isAdmin = isAdminRequest(request);
 
     if (hasAdminHeader && !isAdmin) {
       return getUnauthorizedResponse();
     }
+
+    if (!isMongoConfigured()) {
+      return isAdmin
+        ? NextResponse.json({ error: "服务器未配置 MONGODB_URI。" }, { status: 503 })
+        : NextResponse.json([]);
+    }
+
+    const db = await getDb();
 
     const query = isAdmin ? {} : { approved: true };
     const messages = await db
@@ -223,6 +229,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `留言请控制在 ${MAX_MESSAGE_LENGTH} 字以内。` }, { status: 400 });
     }
 
+    if (!isMongoConfigured()) {
+      return NextResponse.json({ error: "服务器未配置 MONGODB_URI。" }, { status: 503 });
+    }
     const db = await getDb();
     await ensureGuestbookIndexes(db);
 
@@ -297,22 +306,30 @@ export async function PATCH(request: Request) {
   try {
     if (!isAdminRequest(request)) return getUnauthorizedResponse();
 
-    const { id, approved } = await request.json();
-    if (typeof id !== "string" || !ObjectId.isValid(id)) {
+    const body = await request.json().catch(() => null);
+    const id = body && typeof body === "object" ? (body as { id?: unknown }).id : undefined;
+    const approved = body && typeof body === "object" ? (body as { approved?: unknown }).approved : undefined;
+    if (typeof id !== "string" || !ObjectId.isValid(id) || typeof approved !== "boolean") {
       return NextResponse.json({ error: "留言 ID 不正确。" }, { status: 400 });
     }
 
+    if (!isMongoConfigured()) {
+      return NextResponse.json({ error: "服务器未配置 MONGODB_URI。" }, { status: 503 });
+    }
     const db = await getDb();
-    await db.collection("guestbook").updateOne(
+    const result = await db.collection("guestbook").updateOne(
       { _id: new ObjectId(id) },
       {
         $set: {
-          approved: !!approved,
+          approved,
           moderationStatus: approved ? "approved" : "pending",
           updatedAt: new Date(),
         },
       }
     );
+    if (!result.matchedCount) {
+      return NextResponse.json({ error: "留言不存在。" }, { status: 404 });
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("PATCH /api/guestbook error:", error);
@@ -324,13 +341,20 @@ export async function DELETE(request: Request) {
   try {
     if (!isAdminRequest(request)) return getUnauthorizedResponse();
 
-    const { id } = await request.json();
+    const body = await request.json().catch(() => null);
+    const id = body && typeof body === "object" ? (body as { id?: unknown }).id : undefined;
     if (typeof id !== "string" || !ObjectId.isValid(id)) {
       return NextResponse.json({ error: "留言 ID 不正确。" }, { status: 400 });
     }
 
+    if (!isMongoConfigured()) {
+      return NextResponse.json({ error: "服务器未配置 MONGODB_URI。" }, { status: 503 });
+    }
     const db = await getDb();
-    await db.collection("guestbook").deleteOne({ _id: new ObjectId(id) });
+    const result = await db.collection("guestbook").deleteOne({ _id: new ObjectId(id) });
+    if (!result.deletedCount) {
+      return NextResponse.json({ error: "留言不存在。" }, { status: 404 });
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("DELETE /api/guestbook error:", error);

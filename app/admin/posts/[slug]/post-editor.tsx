@@ -8,11 +8,14 @@ import { MarkdownEditor } from "@/app/admin/posts/markdown-editor";
 import {
   buildSlug,
   clearDraft,
+  getPostFormError,
   loadDraft,
   saveDraft,
   type PostFormShape,
 } from "@/app/admin/posts/post-form-utils";
 import type { PostVisit } from "@/lib/content";
+import { adminFetch, getAdminPassword } from "@/lib/admin-api";
+import styles from "../post-editor-form.module.css";
 
 type EditablePost = {
   title: string;
@@ -21,6 +24,8 @@ type EditablePost = {
   content?: string;
   coverUrl?: string;
   tags?: string[];
+  series?: string;
+  seriesOrder?: number;
   date?: string;
   views?: number;
   published?: boolean;
@@ -33,19 +38,10 @@ type EditorProps = {
   uniqueVisitors: number;
 };
 
-async function parseJsonSafely(response: Response) {
-  const text = await response.text();
-
-  if (!text.trim()) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(text) as Record<string, unknown>;
-  } catch {
-    return { error: text };
-  }
-}
+type EditorForm = PostFormShape & {
+  series: string;
+  seriesOrder: string;
+};
 
 function formatVisitTime(value?: Date | string) {
   if (!value) {
@@ -76,7 +72,7 @@ export function PostEditor({
 }: EditorProps) {
   const router = useRouter();
   const draftKey = useMemo(() => `admin_post_draft_${post.slug}`, [post.slug]);
-  const baseForm = useMemo<PostFormShape>(
+  const baseForm = useMemo<EditorForm>(
     () => ({
       title: post.title,
       slug: post.slug,
@@ -84,6 +80,9 @@ export function PostEditor({
       coverUrl: post.coverUrl || "",
       tags: (post.tags || []).join(", "),
       content: post.content || "",
+      series: post.series || "",
+      seriesOrder:
+        typeof post.seriesOrder === "number" ? String(post.seriesOrder) : "",
     }),
     [post]
   );
@@ -91,20 +90,32 @@ export function PostEditor({
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [form, setForm] = useState<PostFormShape>(() => {
-    const draft = loadDraft(draftKey, baseForm);
-    // 始终用服务端 slug，防止旧草稿静默改 slug 导致文章断链
-    return { ...draft, slug: baseForm.slug };
-  });
+  const [form, setForm] = useState<EditorForm>(baseForm);
   const [published, setPublished] = useState(post.published !== false);
   const [isPrivate, setIsPrivate] = useState(Boolean(post.isPrivate));
+  const [draftReady, setDraftReady] = useState(false);
 
   useEffect(() => {
-    saveDraft(draftKey, form);
-  }, [draftKey, form]);
+    const draft = loadDraft(draftKey, baseForm);
+    // 始终用服务端 slug，防止旧草稿静默改 slug 导致文章断链
+    queueMicrotask(() => {
+      setForm({ ...draft, slug: baseForm.slug });
+      setDraftReady(true);
+    });
+  }, [baseForm, draftKey]);
+
+  useEffect(() => {
+    if (draftReady) saveDraft(draftKey, form);
+  }, [draftKey, draftReady, form]);
 
   async function savePost() {
-    const password = localStorage.getItem("admin_password") || "";
+    const validationError = getPostFormError(form);
+    if (validationError) {
+      setStatus(validationError);
+      return;
+    }
+
+    const password = getAdminPassword();
 
     if (!password) {
       setStatus("后台密码已丢失，请重新进入后台。");
@@ -124,13 +135,10 @@ export function PostEditor({
     setStatus("");
 
     try {
-      const response = await fetch(`/api/posts/${encodeURIComponent(sourceSlug)}`, {
+      const data = await adminFetch<{ slug?: string }>(`/api/posts/${encodeURIComponent(sourceSlug)}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-password": password,
-        },
-        body: JSON.stringify({
+        password,
+        json: {
           title: form.title.trim(),
           slug: form.slug.trim(),
           excerpt: form.excerpt.trim(),
@@ -140,18 +148,16 @@ export function PostEditor({
             .split(",")
             .map((tag) => tag.trim())
             .filter(Boolean),
+          series: form.series.trim(),
+          seriesOrder:
+            form.series.trim() && form.seriesOrder
+              ? Number(form.seriesOrder)
+              : null,
           published,
           isPrivate,
-        }),
+        },
+        fallbackError: "保存文章失败。",
       });
-
-      const data = await parseJsonSafely(response);
-
-      if (!response.ok) {
-        throw new Error(
-          typeof data?.error === "string" ? data.error : "保存文章失败。"
-        );
-      }
 
       const nextSlug =
         typeof data?.slug === "string" && data.slug.trim()
@@ -179,7 +185,7 @@ export function PostEditor({
       return;
     }
 
-    const password = localStorage.getItem("admin_password") || "";
+    const password = getAdminPassword();
 
     if (!password) {
       setStatus("后台密码已丢失，请重新进入后台。");
@@ -191,20 +197,11 @@ export function PostEditor({
     setStatus("");
 
     try {
-      const response = await fetch(`/api/posts/${encodeURIComponent(sourceSlug)}`, {
+      await adminFetch(`/api/posts/${encodeURIComponent(sourceSlug)}`, {
         method: "DELETE",
-        headers: {
-          "x-admin-password": password,
-        },
+        password,
+        fallbackError: "删除文章失败。",
       });
-
-      const data = await parseJsonSafely(response);
-
-      if (!response.ok) {
-        throw new Error(
-          typeof data?.error === "string" ? data.error : "删除文章失败。"
-        );
-      }
 
       clearDraft(draftKey);
       router.push("/admin/posts");
@@ -225,7 +222,7 @@ export function PostEditor({
   }
 
   return (
-    <div className="admin-panel">
+    <div className={`admin-panel ${styles.workspace}`}>
       <div className="section-head">
         <div>
           <div className="admin-kicker">Edit</div>
@@ -258,76 +255,61 @@ export function PostEditor({
         </button>
       </div>
 
-      {status ? <div className="status-banner">{status}</div> : null}
+      {status ? <div className="status-banner" role="status" aria-live="polite">{status}</div> : null}
 
-      <div className="post-form-grid">
-        <input
-          className="admin-input"
-          placeholder="文章标题"
-          value={form.title}
-          onChange={(event) => setForm({ ...form, title: event.target.value })}
-        />
-
-        <div className="slug-field">
-          <input
-            className="admin-input"
-            placeholder="Slug，例如 my-first-post（建议英文小写+连字符）"
-            value={form.slug}
-            onChange={(event) => setForm({ ...form, slug: event.target.value })}
-          />
-          <button
-            type="button"
-            className="secondary-link slug-button"
-            onClick={() => setForm({ ...form, slug: buildSlug(form.title) })}
-          >
-            根据标题生成
-          </button>
+      <section className={styles.formSection} aria-labelledby="edit-post-basics">
+        <div className={styles.sectionHeading}>
+          <h2 id="edit-post-basics">基本信息</h2>
+          <p>标题、地址与摘要</p>
         </div>
-        {/[^\x20-\x7E]/.test(form.slug) && (
-          <p style={{ fontSize: "0.82rem", color: "#f59e0b", margin: "-4px 0 8px" }}>
-            ⚠️ Slug 包含非英文字符，建议改为英文小写+数字，否则 URL 可能出现问题
-          </p>
-        )}
+        <div className={styles.formGrid}>
+          <label className={`${styles.field} ${styles.titleField}`}>
+            <span>文章标题</span>
+            <input className="admin-input" required placeholder="输入清晰、具体的标题" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
+          </label>
+          <label className={styles.field}>
+            <span>文章地址</span>
+            <div className={styles.slugControl}>
+              <input className="admin-input" required placeholder="my-first-post" value={form.slug} onChange={(event) => setForm({ ...form, slug: event.target.value })} />
+              <button type="button" className="secondary-link" onClick={() => setForm({ ...form, slug: buildSlug(form.title) })}>根据标题生成</button>
+            </div>
+            {/[^\x20-\x7E]/.test(form.slug) ? <p className={styles.fieldWarning}>Slug 建议使用英文小写、数字与连字符。</p> : null}
+          </label>
+          <label className={styles.field}>
+            <span>标签</span>
+            <input className="admin-input" placeholder="技术, 随笔" value={form.tags} onChange={(event) => setForm({ ...form, tags: event.target.value })} />
+          </label>
+          <label className={`${styles.field} ${styles.wideField}`}>
+            <span>文章摘要</span>
+            <input className="admin-input" placeholder="用一两句话概括文章内容" value={form.excerpt} onChange={(event) => setForm({ ...form, excerpt: event.target.value })} />
+          </label>
+        </div>
+      </section>
 
-        <input
-          className="admin-input"
-          placeholder="文章摘要"
-          value={form.excerpt}
-          onChange={(event) => setForm({ ...form, excerpt: event.target.value })}
-        />
-
-        <input
-          className="admin-input post-form-span-2"
-          placeholder="标签，用英文逗号分隔"
-          value={form.tags}
-          onChange={(event) => setForm({ ...form, tags: event.target.value })}
-        />
-
-        <CoverImageField
-          value={form.coverUrl}
-          onChange={(coverUrl) => setForm({ ...form, coverUrl })}
-          disabled={saving || deleting}
-        />
-      </div>
-
-      <div className="checkbox-group">
-        <label className="checkbox-row">
-          <input
-            type="checkbox"
-            checked={published}
-            onChange={(event) => setPublished(event.target.checked)}
-          />
-          <span>发布到站点</span>
-        </label>
-        <label className="checkbox-row">
-          <input
-            type="checkbox"
-            checked={isPrivate}
-            onChange={(event) => setIsPrivate(event.target.checked)}
-          />
-          <span>仅后台可见</span>
-        </label>
-      </div>
+      <section className={styles.formSection} aria-labelledby="edit-post-series">
+        <div className={styles.sectionHeading}>
+          <h2 id="edit-post-series">系列归档</h2>
+          <p>独立文章可留空</p>
+        </div>
+        <div className={styles.formGrid}>
+          <label className={styles.field}>
+            <span>系列名称</span>
+            <input className="admin-input" placeholder="例如：从零搭建个人博客" value={form.series} onChange={(event) => setForm({ ...form, series: event.target.value })} />
+          </label>
+          <label className={styles.field}>
+            <span>系列顺序</span>
+            <input className="admin-input" type="number" min="1" step="1" inputMode="numeric" placeholder="1" value={form.seriesOrder} onChange={(event) => setForm({ ...form, seriesOrder: event.target.value })} disabled={!form.series.trim()} />
+            <p className={styles.fieldHint}>按 1、2、3 排列；未填写的篇章会排在系列末尾。</p>
+          </label>
+          <div className={styles.coverField}>
+            <CoverImageField value={form.coverUrl} onChange={(coverUrl) => setForm({ ...form, coverUrl })} disabled={saving || deleting} />
+          </div>
+        </div>
+        <div className={styles.stateRow}>
+          <label><input type="checkbox" checked={published} onChange={(event) => setPublished(event.target.checked)} /><span>发布到站点</span></label>
+          <label><input type="checkbox" checked={isPrivate} onChange={(event) => setIsPrivate(event.target.checked)} /><span>仅后台可见</span></label>
+        </div>
+      </section>
 
       <div className="post-manage-meta">
         <span>{post.date || "刚刚发布"}</span>
@@ -335,7 +317,10 @@ export function PostEditor({
         <span>UV {uniqueVisitors}</span>
       </div>
 
-      <section className="visitor-panel">
+      <details className={styles.visitorDetails}>
+        <summary>访问数据 <span>{uniqueVisitors} 位独立访客 · 最近 {recentVisits.length} 次记录</span></summary>
+        <div className={styles.visitorContent}>
+        <section className="visitor-panel">
         <div className="visitor-panel-head">
           <div>
             <h2 className="section-title">最近访问</h2>
@@ -377,15 +362,19 @@ export function PostEditor({
             <p>这篇文章暂时还没有访问记录。</p>
           </div>
         )}
+        </section>
+        </div>
+      </details>
+
+      <section className={styles.formSection} aria-labelledby="edit-post-content">
+        <div className={styles.sectionHeading}>
+          <h2 id="edit-post-content">正文</h2>
+          <p>支持 Markdown 与实时预览</p>
+        </div>
+        <MarkdownEditor value={form.content} onChange={(content) => setForm({ ...form, content })} disabled={saving || deleting} />
       </section>
 
-      <MarkdownEditor
-        value={form.content}
-        onChange={(content) => setForm({ ...form, content })}
-        disabled={saving || deleting}
-      />
-
-      <div className="admin-actions">
+      <div className={styles.actionBar}>
         <button
           type="button"
           className="admin-button"

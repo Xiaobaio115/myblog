@@ -1,4 +1,10 @@
 import { NextResponse } from "next/server";
+import {
+  ADMIN_SESSION_COOKIE,
+  adminSessionCookieOptions,
+  getAdminSessionToken,
+  verifyAdminPassword,
+} from "@/lib/admin-session";
 
 export const dynamic = "force-dynamic";
 
@@ -9,9 +15,24 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "服务器未配置 ADMIN_PASSWORD" }, { status: 500 });
   }
 
-  if (pwd !== process.env.ADMIN_PASSWORD) {
+  if (!verifyAdminPassword(pwd)) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
 
-  return NextResponse.json({ ok: true });
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set(
+    ADMIN_SESSION_COOKIE,
+    getAdminSessionToken()!,
+    adminSessionCookieOptions
+  );
+  return response;
+}
+
+export async function DELETE() {
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set(ADMIN_SESSION_COOKIE, "", {
+    ...adminSessionCookieOptions,
+    maxAge: 0,
+  });
+  return response;
 }

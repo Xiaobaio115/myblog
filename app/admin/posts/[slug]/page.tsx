@@ -44,6 +44,13 @@ export default async function AdminPostEditPage({ params }: PageProps) {
           tags: Array.isArray(post.tags)
             ? post.tags.map((tag) => String(tag)).filter(Boolean)
             : [],
+          series: post.series ? String(post.series) : "",
+          seriesOrder:
+            typeof post.seriesOrder === "number"
+              ? post.seriesOrder
+              : Number.isFinite(Number(post.seriesOrder))
+                ? Number(post.seriesOrder)
+                : undefined,
           date: post.date ? String(post.date) : "",
           views:
             typeof post.views === "number"

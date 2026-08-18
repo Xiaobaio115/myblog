@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getTravelMapData, saveTravelMapData } from "@/lib/travel-map";
 import type { TravelMapData } from "@/data/travel-map";
+import { verifyAdminPassword } from "@/lib/admin-session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +22,7 @@ export async function PUT(request: Request) {
     if (!process.env.ADMIN_PASSWORD) {
       return NextResponse.json({ error: "服务端未配置 ADMIN_PASSWORD" }, { status: 500 });
     }
-    if (adminPassword !== process.env.ADMIN_PASSWORD) {
+    if (!verifyAdminPassword(adminPassword)) {
       return NextResponse.json({ error: "密码错误" }, { status: 401 });
     }
 

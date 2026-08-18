@@ -1,7 +1,8 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import styles from "./StarPhotoWall.module.css";
 import CommentsPanel from "./CommentsPanel";
 
@@ -19,29 +20,55 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
   const carouselRef = useRef<HTMLDivElement | null>(null);
   const hasDraggedRef = useRef(false);
   const lightboxHistoryRef = useRef(false);
+  const lightboxRef = useRef<HTMLDivElement | null>(null);
+  const lightboxTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const lightboxTouchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const animationWakeRef = useRef<() => void>(() => undefined);
+  const pausedRef = useRef(false);
   const [lightbox, setLightbox] = useState<Photo | null>(null);
+  const [compactScene, setCompactScene] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [failedPhotos, setFailedPhotos] = useState<Set<string>>(() => new Set());
 
-  const displayPhotos = useMemo(() => {
-    if (photos.length > 0) {
-      return photos;
-    }
+  const displayPhotos = useMemo(
+    () => photos.filter((photo) => photo.url.trim()),
+    [photos],
+  );
 
-    return Array.from({ length: 8 }, (_, index) => ({
-      _id: `demo-${index}`,
-      url: `https://picsum.photos/500/360?random=${index + 1}`,
-      caption: "示例照片",
-      category: "示例",
-    }));
-  }, [photos]);
+  useEffect(() => {
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const compactQuery = window.matchMedia("(max-width: 700px)");
+    const navigatorWithMemory = navigator as Navigator & { deviceMemory?: number };
+    const lowPowerDevice =
+      (navigator.hardwareConcurrency > 0 && navigator.hardwareConcurrency <= 4) ||
+      (navigatorWithMemory.deviceMemory !== undefined && navigatorWithMemory.deviceMemory <= 4);
+
+    const syncPreferences = () => {
+      setReducedMotion(motionQuery.matches);
+      setCompactScene(compactQuery.matches || lowPowerDevice);
+    };
+
+    syncPreferences();
+    motionQuery.addEventListener("change", syncPreferences);
+    compactQuery.addEventListener("change", syncPreferences);
+    return () => {
+      motionQuery.removeEventListener("change", syncPreferences);
+      compactQuery.removeEventListener("change", syncPreferences);
+    };
+  }, []);
+
+  useEffect(() => {
+    pausedRef.current = paused;
+    animationWakeRef.current();
+  }, [paused]);
 
   const cards = useMemo(() => {
     const count = displayPhotos.length;
     if (count === 0) return [];
-    const isMobile =
-      typeof window !== "undefined" && window.matchMedia("(max-width: 700px)").matches;
-    const baseRadius = isMobile ? 150 : 520;
-    const radiusJitter = isMobile ? 40 : 110;
-    const yRange = isMobile ? 180 : 360;
+    const baseRadius = compactScene ? 150 : 520;
+    const radiusJitter = compactScene ? 40 : 110;
+    const yRange = compactScene ? 180 : 360;
 
     return displayPhotos.map((photo, index) => {
       const angle = (360 / count) * index;
@@ -57,7 +84,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
         } as CSSProperties,
       };
     });
-  }, [displayPhotos]);
+  }, [compactScene, displayPhotos]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -66,7 +93,8 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     const carousel = carouselRef.current;
     if (!canvas || !scene || !camera || !carousel) return;
 
-    const ctx = canvas.getContext("2d")!;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
     // ── rotation state ──
     let rotY = 0, tgtY = 0, rotX = 0, tgtX = 0, zoom = 0, tgtZoom = 0;
@@ -75,6 +103,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
 
     const onDown = (e: MouseEvent | TouchEvent) => {
       dragging = true;
+      animationWakeRef.current();
       hasDraggedRef.current = false;
       const p = "touches" in e ? e.touches[0] : e;
       sx = lx = p.clientX; sy = ly = p.clientY;
@@ -94,6 +123,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       tgtX -= (p.clientY - ly) * tiltMultiplier;
       tgtX = Math.max(-15, Math.min(tgtX, 15));
       lx = p.clientX; ly = p.clientY;
+      animationWakeRef.current();
     };
     const onUp = () => { dragging = false; };
     const onWheel = (e: WheelEvent) => {
@@ -104,6 +134,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       
       tgtZoom += e.deltaY * -zoomSensitivity;
       tgtZoom = Math.max(-400, Math.min(tgtZoom, maxZoom));
+      animationWakeRef.current();
     };
     const onEnter = (e: MouseEvent) => {
       if ((e.target as HTMLElement).tagName === "IMG") hoveringCard = true;
@@ -134,7 +165,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     };
 
     const SNOW = ["❄", "❅", "❆"];
-    let W = 0, H = 0, parts: Particle[] = [], rafId = 0;
+    let W = 0, H = 0, dpr = 1, parts: Particle[] = [], rafId = 0;
     let canvasScale = 1, treeBottomY = 250;
 
     const mkBase = (
@@ -149,20 +180,27 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     });
 
     const initCanvas = () => {
-      W = canvas.width = window.innerWidth;
-      H = canvas.height = window.innerHeight;
+      W = window.innerWidth;
+      H = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, compactScene ? 1.25 : 1.75);
+      canvas.width = Math.round(W * dpr);
+      canvas.height = Math.round(H * dpr);
       const treeTopY = -180;
       treeBottomY = 250;
       const treeHeight = treeBottomY - treeTopY;
       parts = [];
 
-      // Reduce particle counts on mobile for better performance
-      const isMobile = window.innerWidth < 700;
-      const scaleFactor = isMobile ? 0.4 : 1;
+      // Keep the atmosphere on constrained devices without spending the full
+      // desktop particle budget.
+      const scaleFactor = reducedMotion ? 0.12 : compactScene ? 0.28 : 1;
+      const particleBudget = reducedMotion ? 700 : compactScene ? 3200 : 9000;
 
       // background stars
-      const numStars = Math.floor((W * H) / (1000 / scaleFactor));
-      for (let i = 0; i < numStars; i++) {
+      const numStars = Math.min(
+        compactScene ? 700 : 2200,
+        Math.floor((W * H) / (1000 / scaleFactor)),
+      );
+      for (let i = 0; i < numStars && parts.length < particleBudget; i++) {
         parts.push(mkBase("star",
           (Math.random() * 2 - 1) * W,
           (Math.random() * 2 - 1) * H,
@@ -174,7 +212,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
 
       // central tree (cone of stars)
       const treeCount = Math.floor(2500 * scaleFactor);
-      for (let i = 0; i < treeCount; i++) {
+      for (let i = 0; i < treeCount && parts.length < particleBudget; i++) {
         const depth = Math.pow(Math.random(), 0.7);
         const y = treeTopY + depth * treeHeight;
         const offsetX = (Math.random() - 0.5) * depth * 180 * Math.pow(Math.random(), 0.5) * 2;
@@ -187,7 +225,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
 
       // dense core
       const coreCount = Math.floor(800 * scaleFactor);
-      for (let i = 0; i < coreCount; i++) {
+      for (let i = 0; i < coreCount && parts.length < particleBudget; i++) {
         const y = treeTopY + Math.random() * treeHeight;
         parts.push(mkBase("core",
           (Math.random() - 0.5) * 15, y,
@@ -206,7 +244,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
         { count: Math.floor(1000 * scaleFactor), rx: r1x * 0.15, ry: r1y * 0.15, sMin: 0.5, sMax: 3.0, aMin: 0.2, aMax: 1.0, sp: 0.04, mult: -3.5, elevation: -60, rPow: 0.8 },
       ];
       for (const cfg of ringCfg) {
-        for (let i = 0; i < cfg.count; i++) {
+        for (let i = 0; i < cfg.count && parts.length < particleBudget; i++) {
           const r = Math.pow(Math.random(), cfg.rPow);
           const p = mkBase("ring", 0, 0,
             Math.random() * (cfg.sMax - cfg.sMin) + cfg.sMin,
@@ -222,7 +260,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
 
       // snowflakes
       const snowCount = Math.floor(200 * scaleFactor);
-      for (let i = 0; i < snowCount; i++) {
+      for (let i = 0; i < snowCount && parts.length < particleBudget; i++) {
         const p = mkBase("snow", 0, 0, 0, Math.random() * 0.4 + 0.3, 0);
         p.size = Math.random() * 10 + 8;
         p.speedX = Math.random() * 1.0 + 0.5;
@@ -236,14 +274,16 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       }
     };
 
-    const drawParticle = (p: Particle) => {
+    const drawParticle = (p: Particle, shouldAdvance: boolean) => {
       if (p.type === "snow") {
-        p.x += p.speedX!;
-        p.y += p.speedY!;
-        p.angle += p.spinSpeed!;
+        if (shouldAdvance) {
+          p.x += p.speedX!;
+          p.y += p.speedY!;
+          p.angle += p.spinSpeed!;
+        }
         const boundX = (W / 2) / canvasScale + 100;
         const boundY = (H / 2) / canvasScale + 100;
-        if (p.x > boundX || p.y > boundY) {
+        if (shouldAdvance && (p.x > boundX || p.y > boundY)) {
           if (Math.random() > 0.3) { p.x = (Math.random() * 2 - 1) * boundX; p.y = -boundY - 20; }
           else { p.x = -boundX - 20; p.y = (Math.random() * 2 - 1) * boundY; }
         }
@@ -261,20 +301,20 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
         return;
       }
       if (p.type === "ring") {
-        p.intrinsicAngle! -= 0.001 * p.speedMult!;
+        if (shouldAdvance) p.intrinsicAngle! -= 0.001 * p.speedMult!;
         const sync = rotY * (Math.PI / 180);
         const fa = p.intrinsicAngle! + sync;
         p.x = Math.cos(fa) * p.radiusX! * p.r!;
         p.y = treeBottomY + Math.sin(fa) * p.radiusY! * p.r! + p.elevation!;
-        p.floatAngle += 0.02;
+        if (shouldAdvance) p.floatAngle += 0.02;
         p.y -= Math.sin(p.floatAngle) * 2;
-        p.angle += p.speed;
+        if (shouldAdvance) p.angle += p.speed;
         p.alpha = p.baseAlpha + Math.sin(p.angle) * 0.8;
       } else {
-        p.angle += p.speed;
+        if (shouldAdvance) p.angle += p.speed;
         p.alpha = p.baseAlpha + Math.sin(p.angle) * 0.8;
         if (p.type === "tree" || p.type === "core") {
-          p.floatAngle += 0.02;
+          if (shouldAdvance) p.floatAngle += 0.02;
           p.y = p.baseY - Math.sin(p.floatAngle) * 3;
           p.x = p.baseX + Math.cos(p.floatAngle) * 2;
         }
@@ -291,8 +331,15 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       ctx.fill();
     };
 
+    let documentVisible = !document.hidden;
+    const wakeAnimation = () => {
+      if (!documentVisible || rafId) return;
+      rafId = requestAnimationFrame(animate);
+    };
     const animate = () => {
-      if (!dragging && !hoveringCard) tgtY += 0.1875;
+      rafId = 0;
+      if (!documentVisible) return;
+      if (!dragging && !hoveringCard && !pausedRef.current && !reducedMotion) tgtY += 0.1875;
       rotY += (tgtY - rotY) * 0.08;
       rotX += (tgtX - rotX) * 0.08;
       zoom += (tgtZoom - zoom) * 0.08;
@@ -302,25 +349,51 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       carousel.style.transform = `rotateY(${rotY}deg)`;
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(dpr, dpr);
       ctx.fillStyle = "rgba(3,3,3,0.7)";
       ctx.fillRect(0, 0, W, H);
       ctx.translate(W / 2, H / 2);
       ctx.scale(canvasScale, canvasScale);
       ctx.translate(0, rotX * 5);
 
-      for (const p of parts) drawParticle(p);
+      const shouldAdvanceParticles = !pausedRef.current && !reducedMotion;
+      for (const p of parts) drawParticle(p, shouldAdvanceParticles);
 
-      rafId = requestAnimationFrame(animate);
+      const transformsMoving =
+        Math.abs(tgtY - rotY) > 0.02 ||
+        Math.abs(tgtX - rotX) > 0.02 ||
+        Math.abs(tgtZoom - zoom) > 0.1;
+      if (shouldAdvanceParticles || dragging || transformsMoving) wakeAnimation();
+    };
+
+    animationWakeRef.current = wakeAnimation;
+
+    const onVisibilityChange = () => {
+      documentVisible = !document.hidden;
+      if (documentVisible) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
+        wakeAnimation();
+      } else {
+        cancelAnimationFrame(rafId);
+      }
     };
 
     initCanvas();
-    animate();
+    wakeAnimation();
 
-    const onResize = () => { cancelAnimationFrame(rafId); initCanvas(); animate(); };
+    const onResize = () => {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+      initCanvas();
+      wakeAnimation();
+    };
     window.addEventListener("resize", onResize);
+    document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
       cancelAnimationFrame(rafId);
+      animationWakeRef.current = () => undefined;
       scene.removeEventListener("mousedown", onDown);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
@@ -331,8 +404,9 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
       carousel.removeEventListener("mouseover", onEnter);
       carousel.removeEventListener("mouseout", onLeave);
       window.removeEventListener("resize", onResize);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, []);
+  }, [compactScene, reducedMotion]);
 
   useEffect(() => {
     if (!lightbox) return;
@@ -353,6 +427,7 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     const onPopState = () => {
       lightboxHistoryRef.current = false;
       setLightbox(null);
+      window.setTimeout(() => lightboxTriggerRef.current?.focus(), 0);
     };
 
     window.addEventListener("popstate", onPopState);
@@ -361,20 +436,87 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
     };
   }, [lightbox]);
 
-  function closeLightbox() {
+  const showAdjacentPhoto = useCallback((direction: -1 | 1) => {
+    if (!lightbox || displayPhotos.length < 2) return;
+    const currentIndex = displayPhotos.findIndex((photo) => photo._id === lightbox._id);
+    const nextIndex = (currentIndex + direction + displayPhotos.length) % displayPhotos.length;
+    setLightbox(displayPhotos[nextIndex]);
+  }, [displayPhotos, lightbox]);
+
+  const closeLightbox = useCallback(() => {
     if (lightboxHistoryRef.current) {
       lightboxHistoryRef.current = false;
       setLightbox(null);
       window.history.back();
+      window.setTimeout(() => lightboxTriggerRef.current?.focus(), 0);
       return;
     }
 
     setLightbox(null);
-  }
+    window.setTimeout(() => lightboxTriggerRef.current?.focus(), 0);
+  }, []);
+
+  useEffect(() => {
+    if (!lightbox) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.setTimeout(() => lightboxRef.current?.focus(), 0);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeLightbox();
+      const target = event.target as HTMLElement | null;
+      const isEditing = target?.matches("input, textarea, [contenteditable='true']");
+      if (!isEditing && event.key === "ArrowLeft") {
+        event.preventDefault();
+        showAdjacentPhoto(-1);
+      }
+      if (!isEditing && event.key === "ArrowRight") {
+        event.preventDefault();
+        showAdjacentPhoto(1);
+      }
+
+      if (event.key === "Tab" && lightboxRef.current) {
+        const focusable = Array.from(
+          lightboxRef.current.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled])',
+          ),
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [closeLightbox, lightbox, showAdjacentPhoto]);
 
   return (
     <section className={styles.wall}>
-      <canvas ref={canvasRef} className={styles.canvas} />
+      <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
+
+      <header className={styles.hud}>
+        <div>
+          <span>MEMORY ORBIT</span>
+          <strong>星空漫游</strong>
+          <small>{displayPhotos.length} 张记忆 · {compactScene ? "轻量星轨" : "完整星轨"}</small>
+        </div>
+        <button
+          type="button"
+          onClick={() => setPaused((value) => !value)}
+          aria-pressed={paused}
+        >
+          {paused ? "继续漫游" : "暂停星轨"}
+        </button>
+      </header>
 
       <div ref={sceneRef} className={styles.scene}>
         <div ref={cameraRef} className={styles.camera}>
@@ -411,30 +553,69 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
 
           <div ref={carouselRef} className={styles.carousel}>
             {cards.map((card) => (
-              <img
+              <button
                 key={card.key}
-                src={card.photo.url}
-                alt={card.photo.caption}
                 className={styles.photoCard}
                 style={card.style}
+                type="button"
+                aria-label={`查看照片：${card.photo.caption}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (!hasDraggedRef.current) setLightbox(card.photo);
+                  if (!hasDraggedRef.current) {
+                    lightboxTriggerRef.current = e.currentTarget;
+                    setLightbox(card.photo);
+                  }
                 }}
-              />
+              >
+                {failedPhotos.has(card.key) ? (
+                  <span className={styles.photoFallback} aria-hidden="true">
+                    <b>影像暂离轨</b>
+                    <small>{card.photo.caption}</small>
+                  </span>
+                ) : (
+                  <img
+                    src={card.photo.url}
+                    alt=""
+                    draggable={false}
+                    onError={() => {
+                      setFailedPhotos((current) => new Set(current).add(card.key));
+                    }}
+                  />
+                )}
+              </button>
             ))}
           </div>
         </div>
       </div>
 
 
-      <div className={styles.hint}>拖拽旋转 · 滚轮缩放 · 点击照片放大</div>
+      {displayPhotos.length === 0 && (
+        <div className={styles.emptyState} role="status">
+          <span>NO PHOTOS IN ORBIT</span>
+          <strong>星轨还在等待第一张照片</strong>
+          <p>可以先浏览普通照片墙，或在后台选择要进入 3D 星空的影像。</p>
+          <Link href="/photos?view=static">返回照片墙</Link>
+        </div>
+      )}
+
+      <div className={styles.hint}>
+        {reducedMotion ? "已按系统偏好减少动态效果" : "拖拽旋转 · 滚轮缩放 · 点击照片放大"}
+      </div>
 
       {lightbox && (
-        <div className={styles.lightbox} onClick={closeLightbox}>
+        <div
+          ref={lightboxRef}
+          className={styles.lightbox}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`照片预览：${lightbox.caption}`}
+          tabIndex={-1}
+          onClick={closeLightbox}
+        >
           <button
             className={styles.close}
             type="button"
+            aria-label="关闭照片预览"
             onClick={(e) => {
               e.stopPropagation();
               closeLightbox();
@@ -443,8 +624,38 @@ export default function StarPhotoWall({ photos }: { photos: Photo[] }) {
             ×
           </button>
 
-          <div className={styles.lightboxStage} onClick={(e) => e.stopPropagation()}>
-            <img src={lightbox.url} alt={lightbox.caption} />
+          {displayPhotos.length > 1 && (
+            <>
+              <button className={`${styles.lightboxNav} ${styles.previous}`} type="button" onClick={(event) => { event.stopPropagation(); showAdjacentPhoto(-1); }} aria-label="上一张照片">‹</button>
+              <button className={`${styles.lightboxNav} ${styles.next}`} type="button" onClick={(event) => { event.stopPropagation(); showAdjacentPhoto(1); }} aria-label="下一张照片">›</button>
+            </>
+          )}
+
+          <div
+            className={styles.lightboxStage}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(event) => {
+              const touch = event.touches[0];
+              lightboxTouchStartRef.current = touch
+                ? { x: touch.clientX, y: touch.clientY }
+                : null;
+            }}
+            onTouchEnd={(event) => {
+              const start = lightboxTouchStartRef.current;
+              const touch = event.changedTouches[0];
+              lightboxTouchStartRef.current = null;
+              if (!start || !touch || displayPhotos.length < 2) return;
+              const deltaX = touch.clientX - start.x;
+              const deltaY = touch.clientY - start.y;
+              if (Math.abs(deltaX) < 48 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+              showAdjacentPhoto(deltaX < 0 ? 1 : -1);
+            }}
+          >
+            {failedPhotos.has(lightbox._id) ? (
+              <div className={styles.lightboxFallback} role="status">影像暂时无法加载</div>
+            ) : (
+              <img src={lightbox.url} alt={lightbox.caption} onError={() => setFailedPhotos((current) => new Set(current).add(lightbox._id))} />
+            )}
             <div className={styles.caption}>
               <strong>{lightbox.caption}</strong>
               <span>{lightbox.category}</span>

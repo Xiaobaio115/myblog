@@ -1,10 +1,12 @@
 import AdminGate from "./AdminGate";
+import { hasAdminSession } from "@/lib/admin-session";
 
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <AdminGate>{children}</AdminGate>;
+  const authenticated = await hasAdminSession();
+  return <AdminGate serverAuthenticated={authenticated}>{authenticated ? children : null}</AdminGate>;
 }

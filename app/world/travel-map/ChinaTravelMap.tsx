@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import type { TravelMapData, TravelPlace } from "@/data/travel-map";
+import styles from "./TravelMap.module.css";
 
 type Props = {
   data: TravelMapData;
@@ -23,6 +24,7 @@ export default function ChinaTravelMap({ data }: Props) {
   const geoJsonRef = useRef<unknown>(null);
   const keyToGeoRef = useRef<Record<string, string>>({});
   const geoToKeyRef = useRef<Record<string, string>>({});
+  const reducedMotionRef = useRef(false);
 
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -97,7 +99,7 @@ export default function ChinaTravelMap({ data }: Props) {
     if (!svg || !activeKeyRef.current) return;
 
     function renderFrame() {
-      if (!activeKeyRef.current || !svg) return;
+      if (!activeKeyRef.current || !svg || document.hidden) return;
       const prov = data[activeKeyRef.current];
       if (!prov) return;
 
@@ -172,7 +174,7 @@ export default function ChinaTravelMap({ data }: Props) {
     ) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const echarts = (window as any).echarts;
-      if (!echarts) return;
+      if (!echarts || !geoJsonRef.current) return;
 
       const focusCenter = vc.targetCoord
         ? getGeo3DCenter(vc.targetCoord)
@@ -229,8 +231,8 @@ export default function ChinaTravelMap({ data }: Props) {
             alpha: vc.alpha,
             beta: vc.beta,
             center: focusCenter,
-            animation: true,
-            animationDurationUpdate: 800,
+            animation: !reducedMotionRef.current,
+            animationDurationUpdate: reducedMotionRef.current ? 0 : 800,
             animationEasingUpdate: "cubicOut",
           },
           regions: normalizedRegions,
@@ -368,6 +370,16 @@ export default function ChinaTravelMap({ data }: Props) {
     };
   }, [data, geoToScreen]);
 
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => {
+      reducedMotionRef.current = query.matches;
+    };
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
   // Mobile browsers do not consistently expose scatter3D points to ECharts'
   // click picker. Keep accessible HTML hit targets aligned with each pin.
   useEffect(() => {
@@ -377,6 +389,7 @@ export default function ChinaTravelMap({ data }: Props) {
     if (!root) return;
 
     const updateTargets = () => {
+      if (document.hidden) return;
       const rootRect = root.getBoundingClientRect();
       const mobile = isMobileViewport();
 
@@ -401,12 +414,38 @@ export default function ChinaTravelMap({ data }: Props) {
         });
       }
 
-      mobilePinFrameRef.current = requestAnimationFrame(updateTargets);
+      mobilePinFrameRef.current = window.setTimeout(updateTargets, 80);
+    };
+
+    const onVisibilityChange = () => {
+      window.clearTimeout(mobilePinFrameRef.current);
+      if (!document.hidden) updateTargets();
     };
 
     updateTargets();
-    return () => cancelAnimationFrame(mobilePinFrameRef.current);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.clearTimeout(mobilePinFrameRef.current);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, [data, geoToScreen, mapStatus]);
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      cancelAnimationFrame(animFrameRef.current);
+      const chart = chartRef.current;
+      if (document.hidden) {
+        chart?.getZr().animation.stop();
+        return;
+      }
+
+      chart?.getZr().wakeUp();
+      chart?.resize();
+      if (activeKeyRef.current) runTrackingLoop();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [runTrackingLoop]);
 
   // ---- 返回总览 ----
   const resetView = useCallback(() => {
@@ -557,10 +596,16 @@ export default function ChinaTravelMap({ data }: Props) {
   const activeProv = activeKey ? data[activeKey] : null;
 
   return (
-    <div className={`tmap-root${detailOpen ? " detail-open" : ""}`}>
+    <div className={`${styles.root} tmap-root${detailOpen ? " detail-open" : ""}`}>
       {mapStatus !== "ready" && (
-        <div className="tmap-load-state" role="status">
-          <strong>{mapStatus === "loading" ? "地图加载中" : "地图加载失败"}</strong>
+        <div className={styles.loadState} role="status" aria-live="polite">
+          <span className={styles.loadEyebrow}>TRAVEL ARCHIVE</span>
+          <strong>{mapStatus === "loading" ? "正在展开旅行地图" : "3D 地图暂时没有抵达"}</strong>
+          <p>
+            {mapStatus === "loading"
+              ? "正在读取地图边界和旅行坐标…"
+              : "你仍可以从下方地点列表浏览旅行记录，或重新加载地图。"}
+          </p>
           {mapStatus === "error" && (
             <button type="button" onClick={() => setRetryKey((value) => value + 1)}>
               重新加载
@@ -640,7 +685,10 @@ export default function ChinaTravelMap({ data }: Props) {
                         className="tmap-img-card"
                         loading="lazy"
                         onError={(event) => {
-                          event.currentTarget.src = `https://placehold.co/600x400/0f172a/38bdf8?text=${encodeURIComponent(place.name)}`;
+                          event.currentTarget.onerror = null;
+                          event.currentTarget.src = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(
+                            `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400"><rect width="100%" height="100%" fill="#0f172a"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#7dd3fc" font-family="sans-serif" font-size="24">影像加载失败</text></svg>`,
+                          )}`;
                         }}
                       />
                     ))}

@@ -2,26 +2,13 @@
 
 import Image from "next/image";
 import { useRef, useState } from "react";
+import { adminFetch, getAdminPassword } from "@/lib/admin-api";
 
 type CoverImageFieldProps = {
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
 };
-
-async function parseJsonSafely(response: Response) {
-  const text = await response.text();
-
-  if (!text.trim()) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(text) as Record<string, unknown>;
-  } catch {
-    return { error: text };
-  }
-}
 
 export function CoverImageField({
   value,
@@ -37,7 +24,7 @@ export function CoverImageField({
       return;
     }
 
-    const password = localStorage.getItem("admin_password") || "";
+    const password = getAdminPassword();
 
     if (!password) {
       setMessage("后台密码已丢失，请重新进入后台。");
@@ -51,21 +38,12 @@ export function CoverImageField({
     setMessage("");
 
     try {
-      const response = await fetch("/api/upload", {
+      const data = await adminFetch<{ url?: string }>("/api/upload", {
         method: "POST",
-        headers: {
-          "x-admin-password": password,
-        },
+        password,
         body: formData,
+        fallbackError: "封面图上传失败。",
       });
-
-      const data = await parseJsonSafely(response);
-
-      if (!response.ok) {
-        throw new Error(
-          typeof data?.error === "string" ? data.error : "封面图上传失败。"
-        );
-      }
 
       const imageUrl = typeof data?.url === "string" ? data.url : "";
 

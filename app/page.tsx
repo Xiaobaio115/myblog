@@ -1,23 +1,25 @@
-/* eslint-disable @next/next/no-img-element */
-
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArticleCard } from "@/app/components/article-card";
-import { HomePhotoItem } from "@/app/components/home-photo-item";
+import { HomeHeroCarousel } from "@/app/components/home-hero-carousel";
+import { SafeImage } from "@/app/components/safe-image";
 import { SiteFrame } from "@/app/components/site-frame";
-import { StatsBar } from "@/app/components/stats-bar";
-import { SkillsPreview } from "@/app/components/skills-preview";
 import { getLatestPhotos, getPublishedPosts } from "@/lib/content";
-import { getProfileSetting, getSkillsSetting } from "@/lib/settings";
+import { getPublicContentCounts } from "@/lib/content";
+import { getHomeHeroSetting, getProfileSetting } from "@/lib/settings";
+import { getTravelMapData, resolveCoords } from "@/lib/travel-map";
+import ChinaTravelMap from "@/app/world/travel-map/ChinaTravelMap";
+import styles from "./home-editorial.module.css";
 
 export default async function HomePage() {
-  const [posts, photos, profile, skills] = await Promise.all([
+  const [posts, photos, profile, contentCounts, homeHero, travelMapData] = await Promise.all([
     getPublishedPosts(4),
     getLatestPhotos(8),
     getProfileSetting(),
-    getSkillsSetting(),
+    getPublicContentCounts(),
+    getHomeHeroSetting(),
+    getTravelMapData(),
   ]);
 
   const latestPosts = posts.slice(0, 4);
@@ -27,249 +29,93 @@ export default async function HomePage() {
       return url ? [{ ...photo, url }] : [];
     })
     .slice(0, 8);
-  const displayName = profile.name || "LQPP";
-
-  // 获取总数统计用于显示
-  const [allPosts, allPhotos] = await Promise.all([
-    getPublishedPosts(999),
-    getLatestPhotos(999),
-  ]);
-
+  const resolvedTravelMap = resolveCoords(travelMapData);
+  const travelPlaceCount = Object.values(resolvedTravelMap).reduce(
+    (count, province) => count + province.places.length,
+    0,
+  );
   const stats = [
-    { label: "文章", value: allPosts.length },
-    { label: "照片", value: allPhotos.length },
-    { label: "板块", value: 6 },
+    { label: "文章", value: contentCounts.posts },
+    { label: "照片", value: contentCounts.photos },
+    { label: "足迹", value: travelPlaceCount },
   ];
-
-  const featuredSkills = skills
-    .flatMap((group) =>
-      group.items.map((item) =>
-        typeof item === "string"
-          ? { name: item, iconUrl: undefined, group: group.group }
-          : { name: item.name, iconUrl: item.iconUrl, group: group.group },
-      ),
-    )
-    .slice(0, 10);
 
   return (
     <SiteFrame>
-      <section className="pink-home-hero">
-        <Image
-          className="pink-home-visual"
-          src="/poetic-images/hero-home.jpg"
-          alt=""
-          fill
-          sizes="100vw"
-          preload
-        />
-        <div className="pink-home-shade" aria-hidden="true" />
-        <div className="container pink-home-content">
-        <div className="pink-home-copy animate-fade-in-up">
-          <p className="eyebrow animate-fade-in delay-100">LQPP / Personal Digital Garden</p>
-          <h1 className="animate-fade-in-up delay-200">在代码与远方之间，收藏缓慢发光的日子</h1>
-          <p className="pink-home-status animate-fade-in delay-300">{profile.status}</p>
-          <p className="pink-home-intro animate-fade-in delay-400">{profile.intro}</p>
-          <div className="pink-home-actions animate-scale-in delay-500">
-            <Link href="/world" className="pink-btn primary">
-              走进我的世界
-            </Link>
-            <Link href="/articles" className="pink-btn">
-              读一页近作
-            </Link>
-            <Link href="/photos/3d" className="pink-btn">
-              漫游星空相册
-            </Link>
+      <HomeHeroCarousel
+        profile={profile}
+        slides={homeHero}
+        stats={stats}
+      />
+
+      <div className={styles.homeBody}>
+        <section id="travel-map" className={styles.mapSection}>
+          <div className={`${styles.mapIntro} container`}>
+            <div className={styles.sectionHeading}>
+              <p className={styles.sectionEyebrow}>01 / TRAVEL ARCHIVE</p>
+              <h2>把走过的中国，铺成一张会呼吸的地图</h2>
+              <p>拖动地图看见山河，选择一座城，打开留在那里的照片和故事。</p>
+            </div>
+            <div className={styles.mapAside}>
+              <span>{Object.keys(resolvedTravelMap).length} 个省份</span>
+              <span>{travelPlaceCount} 处足迹</span>
+              <Link href="/world/travel-map">进入完整地图 <span aria-hidden="true">↗</span></Link>
+            </div>
           </div>
-        </div>
-
-        <div className="pink-home-profile-bar animate-slide-in-right delay-300">
-          <div className="avatar float-animate">
-            {profile.avatarUrl ? (
-              <img src={profile.avatarUrl} alt={displayName} />
-            ) : (
-              <span>LQ</span>
-            )}
+          <div className={styles.mapStage}>
+            <ChinaTravelMap data={resolvedTravelMap} />
           </div>
-          <div className="info">
-            <span className="name">{displayName}</span>
-            {profile.tagline ? <span className="tagline">{profile.tagline}</span> : null}
+        </section>
+
+        <section className={`${styles.storySection} container`}>
+          <div className={styles.sectionHeadingRow}>
+            <div className={styles.sectionHeading}>
+              <p className={styles.sectionEyebrow}>02 / WRITING</p>
+              <h2>新近落下的文字</h2>
+              <p>把来不及说完的想法，写成可以再次抵达的坐标。</p>
+            </div>
+            <Link href="/articles" className={styles.sectionLink}>查看全部文章 <span aria-hidden="true">↗</span></Link>
           </div>
-          <div className="divider" aria-hidden="true" />
-          <StatsBar stats={stats} />
-          <div className="divider" aria-hidden="true" />
-          <div className="meta-links">
-            {profile.githubUrl ? (
-              <a href={profile.githubUrl} target="_blank" rel="noopener noreferrer">
-                GitHub
-              </a>
-            ) : null}
-            <Link href="/about">查看完整档案</Link>
-          </div>
-        </div>
-        </div>
-      </section>
-
-      <section className="container pink-section">
-        <div className="pink-section-head">
-          <h2>沿着微光，走进我的世界</h2>
-          <p>文字、远方与照片，在这里长成一座可以慢慢散步的数字花园。</p>
-        </div>
-
-        <div className="pink-module-grid pink-module-grid-4 stagger-children">
-          <Link href="/world" className="pink-module">
-            <span className="pink-module-kicker">World Map</span>
-            <h3>我的世界</h3>
-            <p>家乡、学校、旅行、游戏，一整张个人世界地图。</p>
-            <span className="pink-text-link">打开地图</span>
-          </Link>
-
-          <Link href="/articles" className="pink-module">
-            <span className="pink-module-kicker">Articles</span>
-            <h3>思考碎片</h3>
-            <p>技术笔记、生活随笔，以及突然冒出来的想法。</p>
-            <span className="pink-text-link">查看全部</span>
-          </Link>
-
-          <Link href="/photos" className="pink-module pink-module-dark">
-            <span className="pink-module-kicker">Memory Atlas</span>
-            <h3>记忆星图</h3>
-            <p>普通相册、3D 星空墙与旅行地图，翻翻记忆。</p>
-            <span className="pink-text-link">进入相册</span>
-          </Link>
-
-          <Link href="/about" className="pink-module">
-            <span className="pink-module-kicker">Profile</span>
-            <h3>关于我</h3>
-            <p>个人档案、教育经历、技术栈与联系方式。</p>
-            <span className="pink-text-link">了解 {displayName}</span>
-          </Link>
-        </div>
-      </section>
-
-      <section className="container pink-section">
-        <div className="pink-section-head">
-          <h2>此刻，风正吹向哪里</h2>
-          <p>正在做的事、身处的地方，以及最近悄悄发芽的念头。</p>
-        </div>
-        <div className="pink-now-grid">
-          <div className="pink-now-card pink-now-card-primary">
-            <span className="pink-now-kicker">Now</span>
-            <h3>{profile.status || "在做点小事"}</h3>
-            {profile.location ? (
-              <p>
-                <span className="pink-now-badge">◎</span> {profile.location}
-              </p>
-            ) : null}
-            {profile.intro ? <p className="pink-now-intro">{profile.intro}</p> : null}
-          </div>
-
-          <div className="pink-now-card">
-            <span className="pink-now-kicker">Latest</span>
-            <h3>最近的想法</h3>
-            {latestPosts[0] ? (
-              <Link href={`/posts/${latestPosts[0].slug}`} className="pink-now-post">
-                <span className="pink-now-post-title">{latestPosts[0].title}</span>
-                {latestPosts[0].excerpt ? (
-                  <span className="pink-now-post-excerpt">{latestPosts[0].excerpt}</span>
-                ) : null}
-              </Link>
-            ) : (
-              <p>还没有写下最新的想法，很快会有。</p>
-            )}
-          </div>
-
-          <div className="pink-now-card">
-            <span className="pink-now-kicker">Identity</span>
-            <h3>身份关键词</h3>
-            <div className="pink-now-tags">
-              {(profile.tags && profile.tags.length > 0
-                ? profile.tags
-                : ["学生", "博客作者", "旅行探索者"]
-              ).map((tag) => (
-                <span key={tag} className="tag-chip">
-                  {tag}
-                </span>
+          {latestPosts.length > 0 ? (
+            <div className={styles.storyGrid}>
+              {latestPosts.slice(0, 1).map((post) => (
+                <article key={post._id} className={styles.storyLead}>
+                  <Link href={`/posts/${post.slug}`} className={styles.storyMedia}>
+                    <SafeImage src={post.coverUrl} alt={post.title} fallback="文字正在显影" className={styles.storyImage} imageClassName={styles.storyImageElement} loading="eager" />
+                  </Link>
+                  <div className={styles.storyMeta}><span>{post.date || "刚刚"}</span><span>{(post.tags || []).slice(0, 2).join(" / ") || "记录"}</span></div>
+                  <h3><Link href={`/posts/${post.slug}`}>{post.title}</Link></h3>
+                  <p>{post.excerpt || "一篇尚未写下摘要的记录。"}</p>
+                </article>
               ))}
+              <div className={styles.storyList}>
+                {latestPosts.slice(1, 4).map((post, index) => (
+                  <article key={post._id} className={styles.storyListItem}>
+                    <span className={styles.storyNumber}>0{index + 2}</span>
+                    <div><div className={styles.storyMeta}><span>{post.date || "刚刚"}</span></div><h3><Link href={`/posts/${post.slug}`}>{post.title}</Link></h3><p>{post.excerpt || "一篇尚未写下摘要的记录。"}</p></div>
+                    <span className={styles.indexArrow} aria-hidden="true">↗</span>
+                  </article>
+                ))}
+              </div>
             </div>
-          </div>
-        </div>
-      </section>
+          ) : (
+            <div className={styles.emptyStory}><span className={styles.emptyMark}>✎</span><h3>还没有发布文章</h3><p>第一篇思考碎片很快就会出现。也可以先去我的世界逛逛。</p><Link href="/world" className={styles.sectionLink}>先去看看我的世界 <span aria-hidden="true">↗</span></Link></div>
+          )}
+        </section>
 
-      <section className="container pink-section">
-        <div className="pink-section-head">
-          <h2>用这些工具，搭一座数字花园</h2>
-          <p>正在使用、学习与继续探索的技术，都是构筑这里的一砖一瓦。</p>
-        </div>
-        {featuredSkills.length > 0 ? (
-          <>
-            <SkillsPreview skills={featuredSkills} />
-            <div className="pink-skill-more">
-              <Link href="/about#skills" className="pink-text-link">
-                查看完整技术栈 →
-              </Link>
-            </div>
-          </>
-        ) : (
-          <div className="empty-state">
-            <p>技术栈还在整理中。</p>
+        <section className={`${styles.memorySection} container`}>
+          <div className={styles.sectionHeadingRow}>
+            <div className={styles.sectionHeading}><p className={styles.sectionEyebrow}>03 / MEMORY</p><h2>被光留下的片刻</h2><p>有些瞬间不必解释，只需要被好好收藏。</p></div>
+            <div className={styles.memoryLinks}><Link href="/photos">普通相册 ↗</Link><Link href="/photos/3d">3D 星空墙 ↗</Link></div>
           </div>
-        )}
-      </section>
+          {featuredPhotos.length > 0 ? (
+            <div className={styles.memoryGrid}>{featuredPhotos.slice(0, 5).map((photo, index) => <Link href={photo.sourceHref || "/photos"} key={photo._id} className={`${styles.memoryItem} ${styles[`memoryItem${index + 1}`]}`}><SafeImage src={photo.url} alt={photo.caption || "精选瞬间"} fallback={photo.caption || "精选瞬间"} className={styles.memoryImage} imageClassName={styles.memoryImageElement} loading="lazy" /><span>{photo.caption || "精选瞬间"}</span></Link>)}</div>
+          ) : (
+            <div className={styles.memoryFallback}><Image src="/poetic-images/hero-photos.jpg" alt="被光留下的生活片段" fill sizes="100vw" /><span className={styles.visualShade} aria-hidden="true" /><p>相册正在等待下一束光。</p></div>
+          )}
+        </section>
 
-      <section className="container pink-section">
-        <div className="pink-section-head">
-          <h2>新近落下的文字</h2>
-          <p>把来不及说完的想法，写成可以再次抵达的坐标。</p>
-        </div>
-        {latestPosts.length > 0 ? (
-          <div className="cards-grid">
-            {latestPosts.map((post) => (
-              <ArticleCard key={post._id} post={post} />
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state empty-state-rich">
-            <div className="empty-icon">✎</div>
-            <h3>还没有发布文章</h3>
-            <p>第一篇思考碎片很快就会出现。也可以先去我的世界逛逛。</p>
-            <div className="empty-actions">
-              <Link href="/world" className="pink-btn primary">
-                先去看看我的世界
-              </Link>
-              <Link href="/articles" className="pink-btn">
-                查看文章页
-              </Link>
-            </div>
-          </div>
-        )}
-      </section>
-
-      <section className="container pink-section">
-        <div className="pink-section-head">
-          <h2>被光留下的片刻</h2>
-          <p>有些瞬间不必解释，只需要被好好收藏。</p>
-        </div>
-        {featuredPhotos.length > 0 ? (
-          <div className="home-photo-grid pink-photo-grid">
-            {featuredPhotos.map((photo) => (
-              <HomePhotoItem
-                key={photo._id}
-                url={photo.url}
-                caption={photo.caption || "精选瞬间"}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="home-photo-placeholder">
-            <Link href="/photos/3d" className="pink-btn primary">
-              打开 3D 星空相册
-            </Link>
-            <Link href="/photos" className="pink-btn">
-              查看全部照片
-            </Link>
-          </div>
-        )}
-      </section>
+      </div>
     </SiteFrame>
   );
 }

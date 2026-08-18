@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/mongodb";
+import { getDb, isMongoConfigured } from "@/lib/mongodb";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +20,19 @@ export async function GET(
       return NextResponse.json({ error: "照片 ID 无效" }, { status: 400 });
     }
 
+    if (!isMongoConfigured()) {
+      return NextResponse.json({ comments: [] });
+    }
+
     const db = await getDb();
+    const photo = await db.collection("photos").findOne(
+      { _id: photoId, isPrivate: { $ne: true } },
+      { projection: { _id: 1 } }
+    );
+    if (!photo) {
+      return NextResponse.json({ error: "照片不存在" }, { status: 404 });
+    }
+
     const list = await db
       .collection("photo_comments")
       .find({ photoId })
@@ -53,6 +65,10 @@ export async function POST(
       return NextResponse.json({ error: "照片 ID 无效" }, { status: 400 });
     }
 
+    if (!isMongoConfigured()) {
+      return NextResponse.json({ error: "服务器未配置 MONGODB_URI。" }, { status: 503 });
+    }
+
     const body = await request.json().catch(() => ({}));
     const author = String(body.author || "").trim().slice(0, 40) || "匿名";
     const content = String(body.content || "").trim().slice(0, 500);
@@ -63,7 +79,10 @@ export async function POST(
 
     const db = await getDb();
     // make sure the photo exists
-    const photo = await db.collection("photos").findOne({ _id: photoId }, { projection: { _id: 1 } });
+    const photo = await db.collection("photos").findOne(
+      { _id: photoId, isPrivate: { $ne: true } },
+      { projection: { _id: 1 } }
+    );
     if (!photo) {
       return NextResponse.json({ error: "照片不存在" }, { status: 404 });
     }

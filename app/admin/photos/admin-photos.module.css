@@ -1,0 +1,37 @@
+.metadataEditor {
+  border-top: 1px solid var(--border);
+}
+
+.metadataEditor summary {
+  padding: 0.7rem 0;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.metadataFields {
+  display: grid;
+  gap: 0.65rem;
+  padding-bottom: 0.85rem;
+}
+
+.metadataFields label {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.metadataFields label > span {
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.metadataFields :global(.admin-input) {
+  min-height: 40px;
+}
+
+.metadataFields :global(.secondary-link) {
+  justify-content: center;
+  width: 100%;
+}

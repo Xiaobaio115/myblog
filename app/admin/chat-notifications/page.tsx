@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { adminFetch } from "@/lib/admin-api";
 import styles from "./page.module.css";
 
 type SettingsSummary = {
@@ -46,19 +47,13 @@ export default function ChatNotificationsAdminPage() {
   const [aiTesting, setAiTesting] = useState(false);
   const [message, setMessage] = useState<FeedbackMessage | null>(null);
 
-  const password =
-    typeof window === "undefined" ? "" : localStorage.getItem("admin_password") || "";
-
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/chat-notification-settings", {
-        headers: { "x-admin-password": password },
-        cache: "no-store",
+      const data = await adminFetch<SettingsSummary>("/api/chat-notification-settings", {
+        fallbackError: "读取聊天通知配置失败。",
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "读取失败");
-      setSummary(data as SettingsSummary);
+      setSummary(data);
     } catch (error) {
       setMessage({
         text: error instanceof Error ? error.message : "读取聊天通知配置失败。",
@@ -67,7 +62,7 @@ export default function ChatNotificationsAdminPage() {
     } finally {
       setLoading(false);
     }
-  }, [password]);
+  }, []);
 
   useEffect(() => {
     queueMicrotask(load);
@@ -77,13 +72,9 @@ export default function ChatNotificationsAdminPage() {
     setSaving(true);
     setMessage(null);
     try {
-      const response = await fetch("/api/chat-notification-settings", {
+      const data = await adminFetch<{ settings: SettingsSummary }>("/api/chat-notification-settings", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "x-admin-password": password,
-        },
-        body: JSON.stringify({
+        json: {
           aiApiKey,
           aiBaseUrl,
           aiModel,
@@ -93,10 +84,9 @@ export default function ChatNotificationsAdminPage() {
           clearAi,
           clearServerChan,
           clearWebhook,
-        }),
+        },
+        fallbackError: "保存聊天通知配置失败。",
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "保存失败");
       setSummary(data.settings as SettingsSummary);
       setAiApiKey("");
       setAiBaseUrl("");
@@ -122,12 +112,10 @@ export default function ChatNotificationsAdminPage() {
     setTesting(true);
     setMessage(null);
     try {
-      const response = await fetch("/api/chat-notification-settings", {
+      await adminFetch("/api/chat-notification-settings", {
         method: "POST",
-        headers: { "x-admin-password": password },
+        fallbackError: "测试通知发送失败。",
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "发送失败");
       setMessage({ text: "测试通知已发送，请检查手机端。", tone: "success" });
     } catch (error) {
       setMessage({
@@ -143,12 +131,10 @@ export default function ChatNotificationsAdminPage() {
     setAiTesting(true);
     setMessage(null);
     try {
-      const response = await fetch("/api/ai-test", {
-        headers: { "x-admin-password": password },
-        cache: "no-store",
+      const data = await adminFetch<{ ok: boolean; error?: string; errorMessage?: string; model?: string; ms?: number }>("/api/ai-test", {
+        fallbackError: "AI 连接测试失败。",
       });
-      const data = await response.json();
-      if (!response.ok || !data.ok) throw new Error(data.error || data.errorMessage || "AI 连接失败");
+      if (!data.ok) throw new Error(data.error || data.errorMessage || "AI 连接失败");
       setMessage({
         text: `AI 连接正常：${data.model}，响应 ${data.ms} ms。`,
         tone: "success",

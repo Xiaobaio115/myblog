@@ -15,11 +15,14 @@ import type {
   ContentSection,
   AllSettings,
 } from "@/lib/settings";
+import { adminFetch } from "@/lib/admin-api";
+import { HomeHeroForm } from "./home-hero-form";
 
-type Tab = "profile" | "socials" | "skills" | "education" | "projects" | "travel" | "games" | "world";
+type Tab = "profile" | "homeHero" | "socials" | "skills" | "education" | "projects" | "travel" | "games" | "world";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "profile", label: "👤 个人信息" },
+  { key: "homeHero", label: "▣ 首页轮播" },
   { key: "socials", label: "🔗 社交链接" },
   { key: "skills", label: "🛠 技能栈" },
   { key: "education", label: "🎓 教育经历" },
@@ -29,25 +32,11 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "world", label: "🌍 世界分区" },
 ];
 
-async function parseJsonSafely(response: Response) {
-  const text = await response.text();
-  if (!text.trim()) return null;
-
-  try {
-    return JSON.parse(text) as Record<string, unknown>;
-  } catch {
-    return { error: text };
-  }
-}
-
 function normalizeSkillItem(item: SkillItem) {
   return typeof item === "string" ? { name: item, iconUrl: "" } : item;
 }
 
 export default function AdminSettingsPage() {
-  const [pw] = useState(() =>
-    typeof window === "undefined" ? "" : localStorage.getItem("admin_password") || ""
-  );
   const [tab, setTab] = useState<Tab>("profile");
   const [settings, setSettings] = useState<AllSettings | null>(null);
   const [loading, setLoading] = useState(false);
@@ -57,9 +46,13 @@ export default function AdminSettingsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/settings");
-      const data = await res.json();
-      setSettings(data as AllSettings);
+      const data = await adminFetch<AllSettings>("/api/settings", {
+        fallbackError: "读取站点设置失败。",
+      });
+      setSettings(data);
+      setMsg("");
+    } catch (error) {
+      setMsg(error instanceof Error ? error.message : "读取站点设置失败。");
     } finally {
       setLoading(false);
     }
@@ -69,21 +62,26 @@ export default function AdminSettingsPage() {
     queueMicrotask(load);
   }, [load]);
 
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("tab");
+    if (TABS.some((item) => item.key === requested)) {
+      queueMicrotask(() => setTab(requested as Tab));
+    }
+  }, []);
+
   async function saveSection(key: Tab, value: unknown) {
     setSaving(true);
     setMsg("");
     try {
-      const res = await fetch("/api/settings", {
+      await adminFetch("/api/settings", {
         method: "PUT",
-        headers: { "Content-Type": "application/json", "x-admin-password": pw },
-        body: JSON.stringify({ key, value }),
+        json: { key, value },
+        fallbackError: "保存站点设置失败。",
       });
-      const data = await res.json();
-      if (!res.ok) { setMsg("❌ " + (data.error || "保存失败")); return; }
-      setMsg("✅ 保存成功！");
-      load();
-    } catch {
-      setMsg("❌ 网络错误");
+      setMsg("保存成功！");
+      await load();
+    } catch (error) {
+      setMsg(error instanceof Error ? error.message : "保存站点设置失败。");
     } finally {
       setSaving(false);
     }
@@ -106,7 +104,13 @@ export default function AdminSettingsPage() {
               key={t.key}
               type="button"
               className={`settings-tab-btn ${tab === t.key ? "active" : ""}`}
-              onClick={() => { setTab(t.key); setMsg(""); }}
+              onClick={() => {
+                setTab(t.key);
+                setMsg("");
+                const url = new URL(window.location.href);
+                url.searchParams.set("tab", t.key);
+                window.history.replaceState(null, "", url);
+              }}
             >
               {t.label}
             </button>
@@ -115,7 +119,7 @@ export default function AdminSettingsPage() {
 
         <div className="settings-panel">
           {loading && <p className="admin-tip">加载中…</p>}
-          {msg && <p className="settings-msg">{msg}</p>}
+          {msg && <p className="settings-msg" role="status">{msg}</p>}
           {!loading && settings && (
             <>
               {tab === "profile" && (
@@ -124,6 +128,14 @@ export default function AdminSettingsPage() {
                   saving={saving}
                   onChange={(v) => setSettings({ ...settings, profile: v })}
                   onSave={(v) => saveSection("profile", v)}
+                />
+              )}
+              {tab === "homeHero" && (
+                <HomeHeroForm
+                  value={settings.homeHero ?? []}
+                  saving={saving}
+                  onChange={(v) => setSettings({ ...settings, homeHero: v })}
+                  onSave={(v) => saveSection("homeHero", v)}
                 />
               )}
               {tab === "socials" && (
@@ -401,7 +413,8 @@ function SkillsFormWithIcons({ value, saving, onChange, onSave }: {
                     value={item.iconUrl ?? ""}
                     onChange={(event) => updateItem(gi, itemIndex, { ...item, iconUrl: event.target.value })}
                   />
-                  <SkillIconUploader
+                  <SettingsImageUploader
+                    label="上传图标"
                     onUploaded={(iconUrl) => updateItem(gi, itemIndex, { ...item, iconUrl })}
                   />
                   <button
@@ -453,7 +466,7 @@ function SkillsFormWithIcons({ value, saving, onChange, onSave }: {
   );
 }
 
-function SkillIconUploader({ onUploaded }: { onUploaded: (url: string) => void }) {
+function SettingsImageUploader({ label, onUploaded }: { label: string; onUploaded: (url: string) => void }) {
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -472,16 +485,12 @@ function SkillIconUploader({ onUploaded }: { onUploaded: (url: string) => void }
     setMessage("");
 
     try {
-      const response = await fetch("/api/upload", {
+      const data = await adminFetch<{ url?: string }>("/api/upload", {
         method: "POST",
-        headers: { "x-admin-password": password },
+        password,
         body: formData,
+        fallbackError: "上传图片失败。",
       });
-      const data = await parseJsonSafely(response);
-
-      if (!response.ok) {
-        throw new Error(typeof data?.error === "string" ? data.error : "上传失败。");
-      }
 
       const url = typeof data?.url === "string" ? data.url : "";
       if (!url) throw new Error("上传成功，但没有拿到图片 URL。");
@@ -497,7 +506,7 @@ function SkillIconUploader({ onUploaded }: { onUploaded: (url: string) => void }
 
   return (
     <label className="secondary-link settings-upload-inline">
-      {uploading ? "上传中..." : "上传图标"}
+      {uploading ? "上传中..." : label}
       <input
         type="file"
         accept="image/*"
@@ -702,15 +711,20 @@ function PhotoPicker({ selected, onChange }: {
   const [open, setOpen] = useState(false);
   const [photos, setPhotos] = useState<ApiPhoto[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function load() {
     if (photos.length) return;
     setLoading(true);
+    setError("");
     try {
-      const res = await fetch("/api/photos?limit=200");
-      const data = await res.json() as ApiPhoto[];
+      const data = await adminFetch<ApiPhoto[]>("/api/photos?limit=200", {
+        fallbackError: "读取照片失败。",
+      });
       setPhotos(Array.isArray(data) ? data : []);
-    } catch { /* ignore */ }
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "读取照片失败。");
+    }
     finally { setLoading(false); }
   }
 
@@ -752,6 +766,7 @@ function PhotoPicker({ selected, onChange }: {
       {open && (
         <div className="photo-picker-grid">
           {loading && <p style={{ color: "var(--text-soft)", gridColumn: "1/-1" }}>加载中…</p>}
+          {error && !loading && <p role="alert" style={{ color: "var(--danger-text)", gridColumn: "1/-1" }}>{error}</p>}
           {!loading && photos.length === 0 && (
             <p style={{ color: "var(--text-soft)", gridColumn: "1/-1" }}>暂无上传的照片</p>
           )}
