@@ -1,7 +1,7 @@
 import { getDb } from "@/lib/mongodb";
 import { profile as defaultProfile, socials as defaultSocials, skills as defaultSkills, education as defaultEducation } from "@/data/profile";
 import { projects as defaultProjects } from "@/data/projects";
-import { travelDestinations as defaultTravel, gamesList as defaultGames, worldSections as defaultWorldSections } from "@/data/world";
+import { travelDestinations as defaultTravel, worldSections as defaultWorldSections } from "@/data/world";
 
 export type ProfileSetting = {
   name: string;
@@ -21,7 +21,6 @@ export type SkillGroup = { group: string; items: SkillItem[] };
 export type EducationItem = { time: string; title: string; desc: string; tags: string[] };
 export type ProjectItem = { title: string; status: string; desc: string; stack: string[]; href: string };
 export type TravelItem = { id: string; name: string; date: string; desc: string; cover: string; coverPosition?: string; photos: string[]; tags: string[]; sections: ContentSection[] };
-export type GameItem = { id: string; name: string; type: string; date: string; desc: string; cover: string; tags: string[] };
 export type ContentSection = { caption: string; photos: string[]; tag?: string };
 export type WorldSectionSetting = { id: string; eyebrow: string; title: string; desc: string; cover: string; icon: string; tags: string[]; photos: string[]; sections: ContentSection[] };
 export type HomeHeroSlideSetting = {
@@ -75,7 +74,6 @@ export type AllSettings = {
   education: EducationItem[];
   projects: ProjectItem[];
   travel: TravelItem[];
-  games: GameItem[];
   world: WorldSectionSetting[];
   homeHero: HomeHeroSlideSetting[];
 };
@@ -125,9 +123,6 @@ export async function getTravelSetting(): Promise<TravelItem[]> {
   return get("travel", defaultTravel);
 }
 
-export async function getGamesSetting(): Promise<GameItem[]> {
-  return get("games", defaultGames);
-}
 
 export async function getWorldSectionsSetting(): Promise<WorldSectionSetting[]> {
   const fallback: WorldSectionSetting[] = defaultWorldSections.map((s) => ({

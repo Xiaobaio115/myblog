@@ -81,7 +81,7 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
     : "技术笔记、生活随笔与旅行记录。这里不追逐信息流，只留下值得再次打开的篇章。";
 
   return (
-    <SiteFrame>
+    <SiteFrame><div className="articles-page">
       <div className={styles.layout}>
         <header className={styles.intro}>
           <div>
@@ -160,6 +160,6 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
           </section>
         )}
       </div>
-    </SiteFrame>
+    </div></SiteFrame>
   );
 }

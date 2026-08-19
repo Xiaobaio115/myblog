@@ -35,25 +35,13 @@ export const worldSections = [
     cover: "",
     icon: "Travel",
   },
-  {
-    id: "games",
-    eyebrow: "Games",
-    title: "游戏世界",
-    subtitle: "游戏也是一种探索世界的方式。",
-    desc: "在游戏里建造、冒险、和朋友一起完成目标，也会成为个人世界的一部分。",
-    tags: ["Minecraft", "Steam", "建造", "冒险", "朋友"],
-    cta: "进入游戏世界",
-    href: "/world/games",
-    cover: "",
-    icon: "Games",
-  },
 ];
 
 export const personality = [
   { title: "喜欢记录", desc: "会把生活片段变成文字、照片或网页。" },
-  { title: "喜欢探索", desc: "对新的城市、工具、游戏和技术都感兴趣。" },
+  { title: "喜欢探索", desc: "对新的城市、工具和技术都感兴趣。" },
   { title: "喜欢折腾", desc: "会不断改网站、试组件、搭建自己的系统。" },
-  { title: "游戏玩家", desc: "游戏是另一种世界探索方式。" },
+  
   { title: "慢慢成长", desc: "网站和我都会持续更新。" },
 ];
 
@@ -119,35 +107,6 @@ export const travelDestinations = [
   },
 ];
 
-export const gamesList = [
-  {
-    id: "minecraft",
-    name: "Minecraft",
-    type: "沙盒 · 建造",
-    date: "2020 至今",
-    desc: "从生存到创造，在方块世界里搭建自己的家园。",
-    cover: "",
-    tags: ["建造", "生存", "红石", "服务器"],
-  },
-  {
-    id: "steam-indie",
-    name: "Steam 独立游戏",
-    type: "独立 · 剧情",
-    date: "不定期",
-    desc: "喜欢剧情丰富或者玩法独特的独立游戏，比如 Hollow Knight、Celeste、Stardew Valley。",
-    cover: "",
-    tags: ["Hollow Knight", "Celeste", "Stardew Valley", "独立游戏"],
-  },
-  {
-    id: "genshin",
-    name: "原神",
-    type: "开放世界 · RPG",
-    date: "2021 - 2023",
-    desc: "提瓦特大陆的旅行者。场景设计和音乐给我留下了很深的印象。",
-    cover: "",
-    tags: ["开放世界", "剧情", "探索", "音乐"],
-  },
-];
 
 // TODO(上线前): 在 /admin 或此文件中补上真实的家乡地区。目前 details[0] 是中性占位。
 export const hometownContent = {

@@ -6152,7 +6152,7 @@ html, body {
 
 .world-card-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
   align-items: stretch;
 }
@@ -6184,8 +6184,7 @@ html, body {
 
 .world-big-card:nth-child(1),
 .world-big-card:nth-child(2),
-.world-big-card:nth-child(3),
-.world-big-card:nth-child(4) {
+.world-big-card:nth-child(3) {
   animation: none;
   opacity: 1 !important;
 }
@@ -6220,10 +6219,7 @@ html, body {
   background: linear-gradient(135deg, #34d399 0%, #059669 100%);
 }
 
-.world-big-card-cover.tone-games,
-.world-big-card:nth-child(4) .world-big-card-cover {
-  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-}
+
 
 .world-big-card-cover.tone-default {
   background: linear-gradient(135deg, #a78bfa 0%, #ec4899 100%);
@@ -10969,7 +10965,7 @@ html, body {
 /* World cards: equal, always readable, pink hover */
 .world-card-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
 }
 
@@ -11003,10 +10999,6 @@ html, body {
   background: linear-gradient(135deg, #34d399 0%, #059669 100%) !important;
 }
 
-.world-big-card-cover.tone-games,
-.world-big-card:nth-child(4) .world-big-card-cover {
-  background: linear-gradient(135deg, #fa709a 0%, #fee140 100%) !important;
-}
 
 .world-big-card-body {
   min-height: 220px;

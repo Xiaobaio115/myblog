@@ -33,7 +33,7 @@ export default async function AboutPage() {
   ]);
 
   return (
-    <SiteFrame>
+    <SiteFrame><div className="about-page">
       <PoeticPageHero
         eyebrow="Portrait / 关于我"
         title="关于我，和正在生长的世界"
@@ -171,6 +171,6 @@ export default async function AboutPage() {
           </section>
         </div>
       </section>
-    </SiteFrame>
+    </div></SiteFrame>
   );
 }

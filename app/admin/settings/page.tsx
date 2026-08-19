@@ -10,7 +10,6 @@ import type {
   EducationItem,
   ProjectItem,
   TravelItem,
-  GameItem,
   WorldSectionSetting,
   ContentSection,
   AllSettings,
@@ -18,7 +17,7 @@ import type {
 import { adminFetch } from "@/lib/admin-api";
 import { HomeHeroForm } from "./home-hero-form";
 
-type Tab = "profile" | "homeHero" | "socials" | "skills" | "education" | "projects" | "travel" | "games" | "world";
+type Tab = "profile" | "homeHero" | "socials" | "skills" | "education" | "projects" | "travel" | "world";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "profile", label: "👤 个人信息" },
@@ -27,9 +26,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "skills", label: "🛠 技能栈" },
   { key: "education", label: "🎓 教育经历" },
   { key: "projects", label: "🚀 项目列表" },
-  { key: "travel", label: "✈️ 旅行目的地" },
-  { key: "games", label: "🎮 游戏列表" },
-  { key: "world", label: "🌍 世界分区" },
+  { key: "travel", label: "✈️ 旅行目的地" },  { key: "world", label: "🌍 世界分区" },
 ];
 
 function normalizeSkillItem(item: SkillItem) {
@@ -270,31 +267,6 @@ export default function AdminSettingsPage() {
                   )}
                   onChange={(v) => setSettings({ ...settings, travel: v })}
                   onSave={(v) => saveSection("travel", v)}
-                />
-              )}
-              {tab === "games" && (
-                <ListForm<GameItem>
-                  label="游戏"
-                  items={settings.games}
-                  saving={saving}
-                  empty={{ id: "", name: "", type: "", date: "", desc: "", cover: "", tags: [] }}
-                  renderItem={(item, onChange) => (
-                    <div className="settings-col">
-                      <div className="settings-row3">
-                        <input className="admin-input" placeholder="ID（英文）" value={item.id} onChange={(e) => onChange({ ...item, id: e.target.value })} />
-                        <input className="admin-input" placeholder="游戏名" value={item.name} onChange={(e) => onChange({ ...item, name: e.target.value })} />
-                        <input className="admin-input" placeholder="类型" value={item.type} onChange={(e) => onChange({ ...item, type: e.target.value })} />
-                      </div>
-                      <div className="settings-row2">
-                        <input className="admin-input" placeholder="时间（如 2020 至今）" value={item.date} onChange={(e) => onChange({ ...item, date: e.target.value })} />
-                        <input className="admin-input" placeholder="封面图 URL" value={item.cover} onChange={(e) => onChange({ ...item, cover: e.target.value })} />
-                      </div>
-                      <textarea className="admin-input" placeholder="描述" rows={2} value={item.desc} onChange={(e) => onChange({ ...item, desc: e.target.value })} />
-                      <input className="admin-input" placeholder="标签，逗号分隔" value={item.tags.join(",")} onChange={(e) => onChange({ ...item, tags: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} />
-                    </div>
-                  )}
-                  onChange={(v) => setSettings({ ...settings, games: v })}
-                  onSave={(v) => saveSection("games", v)}
                 />
               )}
               {tab === "world" && (

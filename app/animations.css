@@ -388,3 +388,56 @@ a:focus-visible {
   outline-offset: 3px;
   border-radius: 4px;
 }
+
+/* ==========================================================
+   Scroll-driven reveal (global) — editorial pages
+   ========================================================== */
+@keyframes editorialGlobalReveal {
+  from { opacity: 0.35; transform: translateY(24px); }
+  to   { opacity: 1;   transform: translateY(0); }
+}
+
+@supports (animation-timeline: view()) {
+  .articles-page .pink-module,
+  .articles-page .article-card,
+  .series-page .pink-module,
+  .series-page .article-card,
+  .photos-page .pink-module,
+  .photos-page .photo-card,
+  .photos-page .memory-photo,
+  .projects-page .project-card,
+  .about-page .pink-about-card,
+  .about-page .pink-skill-chip,
+  .world-page .world-big-card,
+  .guestbook-page .pink-message-card {
+    animation: editorialGlobalReveal linear both;
+    animation-timeline: view();
+    animation-range: entry 5% cover 28%;
+  }
+
+  .articles-page .section-heading,
+  .series-page .section-heading,
+  .photos-page .section-heading,
+  .projects-page .section-heading,
+  .about-page .section-heading,
+  .world-page .section-heading,
+  .guestbook-page .section-heading {
+    animation: editorialGlobalReveal linear both;
+    animation-timeline: view();
+    animation-range: entry 2% cover 22%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @supports (animation-timeline: view()) {
+    .articles-page *,
+    .series-page *,
+    .photos-page *,
+    .projects-page *,
+    .about-page *,
+    .world-page *,
+    .guestbook-page * {
+      animation: none !important;
+    }
+  }
+}

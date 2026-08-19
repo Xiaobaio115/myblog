@@ -35,19 +35,13 @@ const SECTION_META: Record<
     tone: "tone-travel",
     fallbackCover: "/poetic-images/hero-home.jpg",
   },
-  games: {
-    href: "/world/games",
-    cta: "进入游戏世界",
-    tone: "tone-games",
-    fallbackCover: "/poetic-images/world-games.jpg",
-  },
 };
 
 export default async function WorldPage() {
   const dbSections = await getWorldSectionsSetting();
   const dbById = new Map(dbSections.map((section) => [section.id, section]));
 
-  // Keep the four design-map coordinates stable even if DB settings are partial.
+  // Keep the three design-map coordinates stable even if DB settings are partial.
   const sections = defaultWorldSections.map((fallback) => {
     const saved = dbById.get(fallback.id);
     return {
@@ -64,11 +58,11 @@ export default async function WorldPage() {
   });
 
   return (
-    <SiteFrame>
+    <SiteFrame><div className="world-page">
       <PoeticPageHero
         eyebrow="My World Map"
         title="我的世界，在山河与星光之间"
-        description="从故乡的一盏灯出发，途经校园、远方与虚拟星河，把走过的路写成自己的坐标。"
+        description="从故乡的一盏灯出发，途经校园与远方，把走过的路写成自己的坐标。"
         background="world"
       >
         <a href="#hometown" className="pink-btn primary">
@@ -76,9 +70,6 @@ export default async function WorldPage() {
         </a>
         <a href="#travel" className="pink-btn">
           沿旅行寻迹
-        </a>
-        <a href="#games" className="pink-btn">
-          去游戏远游
         </a>
       </PoeticPageHero>
 
@@ -178,6 +169,6 @@ export default async function WorldPage() {
           </div>
         </div>
       </section>
-    </SiteFrame>
+    </div></SiteFrame>
   );
 }

@@ -9,21 +9,20 @@ import styles from "./admin-shell.module.css";
 
 const navGroups = [
   { title: "内容管理", items: [
-    { href: "/admin", label: "总览", desc: "工作台", code: "OV" },
-    { href: "/admin/posts", label: "文章", desc: "发布与编辑", code: "PO" },
-    { href: "/admin/series", label: "系列", desc: "连载目录", code: "SR" },
-    { href: "/admin/photos", label: "相册", desc: "上传与分组", code: "PH" },
-    { href: "/admin/guestbook", label: "留言", desc: "审核与处理", code: "GB" },
+    { href: "/admin", label: "总览", desc: "工作台", code: "◉" },
+    { href: "/admin/posts", label: "文章", desc: "发布与编辑", code: "▤" },
+    { href: "/admin/series", label: "系列", desc: "连载目录", code: "≋" },
+    { href: "/admin/photos", label: "相册", desc: "上传与分组", code: "✦" },
+    { href: "/admin/guestbook", label: "留言", desc: "审核与处理", code: "✉" },
   ] },
   { title: "站点系统", items: [
-    { href: "/admin/home-hero", label: "首页轮播", desc: "图片与文案", code: "HR" },
-    { href: "/admin/travel-map", label: "旅行地图", desc: "城市与照片", code: "MP" },
-    { href: "/admin/chat-notifications", label: "AI 与通知", desc: "模型与转发", code: "AI" },
-    { href: "/admin/settings", label: "站点设置", desc: "资料与模块", code: "ST" },
+    { href: "/admin/travel-map", label: "旅行地图", desc: "城市与照片", code: "◈" },
+    { href: "/admin/chat-notifications", label: "AI 与通知", desc: "模型与转发", code: "⚡" },
+    { href: "/admin/settings", label: "站点设置", desc: "资料与模块", code: "⚙" },
   ] },
   { title: "快捷入口", items: [
-    { href: "/admin/posts/new", label: "写文章", desc: "新建内容", code: "NW" },
-    { href: "/", label: "预览站点", desc: "打开前台", code: "PV" },
+    { href: "/admin/posts/new", label: "写文章", desc: "新建内容", code: "✎" },
+    { href: "/", label: "预览站点", desc: "打开前台", code: "↗" },
   ] },
 ];
 const flatNavItems = navGroups.flatMap((group) => group.items);

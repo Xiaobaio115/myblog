@@ -40,7 +40,7 @@ export default async function ProjectsPage() {
   ).length;
 
   return (
-    <SiteFrame>
+    <SiteFrame><div className="projects-page">
       <section className={styles.hero}>
         <Image
           className={styles.heroImage}
@@ -111,6 +111,6 @@ export default async function ProjectsPage() {
           })}
         </div>
       </section>
-    </SiteFrame>
+    </div></SiteFrame>
   );
 }

@@ -11,7 +11,7 @@ export default async function PhotosPage() {
   const categories = getPhotoCategories(photos);
 
   return (
-    <SiteFrame>
+    <SiteFrame><div className="photos-page">
       <header className={styles.intro}>
         <div className={styles.introTopline}>
           <span>Memory atlas</span>
@@ -41,6 +41,6 @@ export default async function PhotosPage() {
           </div>
         )}
       </div>
-    </SiteFrame>
+    </div></SiteFrame>
   );
 }

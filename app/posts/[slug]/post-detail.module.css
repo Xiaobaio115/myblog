@@ -44,7 +44,7 @@
 .toc li[data-depth="3"] a { padding-left: 1.6rem; font-size: .76rem; }
 .toc a { display: block; padding: .45rem 0 .45rem 1rem; color: color-mix(in srgb, currentColor 52%, transparent); text-decoration: none; font-size: .82rem; line-height: 1.45; border-left: 1px solid transparent; transform: translateX(-1px); transition: color var(--editorial-fast) ease, border-color var(--editorial-fast) ease; }
 .toc a:hover, .toc a:focus-visible, .toc .tocActive { color: var(--editorial-accent); border-left-color: var(--editorial-accent); }
-.content { width: 100%; max-width: var(--editorial-reading, 760px); margin: 0; padding: 0; color: color-mix(in srgb, currentColor 80%, transparent); font-size: clamp(1rem, 1.15vw, 1.08rem); line-height: 2; }
+.content { width: 100%; max-width: var(--editorial-reading, 760px); margin: 0; padding: 0; color: color-mix(in srgb, currentColor 80%, transparent); font-size: clamp(1rem, 1.15vw, 1.08rem); line-height: 2; overflow-wrap: anywhere; }
 .content :global(h2), .content :global(h3) { scroll-margin-top: 110px; font-family: var(--editorial-display); }
 .content :global(h1) { margin: 0 0 1.5rem; font-family: var(--editorial-display); font-size: 2.3rem; line-height: 1.2; }
 .content :global(h2) { margin: 3.5rem 0 1.25rem; color: var(--editorial-ink); font-size: clamp(1.8rem, 3vw, 2.4rem); line-height: 1.25; }
@@ -52,8 +52,67 @@
 .content :global(p) { margin: 0 0 1.7em; }
 .content :global(ul), .content :global(ol) { margin: 0 0 1.7em; padding-left: 1.35rem; }
 .content :global(li + li) { margin-top: .5rem; }
-.content :global(img) { width: min(1040px, calc(100vw - 2rem)); max-width: none; margin: 2.5rem 50% 2.5rem; transform: translateX(-50%); cursor: zoom-in; border-radius: 2px; }
-.content :global(img:focus-visible) { outline: 3px solid var(--editorial-accent); outline-offset: 4px; }
+
+/* Article images: stay readable, never crop, coordinate with magazine column */
+.content :global(img) {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin: 2.1rem auto;
+  object-fit: contain;
+  object-position: center;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--editorial-ink) 4%, transparent), color-mix(in srgb, var(--editorial-ink) 8%, transparent));
+  border: 1px solid color-mix(in srgb, var(--editorial-line) 88%, transparent);
+  border-radius: 4px;
+  box-shadow: 0 18px 48px color-mix(in srgb, #000 12%, transparent);
+  cursor: zoom-in;
+}
+.content :global(img[data-shape="wide"]) {
+  width: min(1040px, calc(100vw - 2.5rem));
+  max-width: none;
+  margin-left: 50%;
+  transform: translateX(-50%);
+}
+.content :global(img[data-shape="tall"]) {
+  width: min(100%, 520px);
+  margin-inline: auto;
+}
+.content :global(img:focus-visible) {
+  outline: 3px solid var(--editorial-accent);
+  outline-offset: 4px;
+}
+.content :global(p:has(> img:only-child)),
+.content :global(p:has(> a:only-child > img:only-child)) {
+  margin: 2.35rem 0;
+  line-height: 0;
+}
+.content :global(p:has(> img:only-child) img),
+.content :global(p:has(> a:only-child > img:only-child) img) {
+  margin-block: 0;
+}
+.content :global(figure) {
+  width: 100%;
+  max-width: 100%;
+  margin: 2.5rem 0;
+  padding: 0;
+}
+.content :global(figure img) {
+  margin: 0 auto;
+}
+.content :global(figcaption) {
+  margin-top: .85rem;
+  color: color-mix(in srgb, currentColor 52%, transparent);
+  font-size: .82rem;
+  line-height: 1.6;
+  text-align: center;
+}
+.content :global(a:has(> img)) {
+  display: block;
+  text-decoration: none;
+}
+
 .content :global(blockquote) { margin: 2.5rem 0; padding: .35rem 0 .35rem 1.6rem; border-left: 2px solid var(--editorial-accent); font-family: var(--editorial-display); font-size: 1.12em; }
 .content :global(a) { color: var(--editorial-accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; }
 .content :global(code) { padding: .12em .35em; background: color-mix(in srgb, var(--editorial-accent) 10%, transparent); color: var(--editorial-ink); font-size: .9em; }
@@ -78,7 +137,7 @@
 .sectionTitle h2 { margin: 0; font-family: var(--editorial-display); font-size: 2.3rem; font-weight: 500; }
 .relatedGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
 .lightbox { position: fixed; z-index: 1000; inset: 0; display: grid; place-items: center; padding: clamp(1rem, 4vw, 3rem); background: rgba(12, 11, 10, .94); color: #fff; }
-.lightbox img { display: block; max-width: min(92vw, 1500px); max-height: 86vh; object-fit: contain; }
+.lightbox img { display: block; max-width: min(96vw, 1600px); max-height: 88vh; width: auto; height: auto; object-fit: contain; border-radius: 2px; }
 .lightbox button { position: absolute; display: grid; place-items: center; width: 44px; height: 44px; padding: 0; border: 1px solid rgba(255,255,255,.35); border-radius: 50%; background: rgba(0,0,0,.35); color: #fff; font-size: 1.25rem; cursor: pointer; }
 .lightbox button:hover, .lightbox button:focus-visible { border-color: #fff; outline: 2px solid #fff; outline-offset: 2px; }
 .lightboxClose { top: 1.25rem; right: 1.25rem; }
@@ -86,6 +145,14 @@
 .lightboxPrev { left: 1.25rem; }
 .lightboxNext { right: 1.25rem; }
 .lightboxCount { position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,.7); font-size: .78rem; }
+@media (max-width: 1100px) {
+  .content :global(img[data-shape="wide"]) {
+    width: 100%;
+    max-width: 100%;
+    margin-left: auto;
+    transform: none;
+  }
+}
 @media (max-width: 900px) {
   .readingGrid { grid-template-columns: 1fr; }
   .toc { position: static; width: min(760px, 100%); margin: 0 auto 2rem; }
@@ -105,7 +172,19 @@
   .toc ol { columns: 1; }
   .toc { margin-bottom: 2.5rem; }
   .content { font-size: 1rem; line-height: 1.9; }
-  .content :global(img) { width: calc(100% + 1.25rem); margin-left: -.625rem; margin-right: -.625rem; transform: none; }
+  .content :global(img),
+  .content :global(img[data-shape="wide"]),
+  .content :global(img[data-shape="tall"]) {
+    width: calc(100% + 1.25rem);
+    max-width: none;
+    margin-left: -.625rem;
+    margin-right: -.625rem;
+    transform: none;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
   .seriesContextHead { align-items: flex-start; flex-direction: column; }
   .seriesDirectoryLink { grid-template-columns: 2rem minmax(0, 1fr); gap: .7rem; min-height: 58px; }
   .seriesState { grid-column: 2; margin-top: -.45rem; }

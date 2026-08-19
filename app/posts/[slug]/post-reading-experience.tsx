@@ -43,12 +43,33 @@ export function PostReadingExperience({
     };
 
     const articleImages = Array.from(article.querySelectorAll("img"));
-    setImages(articleImages.map((image) => ({ src: image.currentSrc || image.src, alt: image.alt })));
-    articleImages.forEach((image) => {
+
+    const classifyImage = (image: HTMLImageElement) => {
+      image.loading = image.loading || "lazy";
+      image.decoding = "async";
+      image.removeAttribute("width");
+      image.removeAttribute("height");
+      image.style.height = "auto";
       image.tabIndex = 0;
       image.setAttribute("role", "button");
       image.setAttribute("aria-label", `${image.alt || "正文图片"}，点击放大`);
-    });
+
+      const applyShape = () => {
+        const width = image.naturalWidth || image.width;
+        const height = image.naturalHeight || image.height;
+        if (!width || !height) return;
+        const ratio = width / height;
+        if (ratio >= 1.55) image.dataset.shape = "wide";
+        else if (ratio <= 0.78) image.dataset.shape = "tall";
+        else image.dataset.shape = "regular";
+      };
+
+      if (image.complete && image.naturalWidth > 0) applyShape();
+      else image.addEventListener("load", applyShape, { once: true });
+    };
+
+    articleImages.forEach(classifyImage);
+    setImages(articleImages.map((image) => ({ src: image.currentSrc || image.src, alt: image.alt })));
 
     const observer = new IntersectionObserver(
       (entries) => {

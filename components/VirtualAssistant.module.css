@@ -167,3 +167,38 @@
     transition: none;
   }
 }
+
+/* Light theme overrides */
+:root:not([data-theme="dark"]) .root :global(.assistant-panel) {
+  background: rgba(255, 255, 255, 0.96);
+  color: #1c1b19;
+  border-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.12);
+}
+
+:root:not([data-theme="dark"]) .root :global(.assistant-header) {
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+  background: transparent;
+  color: #1c1b19;
+}
+
+:root:not([data-theme="dark"]) .root :global(.assistant-header strong) {
+  color: #1c1b19;
+}
+
+:root:not([data-theme="dark"]) .root :global(.assistant-header span) {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+:root:not([data-theme="dark"]) .destinations {
+  border-bottom-color: rgba(0, 0, 0, 0.06);
+}
+
+:root:not([data-theme="dark"]) .destinations a {
+  border-right-color: rgba(0, 0, 0, 0.06);
+  color: #1c1b19;
+}
+
+:root:not([data-theme="dark"]) .destinations small {
+  color: rgba(0, 0, 0, 0.4);
+}

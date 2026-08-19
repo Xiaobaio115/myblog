@@ -22,6 +22,7 @@ const NAV_ITEMS = [
   { href: "/world", label: "我的世界", icon: "◈" },
   { href: "/photos", label: "相册", icon: "✦" },
   { href: "/about", label: "关于我", icon: "◎" },
+  { href: "/projects", label: "项目", icon: "▤" },
   { href: "/guestbook", label: "留言", icon: "✉" },
 ];
 

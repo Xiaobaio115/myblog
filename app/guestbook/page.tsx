@@ -39,7 +39,7 @@ export default async function GuestbookPage() {
   const [messages, socials] = await Promise.all([getMessages(), getSocialsSetting()]);
 
   return (
-    <SiteFrame>
+    <SiteFrame><div className="guestbook-page">
       <PoeticPageHero
         eyebrow="Open Letters / 留言"
         title="留一句话，让相遇有迹可循"
@@ -109,6 +109,6 @@ export default async function GuestbookPage() {
           </div>
         </div>
       </section>
-    </SiteFrame>
+    </div></SiteFrame>
   );
 }
