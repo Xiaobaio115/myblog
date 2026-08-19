@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { HomeHeroCarousel } from "@/app/components/home-hero-carousel";
 import { SafeImage } from "@/app/components/safe-image";
+import { ScrollReveal } from "@/app/components/scroll-reveal";
 import { SiteFrame } from "@/app/components/site-frame";
 import { getLatestPhotos, getPublishedPosts } from "@/lib/content";
 import { getPublicContentCounts } from "@/lib/content";
@@ -49,6 +50,7 @@ export default async function HomePage() {
       />
 
       <div className={styles.homeBody}>
+        <ScrollReveal mode="reveal">
         <section id="travel-map" className={styles.mapSection}>
           <div className={`${styles.mapIntro} container`}>
             <div className={styles.sectionHeading}>
@@ -66,7 +68,9 @@ export default async function HomePage() {
             <ChinaTravelMap data={resolvedTravelMap} />
           </div>
         </section>
+        </ScrollReveal>
 
+        <ScrollReveal mode="reveal">
         <section className={`${styles.storySection} container`}>
           <div className={styles.sectionHeadingRow}>
             <div className={styles.sectionHeading}>
@@ -102,7 +106,9 @@ export default async function HomePage() {
             <div className={styles.emptyStory}><span className={styles.emptyMark}>✎</span><h3>还没有发布文章</h3><p>第一篇思考碎片很快就会出现。也可以先去我的世界逛逛。</p><Link href="/world" className={styles.sectionLink}>先去看看我的世界 <span aria-hidden="true">↗</span></Link></div>
           )}
         </section>
+        </ScrollReveal>
 
+        <ScrollReveal mode="reveal">
         <section className={`${styles.memorySection} container`}>
           <div className={styles.sectionHeadingRow}>
             <div className={styles.sectionHeading}><p className={styles.sectionEyebrow}>03 / MEMORY</p><h2>被光留下的片刻</h2><p>有些瞬间不必解释，只需要被好好收藏。</p></div>
@@ -114,6 +120,7 @@ export default async function HomePage() {
             <div className={styles.memoryFallback}><Image src="/poetic-images/hero-photos.jpg" alt="被光留下的生活片段" fill sizes="100vw" /><span className={styles.visualShade} aria-hidden="true" /><p>相册正在等待下一束光。</p></div>
           )}
         </section>
+        </ScrollReveal>
 
       </div>
     </SiteFrame>

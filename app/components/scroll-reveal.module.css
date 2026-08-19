@@ -1,0 +1,79 @@
+/* ScrollReveal – hero fade */
+:global(.hero-fade-root) {
+  position: relative;
+  overflow: hidden;
+  /* Keep editorial cover scenes in view while the next section moves across them. */
+  position: sticky;
+  top: var(--header-height, 72px);
+  z-index: 0;
+}
+
+:global(.hero-fade-root) > :first-child {
+  will-change: opacity, transform;
+  transition: none;
+}
+
+:global(.hero-fade-root) + * {
+  position: relative;
+  z-index: 1;
+  background: var(--poetic-bg, var(--editorial-bg, #f5f1eb));
+}
+
+:global(.hero-fade-root[style*="--scroll-progress"]) > :first-child {
+  opacity: calc(1 - var(--scroll-progress) * 0.75);
+  transform: translateY(calc(var(--scroll-progress) * 50px));
+}
+
+/* ScrollReveal – content reveal */
+:global(.scroll-reveal-root) {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+              transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:global(.scroll-reveal-visible) {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :global(.hero-fade-root) {
+    position: relative;
+    top: auto;
+  }
+
+  :global(.hero-fade-root) > :first-child,
+  :global(.scroll-reveal-root) {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* Native scroll timelines make the same choreography feel continuous in browsers
+   that support Scroll-driven Animations. The IntersectionObserver/scroll fallback
+   above keeps it working in older browsers. */
+@keyframes scroll-reveal-view {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hero-fade-view {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: .22; transform: translateY(50px) scale(.985); }
+}
+
+@supports (animation-timeline: view()) {
+  :global(.scroll-reveal-root) {
+    animation: scroll-reveal-view linear both;
+    animation-timeline: view();
+    animation-range: entry 0% cover 38%;
+  }
+
+  :global(.hero-fade-root) > :first-child {
+    animation: hero-fade-view linear both;
+    animation-timeline: view();
+    animation-range: entry 0% exit 65%;
+  }
+}

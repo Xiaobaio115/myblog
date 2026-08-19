@@ -201,3 +201,35 @@
     margin-left: 0;
   }
 }
+
+.behaviorGrid {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 50%, transparent);
+}
+
+.behaviorGrid .field :global(textarea.admin-input) {
+  min-height: 120px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.6;
+}
+
+.behaviorGrid .field small {
+  color: var(--text-soft);
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.behaviorGrid .field :global(input[type="number"]) {
+  max-width: 200px;
+}
+
+.behaviorGrid :global(.admin-button) {
+  justify-self: start;
+  margin-top: 6px;
+}

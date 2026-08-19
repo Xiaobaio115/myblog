@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArticleCard } from "@/app/components/article-card";
+import { ScrollReveal } from "@/app/components/scroll-reveal";
 import { SiteFrame } from "@/app/components/site-frame";
 import {
   filterPosts,
@@ -144,10 +145,14 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
 
         {lead ? (
           <section className={styles.editorial} aria-label={resultLabel}>
-            <ArticleCard post={lead} variant="feature" />
+            <ScrollReveal mode="reveal">
+              <ArticleCard post={lead} variant="feature" />
+            </ScrollReveal>
             <div className={styles.secondary}>
               {secondary.map((post, index) => (
-                <ArticleCard key={post._id} post={post} variant={index < 3 ? "compact" : "standard"} />
+                <ScrollReveal mode="reveal" key={post._id}>
+                  <ArticleCard post={post} variant={index < 3 ? "compact" : "standard"} />
+                </ScrollReveal>
               ))}
             </div>
           </section>

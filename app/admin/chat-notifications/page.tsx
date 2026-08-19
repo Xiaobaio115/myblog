@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { adminFetch } from "@/lib/admin-api";
 import styles from "./page.module.css";
 
+type AiBehavior = { systemPrompt: string; dailyLimit: number; maxMessageLength: number; maxHistoryMessages: number; maxOutputTokens: number; temperature: number; };
+
 type SettingsSummary = {
   aiConfigured: boolean;
   aiSource: "environment" | "admin" | "mixed" | "none";
@@ -45,6 +47,8 @@ export default function ChatNotificationsAdminPage() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [aiTesting, setAiTesting] = useState(false);
+  const [aiBehavior, setAiBehavior] = useState<AiBehavior | null>(null);
+  const [aiBehaviorLoaded, setAiBehaviorLoaded] = useState(false);
   const [message, setMessage] = useState<FeedbackMessage | null>(null);
 
   const load = useCallback(async () => {
@@ -64,9 +68,39 @@ export default function ChatNotificationsAdminPage() {
     }
   }, []);
 
-  useEffect(() => {
-    queueMicrotask(load);
-  }, [load]);
+  useEffect(() => { queueMicrotask(load); }, [load]);
+
+  const loadAiBehavior = useCallback(async () => {
+    try {
+      const data = await adminFetch<AiBehavior>("/api/ai-behavior", { fallbackError: "读取 AI 行为配置失败。" });
+      setAiBehavior(data);
+      setAiBehaviorLoaded(true);
+    } catch (error) {
+      setMessage({ text: error instanceof Error ? error.message : "读取 AI 行为配置失败。", tone: "error" });
+      setAiBehaviorLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => { queueMicrotask(loadAiBehavior); }, [loadAiBehavior]);
+
+  async function saveAiBehaviorConfig() {
+    if (!aiBehavior) return;
+    setSaving(true);
+    setMessage(null);
+    try {
+      const data = await adminFetch<{ success: boolean; behavior: AiBehavior }>("/api/ai-behavior", {
+        method: "PUT",
+        json: aiBehavior,
+        fallbackError: "保存 AI 行为配置失败。",
+      });
+      setAiBehavior(data.behavior);
+      setMessage({ text: "AI 行为配置已保存。", tone: "success" });
+    } catch (error) {
+      setMessage({ text: error instanceof Error ? error.message : "保存 AI 行为配置失败。", tone: "error" });
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function save() {
     setSaving(true);
@@ -265,6 +299,104 @@ export default function ChatNotificationsAdminPage() {
           <div className={styles.channelHead}>
             <div>
               <span className={styles.index}>02</span>
+              <h2>AI 行为与限制</h2>
+            </div>
+            <span className={styles.status}>
+              <i aria-hidden="true" />
+              {aiBehaviorLoaded ? "已读取" : "读取中..."}
+            </span>
+          </div>
+          <p className={styles.channelNote}>
+            直接编辑 AI 的角色说明、回答长度和访客限制。保存后立即作用于右下角对话，不需要修改代码。
+          </p>
+          {aiBehavior ? (
+            <div className={styles.behaviorGrid}>
+              <label className={styles.field}>
+                <span>系统提示词</span>
+                <textarea
+                  className="admin-input"
+                  rows={8}
+                  value={aiBehavior.systemPrompt}
+                  onChange={(event) => setAiBehavior({ ...aiBehavior, systemPrompt: event.target.value })}
+                />
+                <small>描述身份、语气、知识范围和回答方式。不要在这里填写 API Key。</small>
+              </label>
+              <div className={styles.aiFields}>
+                <label className={styles.field}>
+                  <span>每日每 IP 次数</span>
+                  <input
+                    className="admin-input"
+                    type="number"
+                    min={1}
+                    max={1000}
+                    value={aiBehavior.dailyLimit}
+                    onChange={(event) => setAiBehavior({ ...aiBehavior, dailyLimit: Number(event.target.value) })}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>单条消息上限</span>
+                  <input
+                    className="admin-input"
+                    type="number"
+                    min={50}
+                    max={10000}
+                    value={aiBehavior.maxMessageLength}
+                    onChange={(event) => setAiBehavior({ ...aiBehavior, maxMessageLength: Number(event.target.value) })}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>保留历史消息</span>
+                  <input
+                    className="admin-input"
+                    type="number"
+                    min={1}
+                    max={30}
+                    value={aiBehavior.maxHistoryMessages}
+                    onChange={(event) => setAiBehavior({ ...aiBehavior, maxHistoryMessages: Number(event.target.value) })}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>最大输出 tokens</span>
+                  <input
+                    className="admin-input"
+                    type="number"
+                    min={32}
+                    max={4000}
+                    value={aiBehavior.maxOutputTokens}
+                    onChange={(event) => setAiBehavior({ ...aiBehavior, maxOutputTokens: Number(event.target.value) })}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>创造性 temperature</span>
+                  <input
+                    className="admin-input"
+                    type="number"
+                    min={0}
+                    max={2}
+                    step={0.1}
+                    value={aiBehavior.temperature}
+                    onChange={(event) => setAiBehavior({ ...aiBehavior, temperature: Number(event.target.value) })}
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                className="admin-button"
+                disabled={saving || !aiBehaviorLoaded}
+                onClick={() => void saveAiBehaviorConfig()}
+              >
+                {saving ? "保存中..." : "保存 AI 行为"}
+              </button>
+            </div>
+          ) : (
+            <p className={styles.channelNote}>正在读取 AI 行为配置...</p>
+          )}
+        </section>
+
+        <section className={styles.channel}>
+          <div className={styles.channelHead}>
+            <div>
+              <span className={styles.index}>03</span>
               <h2>Server酱 · 微信通知</h2>
             </div>
             <Status
@@ -304,7 +436,7 @@ export default function ChatNotificationsAdminPage() {
         <section className={styles.channel}>
           <div className={styles.channelHead}>
             <div>
-              <span className={styles.index}>03</span>
+              <span className={styles.index}>04</span>
               <h2>通用 Webhook · 单向转发</h2>
             </div>
             <Status

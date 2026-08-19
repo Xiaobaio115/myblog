@@ -2,14 +2,10 @@ import { after, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { notifyOwnerOfChatMessage } from "@/lib/chat-notify";
 import { getEffectiveChatNotificationSettings } from "@/lib/chat-notification-settings";
+import { getAiBehavior } from "@/lib/ai-behavior-settings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-const DEFAULT_DAILY_LIMIT = 10;
-const MAX_MESSAGE_LENGTH = 500;
-const MAX_HISTORY_MESSAGES = 6;
-const MAX_OUTPUT_TOKENS = 300;
 
 type ChatMessage = {
   role: "user" | "assistant" | "system";
@@ -21,17 +17,10 @@ type IncomingChatMessage = {
   content?: unknown;
 };
 
-const ASSISTANT_SYSTEM_PROMPT = `
-你是这个个人博客右下角的虚拟助手，名字叫甘蔗。
-你的语气像朋友一样自然、简洁、温和，不要过度正式。
-你可以介绍博客里的首页、文章、相册、3D 星空相册、我的世界、旅行地图和后台入口。
-你不能声称自己能访问后台、修改数据、看到秘密配置或编造不存在的文章和照片。
-回答以中文为主，尽量短一些；只有用户明确要求详细说明时再展开。
-`;
-
-function getDailyLimit() {
-  const value = Number(process.env.AI_DAILY_LIMIT || DEFAULT_DAILY_LIMIT);
-  return Number.isFinite(value) && value > 0 ? value : DEFAULT_DAILY_LIMIT;
+async function getDailyLimit() {
+  const behavior = await getAiBehavior();
+  const envValue = Number(process.env.AI_DAILY_LIMIT);
+  return Number.isFinite(envValue) && envValue > 0 ? envValue : behavior.dailyLimit;
 }
 
 function getClientIp(request: Request) {
@@ -90,7 +79,7 @@ function streamLocalText(text: string) {
 }
 
 async function checkDailyLimit(request: Request) {
-  const dailyLimit = getDailyLimit();
+  const dailyLimit = await getDailyLimit();
   const ip = getClientIp(request);
   const key = `${getTodayKey()}::${ip}`;
 
@@ -113,16 +102,17 @@ async function checkDailyLimit(request: Request) {
   }
 }
 
-function normalizeMessages(messages: IncomingChatMessage[]) {
-  return messages.slice(-MAX_HISTORY_MESSAGES).map<ChatMessage>((message) => ({
+function normalizeMessages(messages: IncomingChatMessage[], maxHistory: number, maxLength: number) {
+  return messages.slice(-maxHistory).map<ChatMessage>((message) => ({
     role: message.role === "assistant" ? "assistant" : "user",
-    content: String(message.content || "").slice(0, MAX_MESSAGE_LENGTH),
+    content: String(message.content || "").slice(0, maxLength),
   }));
 }
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const behavior = await getAiBehavior();
     const rawMessages: IncomingChatMessage[] = Array.isArray(body.messages) ? body.messages : [];
     const lastUserMessage = rawMessages.filter((message) => message.role === "user").at(-1);
     const userText = String(lastUserMessage?.content || "").trim();
@@ -131,9 +121,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "消息不能为空。" }, { status: 400 });
     }
 
-    if (userText.length > MAX_MESSAGE_LENGTH) {
+    if (userText.length > behavior.maxMessageLength) {
       return NextResponse.json(
-        { error: `消息太长了，请控制在 ${MAX_MESSAGE_LENGTH} 字以内。` },
+        { error: `消息太长了，请控制在 ${behavior.maxMessageLength} 字以内。` },
         { status: 400 }
       );
     }
@@ -197,9 +187,9 @@ export async function POST(request: Request) {
         },
         body: JSON.stringify({
           model,
-          messages: [{ role: "system", content: ASSISTANT_SYSTEM_PROMPT }, ...normalizeMessages(rawMessages)],
-          max_tokens: MAX_OUTPUT_TOKENS,
-          temperature: 0.7,
+          messages: [{ role: "system", content: behavior.systemPrompt }, ...normalizeMessages(rawMessages, behavior.maxHistoryMessages, behavior.maxMessageLength)],
+          max_tokens: behavior.maxOutputTokens,
+          temperature: behavior.temperature,
           stream: true,
         }),
       });

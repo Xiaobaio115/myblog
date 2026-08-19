@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { marked } from "marked";
 import { ArticleCard } from "@/app/components/article-card";
+import { ScrollReveal } from "@/app/components/scroll-reveal";
 import { SafeImage } from "@/app/components/safe-image";
 import { SiteFrame } from "@/app/components/site-frame";
 import { TwikooComments } from "@/app/components/twikoo-comments";
@@ -148,7 +149,8 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
   return (
     <SiteFrame>
       <div className={styles.page}>
-        <header className={`${styles.header} ${post.coverUrl ? styles.headerWithCover : ""}`}>
+        <ScrollReveal mode={post.coverUrl?.trim() ? "heroFade" : "reveal"}>
+          <header className={`${styles.header} ${post.coverUrl ? styles.headerWithCover : ""}`}>
           {post.coverUrl?.trim() ? (
             <>
               <SafeImage
@@ -183,10 +185,12 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
               <PostViewTracker slug={slug} initialViews={post.views || 0} />
             </div>
           </div>
-        </header>
+          </header>
+        </ScrollReveal>
 
         {seriesPosts.length > 0 ? (
-          <section className={styles.seriesContext} aria-labelledby="series-context-title">
+          <ScrollReveal mode="reveal">
+            <section className={styles.seriesContext} aria-labelledby="series-context-title">
             <div className={styles.seriesContextHead}>
               <div>
                 <span className={styles.seriesEyebrow}>Series / 连载</span>
@@ -218,16 +222,20 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                 );
               })}
             </ol>
-          </section>
+            </section>
+          </ScrollReveal>
         ) : null}
 
-        <PostReadingExperience
-          html={html || "<p>这篇文章暂时没有正文，内容仍在整理中。</p>"}
-          toc={toc}
-        />
+        <ScrollReveal mode="reveal">
+          <PostReadingExperience
+            html={html || "<p>这篇文章暂时没有正文，内容仍在整理中。</p>"}
+            toc={toc}
+          />
+        </ScrollReveal>
 
         {seriesPosts.length > 1 ? (
-          <nav className={styles.seriesNav} aria-label="同系列文章导航">
+          <ScrollReveal mode="reveal">
+            <nav className={styles.seriesNav} aria-label="同系列文章导航">
             {seriesPrevious ? (
               <Link href={postHref(seriesPrevious.slug)}>
                 <span>系列上一篇</span>
@@ -240,27 +248,34 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                 <strong>{seriesNext.title.trim() || "未命名文章"}</strong>
               </Link>
             ) : <span />}
-          </nav>
+            </nav>
+          </ScrollReveal>
         ) : null}
 
-        <nav className={styles.postNav} aria-label="上一篇和下一篇">
+        <ScrollReveal mode="reveal">
+          <nav className={styles.postNav} aria-label="上一篇和下一篇">
           {newerPost ? <Link href={postHref(newerPost.slug)}><span>上一篇</span><strong>{newerPost.title.trim() || "未命名文章"}</strong></Link> : <span />}
           {olderPost ? <Link href={postHref(olderPost.slug)}><span>下一篇</span><strong>{olderPost.title.trim() || "未命名文章"}</strong></Link> : <span />}
-        </nav>
+          </nav>
+        </ScrollReveal>
 
         {relatedPosts.length > 0 ? (
-          <section className={styles.related}>
+          <ScrollReveal mode="reveal">
+            <section className={styles.related}>
             <div className={styles.sectionTitle}><span>Keep reading</span><h2>继续阅读</h2></div>
             <div className={styles.relatedGrid}>
               {relatedPosts.map((related) => <ArticleCard key={related._id} post={related} variant="compact" />)}
             </div>
-          </section>
+            </section>
+          </ScrollReveal>
         ) : null}
 
-        <section className={styles.comments}>
+        <ScrollReveal mode="reveal">
+          <section className={styles.comments}>
           <div className={styles.sectionTitle}><span>Conversation</span><h2>留下你的回声</h2></div>
           <TwikooComments envId={process.env.TWIKOO_ENV_ID} path={`/posts/${slug}`} />
-        </section>
+          </section>
+        </ScrollReveal>
       </div>
     </SiteFrame>
   );

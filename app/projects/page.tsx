@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { ScrollReveal } from "@/app/components/scroll-reveal";
 import Link from "next/link";
 import { SiteFrame } from "@/app/components/site-frame";
 import { getProjectsSetting, type ProjectItem } from "@/lib/settings";
@@ -41,6 +42,7 @@ export default async function ProjectsPage() {
 
   return (
     <SiteFrame><div className="projects-page">
+      <ScrollReveal mode="heroFade">
       <section className={styles.hero}>
         <Image
           className={styles.heroImage}
@@ -67,7 +69,9 @@ export default async function ProjectsPage() {
           <span>{String(liveCount).padStart(2, "0")} 可体验</span>
         </div>
       </section>
+      </ScrollReveal>
 
+      <ScrollReveal mode="reveal">
       <section id="project-index" className={styles.indexSection}>
         <header className={styles.sectionHead}>
           <div>
@@ -111,6 +115,7 @@ export default async function ProjectsPage() {
           })}
         </div>
       </section>
+      </ScrollReveal>
     </div></SiteFrame>
   );
 }

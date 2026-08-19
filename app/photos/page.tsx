@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
+import { ScrollReveal } from "@/app/components/scroll-reveal";
 import { SiteFrame } from "@/app/components/site-frame";
 import { getLatestPhotos, getPhotoCategories } from "@/lib/content";
 import { PhotosGalleryClient } from "./PhotosGalleryClient";
@@ -12,6 +13,7 @@ export default async function PhotosPage() {
 
   return (
     <SiteFrame><div className="photos-page">
+      <ScrollReveal mode="reveal">
       <header className={styles.intro}>
         <div className={styles.introTopline}>
           <span>Memory atlas</span>
@@ -27,6 +29,8 @@ export default async function PhotosPage() {
           <p>按地点与年份翻阅一份不完整的私人影像档案。</p>
         </div>
       </header>
+      </ScrollReveal>
+      <ScrollReveal mode="reveal">
       <div>
         {photos.length > 0 ? (
           <PhotosGalleryClient photos={photos} categories={categories} />
@@ -41,6 +45,7 @@ export default async function PhotosPage() {
           </div>
         )}
       </div>
+      </ScrollReveal>
     </div></SiteFrame>
   );
 }
