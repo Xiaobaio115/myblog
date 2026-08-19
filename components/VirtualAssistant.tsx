@@ -2,16 +2,44 @@
 
 /* eslint-disable react-hooks/immutability */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { isSafeInternalHref } from "@/lib/internal-href";
+import { renderAssistantMarkdown } from "@/lib/assistant-markdown";
 import styles from "./VirtualAssistant.module.css";
 
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
+  actions?: ChatAction[];
 };
+
+type ChatAction = {
+  label: string;
+  href: string;
+  kind: "article" | "series" | "photos" | "project" | "travel";
+};
+
+type AiMode = "guide" | "companion" | "technical" | "writer";
+
+type ChatPublicConfig = {
+  defaultMode?: AiMode;
+  enabledModes?: AiMode[];
+  modes?: Array<{ value: AiMode; label: string }>;
+};
+
+const AI_MODE_OPTIONS: Array<{ value: AiMode; label: string }> = [
+  { value: "guide", label: "导览" },
+  { value: "companion", label: "聊天" },
+  { value: "technical", label: "技术" },
+  { value: "writer", label: "写作" },
+];
+
+const DEFAULT_MODE_LABELS = Object.fromEntries(
+  AI_MODE_OPTIONS.map((option) => [option.value, option.label])
+) as Record<AiMode, string>;
 
 const quickPrompts = [
   "最近的文章有哪些？",
@@ -25,11 +53,32 @@ const quickLinks = [
   { href: "/world/travel-map", label: "去地图", eyebrow: "MAP" },
 ];
 
+function parseChatActions(value: string | null): ChatAction[] {
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(decodeURIComponent(value)) as unknown;
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.filter((item): item is ChatAction => {
+      if (!item || typeof item !== "object") return false;
+      const action = item as Partial<ChatAction>;
+      return typeof action.label === "string" &&
+        isSafeInternalHref(action.href);
+    }).slice(0, 6);
+  } catch {
+    return [];
+  }
+}
+
 export default function VirtualAssistant() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
+  const [mode, setMode] = useState<AiMode>("guide");
+  const [enabledModes, setEnabledModes] = useState<AiMode[]>(["guide"]);
+  const [modeLabels, setModeLabels] = useState<Record<AiMode, string>>(DEFAULT_MODE_LABELS);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
@@ -40,6 +89,43 @@ export default function VirtualAssistant() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const requestControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    async function loadConfig() {
+      try {
+        const response = await fetch("/api/chat", { cache: "no-store" });
+        if (!response.ok) return;
+        const config = await response.json() as ChatPublicConfig;
+        const configuredModes = Array.isArray(config.modes) ? config.modes : [];
+        const available = AI_MODE_OPTIONS
+          .map((option) => option.value)
+          .filter((value) => configuredModes.length > 0
+            ? configuredModes.some((item) => item.value === value)
+            : config.enabledModes?.includes(value));
+        if (!active || available.length === 0) return;
+        const configuredLabels = configuredModes.reduce((labels, item) => {
+          if (available.includes(item.value) && item.label.trim()) labels[item.value] = item.label.trim();
+          return labels;
+        }, { ...DEFAULT_MODE_LABELS });
+        const initial = config.defaultMode && available.includes(config.defaultMode)
+          ? config.defaultMode
+          : available[0];
+        setEnabledModes(available);
+        setModeLabels(configuredLabels);
+        setMode(initial);
+      } catch {
+        // The guide mode remains available when public configuration cannot load.
+      }
+    }
+    void loadConfig();
+    return () => { active = false; };
+  }, []);
+
+  const modeOptions = useMemo(
+    () => AI_MODE_OPTIONS.map((option) => ({ ...option, label: modeLabels[option.value] || option.label })),
+    [modeLabels]
+  );
 
   const stopResponse = useCallback(() => {
     requestControllerRef.current?.abort();
@@ -96,6 +182,7 @@ export default function VirtualAssistant() {
         body: JSON.stringify({
           messages: nextMessages,
           pageUrl: window.location.href,
+          mode,
         }),
       });
 
@@ -107,6 +194,10 @@ export default function VirtualAssistant() {
       if (!response.body) {
         throw new Error("当前浏览器不支持流式响应。");
       }
+
+      const actions = parseChatActions(response.headers.get("X-Chat-Actions"));
+      const confirmedMode = response.headers.get("X-Chat-Mode") as AiMode | null;
+      if (confirmedMode && enabledModes.includes(confirmedMode)) setMode(confirmedMode);
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -123,6 +214,7 @@ export default function VirtualAssistant() {
           copiedMessages[assistantIndex] = {
             role: "assistant",
             content: fullReply || "甘蔗正在整理回答...",
+            actions,
           };
           return copiedMessages;
         });
@@ -133,7 +225,7 @@ export default function VirtualAssistant() {
       if (fullReply.trim()) {
         setMessages((currentMessages) => {
           const copiedMessages = [...currentMessages];
-          copiedMessages[assistantIndex] = { role: "assistant", content: fullReply };
+          copiedMessages[assistantIndex] = { role: "assistant", content: fullReply, actions };
           return copiedMessages;
         });
       }
@@ -208,6 +300,24 @@ export default function VirtualAssistant() {
             ))}
           </nav>
 
+          {enabledModes.length > 1 ? (
+            <div className={styles.modeSwitch} role="group" aria-label="AI 回答模式">
+              {modeOptions.filter((option) => enabledModes.includes(option.value)).map((option) => (
+                <button
+                  type="button"
+                  key={option.value}
+                  className={mode === option.value ? styles.modeActive : ""}
+                  aria-pressed={mode === option.value}
+                  disabled={sending}
+                  onClick={() => setMode(option.value)}
+                  title={option.label}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
           <div className="assistant-quick-actions" aria-label="快捷问题">
             {quickPrompts.map((prompt) => (
               <button key={prompt} onClick={() => sendMessage(prompt)} type="button" disabled={sending}>
@@ -224,13 +334,28 @@ export default function VirtualAssistant() {
                   message.role === "user" ? "is-user" : "is-assistant"
                 } ${!message.content ? "is-thinking" : ""}`}
               >
-                {message.content || (
+                {message.content ? message.role === "assistant" ? (
+                  <div
+                    className={styles.assistantMarkdown}
+                    dangerouslySetInnerHTML={{ __html: renderAssistantMarkdown(message.content) }}
+                  />
+                ) : message.content : (
                   <span className="assistant-typing" aria-label="正在输入">
                     <i />
                     <i />
                     <i />
                   </span>
                 )}
+                {message.actions?.length ? (
+                  <div className={styles.actionList} aria-label="相关页面">
+                    {message.actions.map((action) => (
+                      <Link href={action.href} key={`${action.kind}-${action.href}`} onClick={closeAssistant}>
+                        <span>{action.label}</span>
+                        <b aria-hidden="true">↗</b>
+                      </Link>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ))}
             <div ref={messagesEndRef} />

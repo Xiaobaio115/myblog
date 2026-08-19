@@ -72,7 +72,8 @@
   flex-direction: column;
   justify-content: space-between;
   width: min(1280px, calc(100% - 64px));
-  min-height: inherit;
+  height: 100%;
+  min-height: 0;
   margin: 0 auto;
   padding: 26px 0 24px;
 }
@@ -94,7 +95,7 @@
 .copy {
   width: min(720px, 100%);
   margin: auto 0;
-  padding: clamp(68px, 12vh, 132px) 0 clamp(62px, 10vh, 112px);
+  padding: clamp(42px, 9vh, 112px) 0 clamp(32px, 7vh, 84px);
   opacity: var(--hero-copy-opacity);
   transform: translate3d(0, var(--hero-copy-shift), 0);
   will-change: opacity, transform;
@@ -243,6 +244,19 @@
   .stats { gap: 8px 14px; }
   .controls { width: 100%; justify-content: flex-end; padding-right: 76px; }
   .scrollCue { display: none; }
+}
+
+/* Keep the profile row inside the first viewport on short laptop/browser viewports. */
+@media (max-height: 760px) and (min-width: 561px) {
+  .hero { min-height: 560px; }
+  .inner { padding-block: 18px; }
+  .copy { padding-block: 32px 24px; }
+  .copy h1 { font-size: clamp(2.7rem, 3.8vw, 3.8rem); }
+  .description { margin-top: 16px; line-height: 1.55; }
+  .actions { margin-top: 20px; }
+  .bottomline { min-height: 30px; padding-top: 12px; gap: 14px; }
+  .avatar { width: 32px; height: 32px; }
+  .profileText span { max-width: 200px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -212,6 +212,89 @@
   background: color-mix(in srgb, var(--surface) 50%, transparent);
 }
 
+.behaviorTop {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.72fr) minmax(0, 1.28fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.modePromptSection {
+  display: grid;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.fieldHint {
+  margin: 5px 0 0;
+  color: var(--text-soft);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.modePromptGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.modePromptItem {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 36%, transparent);
+}
+
+.modeControl,
+.modeAvailability {
+  display: grid;
+  gap: 10px;
+}
+
+.modeAvailability {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding-top: 4px;
+}
+
+.modeAvailability .fieldLabel {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+
+.fieldLabel {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.capabilityGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 14px;
+}
+
+.capabilityOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.capabilityOption input {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  accent-color: var(--accent);
+}
+
 .behaviorGrid .field :global(textarea.admin-input) {
   min-height: 120px;
   resize: vertical;
@@ -232,4 +315,53 @@
 .behaviorGrid :global(.admin-button) {
   justify-self: start;
   margin-top: 6px;
+}
+
+@media (max-width: 720px) {
+  .behaviorTop,
+  .capabilityGrid,
+  .modeAvailability,
+  .modePromptGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .channel {
+    padding: 22px 0 24px;
+  }
+
+  .channelHead {
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .channelHead h2 {
+    font-size: 1.05rem;
+  }
+
+  .behaviorGrid {
+    gap: 14px;
+    margin-top: 14px;
+    padding: 14px;
+  }
+
+  .modePromptItem {
+    padding: 12px;
+  }
+
+  .behaviorGrid .field :global(textarea.admin-input) {
+    min-height: 108px;
+  }
+
+  .behaviorGrid :global(.admin-button),
+  .channelActions,
+  .channelActions :global(.secondary-link) {
+    width: 100%;
+  }
+
+  .behaviorGrid :global(.admin-button) {
+    min-height: 44px;
+  }
 }

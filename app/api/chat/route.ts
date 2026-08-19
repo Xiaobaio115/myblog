@@ -2,7 +2,8 @@ import { after, NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { notifyOwnerOfChatMessage } from "@/lib/chat-notify";
 import { getEffectiveChatNotificationSettings } from "@/lib/chat-notification-settings";
-import { getAiBehavior } from "@/lib/ai-behavior-settings";
+import { getAiBehavior, getAiModePrompt, type AiMode } from "@/lib/ai-behavior-settings";
+import { buildAiContentContext, type ChatAction } from "@/lib/ai-content-tools";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,10 +18,9 @@ type IncomingChatMessage = {
   content?: unknown;
 };
 
-async function getDailyLimit() {
-  const behavior = await getAiBehavior();
+function getDailyLimit(configuredLimit: number) {
   const envValue = Number(process.env.AI_DAILY_LIMIT);
-  return Number.isFinite(envValue) && envValue > 0 ? envValue : behavior.dailyLimit;
+  return Number.isFinite(envValue) && envValue > 0 ? envValue : configuredLimit;
 }
 
 function getClientIp(request: Request) {
@@ -61,7 +61,14 @@ function getLocalReply(text: string) {
   return "";
 }
 
-function streamLocalText(text: string) {
+function addChatMetadata(headers: Headers, actions: ChatAction[], mode?: AiMode) {
+  if (actions.length > 0) {
+    headers.set("X-Chat-Actions", encodeURIComponent(JSON.stringify(actions)));
+  }
+  if (mode) headers.set("X-Chat-Mode", mode);
+}
+
+function streamLocalText(text: string, actions: ChatAction[] = [], mode?: AiMode) {
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     start(controller) {
@@ -70,16 +77,26 @@ function streamLocalText(text: string) {
     },
   });
 
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "Cache-Control": "no-cache",
-    },
+  const headers = new Headers({
+    "Content-Type": "text/plain; charset=utf-8",
+    "Cache-Control": "no-cache",
   });
+  addChatMetadata(headers, actions, mode);
+  return new Response(stream, { headers });
 }
 
-async function checkDailyLimit(request: Request) {
-  const dailyLimit = await getDailyLimit();
+function getPagePath(pageUrl: string | undefined) {
+  if (!pageUrl) return "";
+  try {
+    const url = new URL(pageUrl);
+    return ["http:", "https:"].includes(url.protocol) ? url.pathname : "";
+  } catch {
+    return "";
+  }
+}
+
+async function checkDailyLimit(request: Request, configuredLimit: number) {
+  const dailyLimit = getDailyLimit(configuredLimit);
   const ip = getClientIp(request);
   const key = `${getTodayKey()}::${ip}`;
 
@@ -128,7 +145,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const limit = await checkDailyLimit(request);
+    const limit = await checkDailyLimit(request, behavior.dailyLimit);
     if (!limit.allowed) {
       return NextResponse.json(
         { error: `今天聊天次数已经用完了。每位访客每天最多 ${limit.dailyLimit} 次。` },
@@ -138,6 +155,13 @@ export async function POST(request: Request) {
 
     const pageUrl =
       typeof body.pageUrl === "string" ? body.pageUrl.slice(0, 500) : undefined;
+    const requestedMode = typeof body.mode === "string" ? body.mode : "";
+    const activeMode = behavior.enabledModes.includes(requestedMode as AiMode)
+      ? requestedMode as AiMode
+      : behavior.mode;
+    const contentContext = await buildAiContentContext(userText, behavior.capabilities, {
+      currentPath: getPagePath(pageUrl),
+    });
     const userAgent = request.headers.get("user-agent") || undefined;
     after(() =>
       notifyOwnerOfChatMessage({
@@ -147,8 +171,14 @@ export async function POST(request: Request) {
       })
     );
 
+    if (contentContext.directReply) {
+      return streamLocalText(contentContext.directReply, contentContext.actions, activeMode);
+    }
+
     const localReply = getLocalReply(userText);
-    if (localReply) return streamLocalText(localReply);
+    if (!contentContext.matched && contentContext.fallbackText) {
+      return streamLocalText(contentContext.fallbackText, contentContext.actions, activeMode);
+    }
 
     const {
       aiApiKey: apiKey,
@@ -157,6 +187,12 @@ export async function POST(request: Request) {
     } = await getEffectiveChatNotificationSettings();
 
     if (!apiKey || !baseUrl || !model) {
+      if (contentContext.fallbackText) {
+        return streamLocalText(contentContext.fallbackText, contentContext.actions, activeMode);
+      }
+      if (localReply) {
+        return streamLocalText(localReply, contentContext.actions, activeMode);
+      }
       return NextResponse.json({ error: "服务端 AI 配置不完整。" }, { status: 500 });
     }
 
@@ -187,7 +223,21 @@ export async function POST(request: Request) {
         },
         body: JSON.stringify({
           model,
-          messages: [{ role: "system", content: behavior.systemPrompt }, ...normalizeMessages(rawMessages, behavior.maxHistoryMessages, behavior.maxMessageLength)],
+          messages: [
+            {
+              role: "system",
+              content: [
+                behavior.systemPrompt,
+                behavior.knowledgeText ? `站点知识补充：\n${behavior.knowledgeText}` : "",
+                getAiModePrompt(activeMode, behavior.modePrompts),
+                "输出可以使用 Markdown；代码请使用带语言标记的围栏代码块；表情符号可按语气自然使用。不要输出原始 HTML。",
+              ].filter(Boolean).join("\n\n"),
+            },
+            ...(contentContext.context
+              ? [{ role: "system" as const, content: contentContext.context }]
+              : []),
+            ...normalizeMessages(rawMessages, behavior.maxHistoryMessages, behavior.maxMessageLength),
+          ],
           max_tokens: behavior.maxOutputTokens,
           temperature: behavior.temperature,
           stream: true,
@@ -195,6 +245,14 @@ export async function POST(request: Request) {
       });
     } catch (error) {
       clearTimeout(timeoutId);
+      if (contentContext.fallbackText) {
+        console.error("AI provider request failed; using indexed content fallback:", error);
+        return streamLocalText(contentContext.fallbackText, contentContext.actions, activeMode);
+      }
+      if (localReply) {
+        console.error("AI provider request failed; using local reply fallback:", error);
+        return streamLocalText(localReply, contentContext.actions, activeMode);
+      }
       throw error;
     }
 
@@ -202,6 +260,12 @@ export async function POST(request: Request) {
       clearTimeout(timeoutId);
       const errorText = await aiResponse.text().catch(() => "");
       console.error("AI provider error:", { status: aiResponse.status, url, model, errorText });
+      if (contentContext.fallbackText) {
+        return streamLocalText(contentContext.fallbackText, contentContext.actions, activeMode);
+      }
+      if (localReply) {
+        return streamLocalText(localReply, contentContext.actions, activeMode);
+      }
       return NextResponse.json({ error: "AI 服务暂时不可用。" }, { status: 502 });
     }
 
@@ -254,13 +318,13 @@ export async function POST(request: Request) {
       },
     });
 
-    return new Response(stream, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Cache-Control": "no-cache",
-        "X-Accel-Buffering": "no",
-      },
+    const headers = new Headers({
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-cache",
+      "X-Accel-Buffering": "no",
     });
+    addChatMetadata(headers, contentContext.actions, activeMode);
+    return new Response(stream, { headers });
   } catch (error: unknown) {
     const err = error instanceof Error ? error : null;
     console.error("POST /api/chat error:", error);
@@ -272,4 +336,20 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+export async function GET() {
+  const behavior = await getAiBehavior();
+  return NextResponse.json(
+    {
+      defaultMode: behavior.mode,
+      enabledModes: behavior.enabledModes,
+      modes: behavior.enabledModes.map((value) => ({
+        value,
+        label: behavior.modeLabels[value],
+      })),
+      capabilities: behavior.capabilities,
+    },
+    { headers: { "Cache-Control": "no-store" } }
+  );
 }

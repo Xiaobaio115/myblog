@@ -155,9 +155,9 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
               <ArticleCard post={lead} variant="feature" />
             </ScrollReveal>
             <div className={styles.secondary}>
-              {secondary.map((post, index) => (
+              {secondary.map((post) => (
                 <ScrollReveal mode="reveal" key={post._id}>
-                  <ArticleCard post={post} variant={index < 3 ? "compact" : "standard"} />
+                  <ArticleCard post={post} variant="compact" />
                 </ScrollReveal>
               ))}
             </div>

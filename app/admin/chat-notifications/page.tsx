@@ -4,7 +4,29 @@ import { useCallback, useEffect, useState } from "react";
 import { adminFetch } from "@/lib/admin-api";
 import styles from "./page.module.css";
 
-type AiBehavior = { systemPrompt: string; dailyLimit: number; maxMessageLength: number; maxHistoryMessages: number; maxOutputTokens: number; temperature: number; };
+type AiMode = "guide" | "companion" | "technical" | "writer";
+type AiCapabilities = {
+  searchArticles: boolean;
+  searchPhotos: boolean;
+  searchProjects: boolean;
+  searchTravel: boolean;
+  recommendations: boolean;
+  navigation: boolean;
+};
+type AiBehavior = {
+  systemPrompt: string;
+  knowledgeText: string;
+  mode: AiMode;
+  enabledModes: AiMode[];
+  modeLabels: Record<AiMode, string>;
+  modePrompts: Record<AiMode, string>;
+  capabilities: AiCapabilities;
+  dailyLimit: number;
+  maxMessageLength: number;
+  maxHistoryMessages: number;
+  maxOutputTokens: number;
+  temperature: number;
+};
 
 type SettingsSummary = {
   aiConfigured: boolean;
@@ -31,6 +53,22 @@ const SOURCE_LABEL = {
   mixed: "环境变量 + 后台",
   none: "未配置",
 } as const;
+
+const AI_MODE_OPTIONS: Array<{ value: AiMode; label: string; note: string }> = [
+  { value: "guide", label: "站点导览", note: "优先回答内容位置和入口" },
+  { value: "companion", label: "陪伴聊天", note: "更自然地闲聊和回应" },
+  { value: "technical", label: "技术助手", note: "解释项目、代码和技术栈" },
+  { value: "writer", label: "写作助手", note: "标题、摘要和大纲辅助" },
+];
+
+const CAPABILITY_OPTIONS: Array<{ key: keyof AiCapabilities; label: string }> = [
+  { key: "searchArticles", label: "查询文章和系列" },
+  { key: "searchPhotos", label: "查询照片和相册" },
+  { key: "searchProjects", label: "查询项目和技术栈" },
+  { key: "searchTravel", label: "查询旅行地图" },
+  { key: "recommendations", label: "推荐相关内容" },
+  { key: "navigation", label: "显示页面跳转按钮" },
+];
 
 export default function ChatNotificationsAdminPage() {
   const [summary, setSummary] = useState<SettingsSummary | null>(null);
@@ -307,10 +345,73 @@ export default function ChatNotificationsAdminPage() {
             </span>
           </div>
           <p className={styles.channelNote}>
-            直接编辑 AI 的角色说明、回答长度和访客限制。保存后立即作用于右下角对话，不需要修改代码。
+            配置访客可切换的回答模式、站内查询能力、角色说明和使用限制。保存后立即作用于右下角对话。
           </p>
           {aiBehavior ? (
             <div className={styles.behaviorGrid}>
+              <div className={styles.behaviorTop}>
+                <div className={styles.modeControl}>
+                  <label className={styles.field}>
+                    <span>默认 AI 模式</span>
+                    <select
+                      className="admin-input"
+                      value={aiBehavior.mode}
+                      onChange={(event) => setAiBehavior({ ...aiBehavior, mode: event.target.value as AiMode })}
+                    >
+                      {AI_MODE_OPTIONS.filter((option) => aiBehavior.enabledModes.includes(option.value)).map((option) => (
+                        <option key={option.value} value={option.value}>{aiBehavior.modeLabels[option.value] || option.label} · {option.note}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className={styles.modeAvailability}>
+                    <span className={styles.fieldLabel}>聊天窗口可切换模式</span>
+                    {AI_MODE_OPTIONS.map((option) => {
+                      const checked = aiBehavior.enabledModes.includes(option.value);
+                      return (
+                        <label key={option.value} className={styles.capabilityOption}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            disabled={checked && aiBehavior.enabledModes.length === 1}
+                            onChange={(event) => {
+                              const enabledModes = event.target.checked
+                                ? [...aiBehavior.enabledModes, option.value]
+                                : aiBehavior.enabledModes.filter((mode) => mode !== option.value);
+                              setAiBehavior({
+                                ...aiBehavior,
+                                enabledModes,
+                                mode: enabledModes.includes(aiBehavior.mode) ? aiBehavior.mode : enabledModes[0],
+                              });
+                            }}
+                          />
+                          <span>{aiBehavior.modeLabels[option.value] || option.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className={styles.capabilities}>
+                  <span className={styles.fieldLabel}>可用能力</span>
+                  <div className={styles.capabilityGrid}>
+                    {CAPABILITY_OPTIONS.map((option) => (
+                      <label key={option.key} className={styles.capabilityOption}>
+                        <input
+                          type="checkbox"
+                          checked={aiBehavior.capabilities[option.key]}
+                          onChange={(event) => setAiBehavior({
+                            ...aiBehavior,
+                            capabilities: {
+                              ...aiBehavior.capabilities,
+                              [option.key]: event.target.checked,
+                            },
+                          })}
+                        />
+                        <span>{option.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
               <label className={styles.field}>
                 <span>系统提示词</span>
                 <textarea
@@ -321,6 +422,55 @@ export default function ChatNotificationsAdminPage() {
                 />
                 <small>描述身份、语气、知识范围和回答方式。不要在这里填写 API Key。</small>
               </label>
+              <label className={styles.field}>
+                <span>AI 知识补充文本</span>
+                <textarea
+                  className="admin-input"
+                  rows={7}
+                  value={aiBehavior.knowledgeText}
+                  onChange={(event) => setAiBehavior({ ...aiBehavior, knowledgeText: event.target.value })}
+                  placeholder="补充博客模块、作者偏好、常用术语等稳定知识。模型会把它作为参考，不会替代实时检索结果。"
+                />
+                <small>这里写给 AI 看的背景资料，不要放 API Key、密码或访客隐私。</small>
+              </label>
+              <div className={styles.modePromptSection}>
+                <div>
+                  <span className={styles.fieldLabel}>模式名称与专属指令</span>
+                  <p className={styles.fieldHint}>名称会显示在前台切换按钮；专属指令只在对应模式下发送给模型。</p>
+                </div>
+                <div className={styles.modePromptGrid}>
+                  {AI_MODE_OPTIONS.map((option) => (
+                    <div className={styles.modePromptItem} key={option.value}>
+                      <label className={styles.field}>
+                        <span>{option.label} · 显示名称</span>
+                        <input
+                          className="admin-input"
+                          type="text"
+                          maxLength={40}
+                          value={aiBehavior.modeLabels[option.value] || ""}
+                          onChange={(event) => setAiBehavior({
+                            ...aiBehavior,
+                            modeLabels: { ...aiBehavior.modeLabels, [option.value]: event.target.value },
+                          })}
+                        />
+                      </label>
+                      <label className={styles.field}>
+                        <span>回答指令</span>
+                        <textarea
+                          className="admin-input"
+                          rows={5}
+                          maxLength={2400}
+                          value={aiBehavior.modePrompts[option.value] || ""}
+                          onChange={(event) => setAiBehavior({
+                            ...aiBehavior,
+                            modePrompts: { ...aiBehavior.modePrompts, [option.value]: event.target.value },
+                          })}
+                        />
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
               <div className={styles.aiFields}>
                 <label className={styles.field}>
                   <span>每日每 IP 次数</span>

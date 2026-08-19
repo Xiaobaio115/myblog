@@ -1811,3 +1811,146 @@ html:root .site-shell .guestbook-item:hover {
     transition: none !important;
   }
 }
+
+/* Final mobile pass: keep the editorial layouts readable and touchable at
+   narrow widths after the page-specific styles have loaded. */
+@media (max-width: 640px) {
+  html,
+  body {
+    overflow-x: clip;
+  }
+
+  .site-shell .container {
+    width: calc(100% - 24px);
+    max-width: none;
+  }
+
+  .site-shell .nav-inner.container {
+    width: calc(100% - 24px) !important;
+    gap: 8px;
+  }
+
+  .site-shell .pink-brand {
+    min-width: 0;
+    max-width: none;
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .site-shell .nav-actions {
+    flex: 0 0 auto;
+    gap: 2px;
+  }
+
+  .site-shell .pink-search-button,
+  .site-shell .nav-actions .theme-toggle {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+  }
+
+  .site-shell .pink-page-hero h1 {
+    max-width: 100%;
+    font-size: clamp(2.25rem, 12vw, 3.35rem);
+    overflow-wrap: anywhere;
+  }
+
+  .site-shell .pink-page-hero .pink-home-intro {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .site-shell .pink-panel {
+    padding: 18px;
+    border-radius: 16px;
+  }
+
+  .site-shell .pink-guestbook-shell {
+    gap: 28px;
+    padding-top: 36px;
+    padding-bottom: 64px;
+  }
+
+  .site-shell .guestbook-form .pink-btn {
+    width: 100%;
+  }
+
+  .site-shell .guestbook-item {
+    padding: 18px 0 !important;
+  }
+
+  .site-shell .guestbook-item-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 5px 12px;
+  }
+
+  .site-shell .guestbook-item-header strong,
+  .site-shell .guestbook-item p {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .site-shell .guestbook-item-header span {
+    margin-left: auto;
+  }
+
+  .site-shell .pink-content-shell {
+    gap: 18px;
+    padding-top: 36px;
+    padding-bottom: 70px;
+  }
+
+  .site-shell .pink-filter-panel {
+    padding-bottom: 14px !important;
+  }
+
+  .site-shell .article-title,
+  .site-shell .article-content h1,
+  .site-shell .article-content h2,
+  .site-shell .article-content h3 {
+    overflow-wrap: anywhere;
+  }
+
+  .site-shell .article-content {
+    width: 100%;
+    max-width: 100%;
+    padding: 20px 16px;
+  }
+
+  .site-shell .article-content pre,
+  .site-shell .article-content table {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .site-shell .photo-library-filters,
+  .site-shell .photo-category-bar,
+  .site-shell .photo-gallery-toggle {
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .site-shell .photo-library-filters::-webkit-scrollbar,
+  .site-shell .photo-category-bar::-webkit-scrollbar,
+  .site-shell .photo-gallery-toggle::-webkit-scrollbar {
+    display: none;
+  }
+
+  .site-shell .photo-lightbox {
+    padding: 12px;
+  }
+
+  .site-shell .photo-lightbox img {
+    max-width: calc(100vw - 24px);
+    max-height: calc(100svh - 132px);
+  }
+
+  .travel-map-page .tmap-root {
+    min-height: min(560px, calc(100svh - 92px));
+  }
+}
