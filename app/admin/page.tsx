@@ -10,6 +10,7 @@ const tasks = [
   { href: "/admin/posts", title: "管理已有文章", desc: "编辑、预览或删除已发布内容。", action: "文章列表" },
   { href: "/admin/travel-map", title: "更新旅行地图", desc: "维护省份、城市、坐标与相关照片。", action: "编辑地图" },
   { href: "/admin/chat-notifications", title: "检查 AI 与通知", desc: "验证模型连接、Server酱和 Webhook 设置。", action: "打开配置" },
+  { href: "/admin/ai-conversations", title: "清理 AI 会话", desc: "查看匿名对话记录，按需删除或全部清空。", action: "管理会话" },
   { href: "/admin/settings", title: "维护站点资料", desc: "更新个人信息、项目、社交链接与首页内容。", action: "站点设置" },
 ];
 const modules = [
@@ -18,6 +19,7 @@ const modules = [
   { name: "留言", status: "访客互动", href: "/admin/guestbook" },
   { name: "旅行地图", status: "地点档案", href: "/admin/travel-map" },
   { name: "AI 与通知", status: "连接与转发", href: "/admin/chat-notifications" },
+  { name: "AI 会话", status: "记录与清理", href: "/admin/ai-conversations" },
   { name: "站点设置", status: "全局配置", href: "/admin/settings" },
 ];
 

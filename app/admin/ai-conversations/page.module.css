@@ -1,0 +1,373 @@
+.page {
+  max-width: 1320px;
+}
+
+.headActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.clearButton,
+.deleteButton,
+.detailHead button {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid color-mix(in srgb, var(--danger-text) 38%, var(--border));
+  border-radius: 6px;
+  background: transparent;
+  color: var(--danger-text);
+  font-size: 0.76rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.clearButton:disabled,
+.deleteButton:disabled,
+.detailHead button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.message {
+  margin-bottom: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-soft);
+  font-size: 0.8rem;
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border-block: 1px solid var(--border);
+}
+
+.summary > div {
+  display: grid;
+  gap: 5px;
+  padding: 18px 20px;
+  border-right: 1px solid var(--border);
+}
+
+.summary > div:last-child {
+  border-right: 0;
+}
+
+.summary span {
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.summary strong {
+  color: var(--text);
+  font-size: 1.16rem;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(330px, 0.8fr) minmax(0, 1.2fr);
+  min-height: 620px;
+  margin-top: 24px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.listPane,
+.detailPane {
+  min-width: 0;
+}
+
+.listPane {
+  border-right: 1px solid var(--border);
+}
+
+.paneHead,
+.detailHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 66px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.paneHead h2,
+.detailHead h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.92rem;
+  letter-spacing: 0;
+}
+
+.paneHead span,
+.detailHead p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.list {
+  max-height: 680px;
+  overflow-y: auto;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.row > button:first-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 11px 16px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.row strong,
+.row span,
+.row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row strong {
+  font-size: 0.82rem;
+}
+
+.row span,
+.row small {
+  color: var(--text-soft);
+  font-size: 0.68rem;
+}
+
+.row:hover,
+.rowActive {
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+
+.rowActive {
+  box-shadow: inset 3px 0 var(--accent);
+}
+
+.deleteButton {
+  min-height: 32px;
+  padding-inline: 9px;
+  opacity: 0;
+}
+
+.row:hover .deleteButton,
+.row:focus-within .deleteButton,
+.rowActive .deleteButton {
+  opacity: 1;
+}
+
+.detailPane {
+  max-height: 748px;
+  overflow-y: auto;
+}
+
+.detailHead {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  background: var(--surface);
+}
+
+.detailHead > div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.detailHead h2,
+.detailHead p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.messages {
+  display: grid;
+  gap: 24px;
+  padding: 24px;
+}
+
+.messages article {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.messages article > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 0.66rem;
+}
+
+.messages article > div:first-child strong {
+  color: var(--text);
+}
+
+.messages p,
+.markdown {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  line-height: 1.72;
+}
+
+.user {
+  justify-self: end;
+  width: min(86%, 620px);
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface));
+}
+
+.assistant {
+  width: 100%;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--border);
+}
+
+.markdown > :first-child { margin-top: 0; }
+.markdown > :last-child { margin-bottom: 0; }
+.markdown pre,
+.markdown table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.markdown pre {
+  padding: 12px;
+  border-radius: 6px;
+  background: #222320;
+  color: #f4f4ef;
+  white-space: pre;
+}
+.markdown code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.markdown table {
+  display: block;
+  border-collapse: collapse;
+}
+.markdown th,
+.markdown td {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.empty,
+.detailEmpty {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.empty {
+  margin: 0;
+  padding: 22px 18px;
+}
+
+.detailEmpty {
+  display: grid;
+  place-content: center;
+  gap: 7px;
+  min-height: 500px;
+  text-align: center;
+}
+
+.detailEmpty strong {
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .listPane {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .list {
+    max-height: 360px;
+  }
+
+  .detailPane {
+    max-height: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .headActions {
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .summary > div:nth-child(2) {
+    border-right: 0;
+  }
+
+  .summary > div:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .workspace {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .summary > div {
+    padding: 14px;
+  }
+
+  .workspace {
+    margin-top: 16px;
+  }
+
+  .deleteButton {
+    opacity: 1;
+  }
+
+  .detailHead {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .messages {
+    padding: 18px 14px;
+  }
+
+  .user {
+    width: 92%;
+  }
+}

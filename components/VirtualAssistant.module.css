@@ -116,6 +116,44 @@
   color: #fff;
 }
 
+.root :global(.assistant-title-row),
+.root :global(.assistant-title-row > div) {
+  min-width: 0;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.fullChatLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.fullChatLink:hover,
+.fullChatLink:focus-visible {
+  border-color: rgba(239, 120, 173, 0.62);
+  color: #f3a6c8;
+  outline: none;
+}
+
+@media (max-width: 420px) {
+  .fullChatLink {
+    padding-inline: 7px;
+    font-size: 0.62rem;
+  }
+}
+
 .assistantMarkdown {
   min-width: 0;
   overflow-wrap: anywhere;
@@ -457,6 +495,11 @@
 
 :root:not([data-theme="dark"]) .root :global(.assistant-header span) {
   color: rgba(0, 0, 0, 0.45);
+}
+
+:root:not([data-theme="dark"]) .fullChatLink {
+  border-color: rgba(0, 0, 0, 0.1);
+  color: rgba(0, 0, 0, 0.66);
 }
 
 :root:not([data-theme="dark"]) .root :global(.assistant-message.is-assistant) {

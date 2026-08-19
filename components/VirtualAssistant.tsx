@@ -262,7 +262,7 @@ export default function VirtualAssistant() {
     }
   }
 
-  if (pathname.startsWith("/admin")) return null;
+  if (pathname.startsWith("/admin") || pathname === "/ai") return null;
 
   return (
     <div className={`${styles.root} virtual-assistant${pathname === "/world/travel-map" ? " is-map-page" : ""}`}>
@@ -285,9 +285,10 @@ export default function VirtualAssistant() {
               </div>
             </div>
 
-            <button onClick={closeAssistant} type="button" aria-label="关闭聊天助手">
-              ×
-            </button>
+            <div className={styles.headerActions}>
+              <Link href="/ai" className={styles.fullChatLink} onClick={closeAssistant}>完整对话</Link>
+              <button onClick={closeAssistant} type="button" aria-label="关闭聊天助手">×</button>
+            </div>
           </div>
 
           <nav className={styles.destinations} aria-label="站内快捷入口">

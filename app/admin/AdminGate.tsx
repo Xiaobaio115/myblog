@@ -18,6 +18,7 @@ const navGroups = [
   { title: "站点系统", items: [
     { href: "/admin/travel-map", label: "旅行地图", desc: "城市与照片", code: "◈" },
     { href: "/admin/chat-notifications", label: "AI 与通知", desc: "模型与转发", code: "⚡" },
+    { href: "/admin/ai-conversations", label: "AI 会话", desc: "记录与清理", code: "◌" },
     { href: "/admin/settings", label: "站点设置", desc: "资料与模块", code: "⚙" },
   ] },
   { title: "快捷入口", items: [

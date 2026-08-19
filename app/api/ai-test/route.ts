@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getEffectiveChatNotificationSettings } from "@/lib/chat-notification-settings";
+import { resolveAiModel } from "@/lib/ai-provider-settings";
 import { verifyAdminPassword } from "@/lib/admin-session";
 
 export const runtime = "nodejs";
@@ -13,15 +14,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, error: "密码错误。" }, { status: 401 });
   }
 
-  const {
-    aiApiKey: apiKey,
-    aiBaseUrl: baseUrl,
-    aiModel: model,
-  } = await getEffectiveChatNotificationSettings();
+  const requestedModelId = new URL(request.url).searchParams.get("modelId") || "";
+  const selected = await resolveAiModel(requestedModelId || undefined);
+  const legacy = await getEffectiveChatNotificationSettings();
+  const apiKey = selected?.apiKey || legacy.aiApiKey;
+  const baseUrl = selected?.baseUrl || legacy.aiBaseUrl;
+  const model = selected?.model || legacy.aiModel;
 
   if (!apiKey) {
     return NextResponse.json(
-      { ok: false, error: "缺少 AI_API_KEY" },
+      { ok: false, error: "缺少 AI API Key" },
       { status: 500 }
     );
   }

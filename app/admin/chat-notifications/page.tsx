@@ -13,6 +13,13 @@ type AiCapabilities = {
   recommendations: boolean;
   navigation: boolean;
 };
+type AiPromptControls = {
+  useKnowledgeText: boolean;
+  useModePrompt: boolean;
+  useSiteContext: boolean;
+  useFormattingPrompt: boolean;
+  useLocalFallbacks: boolean;
+};
 type AiBehavior = {
   systemPrompt: string;
   knowledgeText: string;
@@ -20,7 +27,11 @@ type AiBehavior = {
   enabledModes: AiMode[];
   modeLabels: Record<AiMode, string>;
   modePrompts: Record<AiMode, string>;
+  promptControls: AiPromptControls;
   capabilities: AiCapabilities;
+  conversationHistoryEnabled: boolean;
+  conversationRetentionDays: number;
+  maxConversationsPerVisitor: number;
   dailyLimit: number;
   maxMessageLength: number;
   maxHistoryMessages: number;
@@ -40,6 +51,31 @@ type SettingsSummary = {
   webhookSource: "environment" | "admin" | "none";
   webhookHost: string;
   webhookTokenConfigured: boolean;
+};
+
+type AdminAiModel = {
+  id: string;
+  label: string;
+  model: string;
+  enabled: boolean;
+  supportsVision: boolean;
+  supportsReasoning: boolean;
+};
+
+type AdminAiProvider = {
+  id: string;
+  label: string;
+  baseUrl: string;
+  apiKey?: string;
+  apiKeyConfigured: boolean;
+  enabled: boolean;
+  models: AdminAiModel[];
+};
+
+type AdminAiProviderPool = {
+  defaultModelId: string;
+  usingLegacyFallback: boolean;
+  providers: AdminAiProvider[];
 };
 
 type FeedbackMessage = {
@@ -70,6 +106,14 @@ const CAPABILITY_OPTIONS: Array<{ key: keyof AiCapabilities; label: string }> = 
   { key: "navigation", label: "显示页面跳转按钮" },
 ];
 
+const PROMPT_CONTROL_OPTIONS: Array<{ key: keyof AiPromptControls; label: string; note: string }> = [
+  { key: "useKnowledgeText", label: "附加知识文本", note: "把下方知识补充发送给模型" },
+  { key: "useModePrompt", label: "附加模式指令", note: "叠加当前导览、聊天、技术或写作指令" },
+  { key: "useSiteContext", label: "启用站内工具", note: "查询文章、照片、项目、地图并生成跳转" },
+  { key: "useFormattingPrompt", label: "附加格式说明", note: "提示模型使用 Markdown、代码块和表情" },
+  { key: "useLocalFallbacks", label: "启用固定兜底", note: "模型不可用时返回博客内置回答" },
+];
+
 export default function ChatNotificationsAdminPage() {
   const [summary, setSummary] = useState<SettingsSummary | null>(null);
   const [aiApiKey, setAiApiKey] = useState("");
@@ -88,14 +132,24 @@ export default function ChatNotificationsAdminPage() {
   const [aiBehavior, setAiBehavior] = useState<AiBehavior | null>(null);
   const [aiBehaviorLoaded, setAiBehaviorLoaded] = useState(false);
   const [message, setMessage] = useState<FeedbackMessage | null>(null);
+  const [providerPool, setProviderPool] = useState<AdminAiProviderPool | null>(null);
+  const [providerPoolLoaded, setProviderPoolLoaded] = useState(false);
+  const [providerPoolSaving, setProviderPoolSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await adminFetch<SettingsSummary>("/api/chat-notification-settings", {
-        fallbackError: "读取聊天通知配置失败。",
-      });
-      setSummary(data);
+      const [settingsData, providerData] = await Promise.all([
+        adminFetch<SettingsSummary>("/api/chat-notification-settings", {
+          fallbackError: "读取聊天通知配置失败。",
+        }),
+        adminFetch<AdminAiProviderPool>("/api/ai-providers", {
+          fallbackError: "读取 AI 模型池失败。",
+        }),
+      ]);
+      setSummary(settingsData);
+      setProviderPool(providerData);
+      setProviderPoolLoaded(true);
     } catch (error) {
       setMessage({
         text: error instanceof Error ? error.message : "读取聊天通知配置失败。",
@@ -138,6 +192,91 @@ export default function ChatNotificationsAdminPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function saveProviderPool() {
+    if (!providerPool) return;
+    setProviderPoolSaving(true);
+    setMessage(null);
+    try {
+      const data = await adminFetch<{ success: boolean; pool: AdminAiProviderPool }>("/api/ai-providers", {
+        method: "PUT",
+        json: providerPool,
+        fallbackError: "保存 AI 模型池失败。",
+      });
+      setProviderPool(data.pool);
+      setMessage({ text: "AI 模型池已保存。", tone: "success" });
+    } catch (error) {
+      setMessage({ text: error instanceof Error ? error.message : "保存 AI 模型池失败。", tone: "error" });
+    } finally {
+      setProviderPoolSaving(false);
+    }
+  }
+
+  function updateProvider(providerId: string, update: Partial<AdminAiProvider>) {
+    setProviderPool((current) => current ? {
+      ...current,
+      providers: current.providers.map((provider) => provider.id === providerId ? { ...provider, ...update } : provider),
+    } : current);
+  }
+
+  function updateProviderModel(providerId: string, modelId: string, update: Partial<AdminAiModel>) {
+    setProviderPool((current) => current ? {
+      ...current,
+      providers: current.providers.map((provider) => provider.id === providerId
+        ? { ...provider, models: provider.models.map((model) => model.id === modelId ? { ...model, ...update } : model) }
+        : provider),
+    } : current);
+  }
+
+  function addProvider() {
+    const providerId = `provider_${crypto.randomUUID().replace(/-/g, "")}`;
+    const modelId = `model_${crypto.randomUUID().replace(/-/g, "")}`;
+    setProviderPool((current) => current ? {
+      ...current,
+      providers: [...current.providers, {
+        id: providerId,
+        label: "新 API 节点",
+        baseUrl: "",
+        apiKey: "",
+        apiKeyConfigured: false,
+        enabled: true,
+        models: [{ id: modelId, label: "新模型", model: "", enabled: true, supportsVision: false, supportsReasoning: false }],
+      }],
+    } : current);
+  }
+
+  function removeProvider(providerId: string) {
+    setProviderPool((current) => {
+      if (!current) return current;
+      const providers = current.providers.filter((provider) => provider.id !== providerId);
+      const defaultStillExists = providers.some((provider) => provider.models.some((model) => `${provider.id}:${model.id}` === current.defaultModelId));
+      return { ...current, providers, defaultModelId: defaultStillExists ? current.defaultModelId : "" };
+    });
+  }
+
+  function addProviderModel(providerId: string) {
+    const modelId = `model_${crypto.randomUUID().replace(/-/g, "")}`;
+    setProviderPool((current) => current ? {
+      ...current,
+      providers: current.providers.map((provider) => provider.id === providerId
+        ? { ...provider, models: [...provider.models, { id: modelId, label: "新模型", model: "", enabled: true, supportsVision: false, supportsReasoning: false }] }
+        : provider),
+    } : current);
+  }
+
+  function removeProviderModel(providerId: string, modelId: string) {
+    setProviderPool((current) => {
+      if (!current) return current;
+      const providers = current.providers.map((provider) => provider.id === providerId
+        ? { ...provider, models: provider.models.filter((model) => model.id !== modelId) }
+        : provider);
+      return {
+        ...current,
+        providers,
+        defaultModelId: current.defaultModelId === `${providerId}:${modelId}` ? "" : current.defaultModelId,
+      };
+    });
   }
 
   async function save() {
@@ -256,7 +395,7 @@ export default function ChatNotificationsAdminPage() {
               <h2>AI 对话服务</h2>
             </div>
             <Status
-              configured={summary?.aiConfigured || false}
+              configured={summary?.aiConfigured || Boolean(providerPool?.providers.some((provider) => provider.enabled && provider.apiKeyConfigured))}
               source={summary?.aiSource || "none"}
             />
           </div>
@@ -266,6 +405,57 @@ export default function ChatNotificationsAdminPage() {
               {summary.aiModel ? ` / ${summary.aiModel}` : ""}
             </div>
           ) : null}
+          <div className={styles.providerPool}>
+            <div className={styles.providerPoolHead}>
+              <div>
+                <span className={styles.fieldLabel}>多模型 API 池</span>
+                <p className={styles.fieldHint}>每个节点可以有自己的 Base URL、Key 和多个模型；前台只显示启用的模型名称，不暴露密钥。</p>
+              </div>
+              <button type="button" className={styles.inlineTest} onClick={addProvider}>＋ 添加 API 节点</button>
+            </div>
+            {providerPoolLoaded && providerPool?.usingLegacyFallback ? (
+              <p className={styles.providerPoolNote}>当前使用旧版单模型配置作为回退。保存下面的模型池后，聊天会优先使用模型池。</p>
+            ) : null}
+            {!providerPoolLoaded ? <p className={styles.providerPoolNote}>正在读取模型池...</p> : null}
+            {providerPool?.providers.map((provider) => (
+              <section className={styles.providerItem} key={provider.id}>
+                <div className={styles.providerHead}>
+                  <div><strong>{provider.label || "未命名节点"}</strong><small>{provider.apiKeyConfigured ? "Key 已配置" : "Key 未配置"}</small></div>
+                  <div className={styles.providerHeadActions}>
+                    <label className={styles.compactToggle}><input type="checkbox" checked={provider.enabled} onChange={(event) => updateProvider(provider.id, { enabled: event.target.checked })} /><span>启用节点</span></label>
+                    <button type="button" className={styles.removeProvider} onClick={() => removeProvider(provider.id)}>删除节点</button>
+                  </div>
+                </div>
+                <div className={styles.providerFields}>
+                  <label className={styles.field}><span>节点名称</span><input className="admin-input" value={provider.label} onChange={(event) => updateProvider(provider.id, { label: event.target.value })} placeholder="例如：主力模型接口" /></label>
+                  <label className={styles.field}><span>API Base URL</span><input className="admin-input" type="url" value={provider.baseUrl} onChange={(event) => updateProvider(provider.id, { baseUrl: event.target.value })} placeholder="https://.../v1" /></label>
+                  <label className={styles.field}><span>API Key</span><input className="admin-input" type="password" autoComplete="off" value={provider.apiKey || ""} onChange={(event) => updateProvider(provider.id, { apiKey: event.target.value })} placeholder={provider.apiKeyConfigured ? "已配置，留空保持不变" : "sk-..."} /></label>
+                </div>
+                <div className={styles.modelPoolHead}><span className={styles.fieldLabel}>节点模型</span><button type="button" className={styles.addModelButton} onClick={() => addProviderModel(provider.id)}>＋ 添加模型</button></div>
+                <div className={styles.modelPool}>
+                  {provider.models.map((model) => {
+                    const modelRef = `${provider.id}:${model.id}`;
+                    return <div className={styles.modelItem} key={model.id}>
+                      <label className={styles.field}><span>显示名称</span><input className="admin-input" value={model.label} onChange={(event) => updateProviderModel(provider.id, model.id, { label: event.target.value })} placeholder="例如：GPT-4o" /></label>
+                      <label className={styles.field}><span>模型 ID</span><input className="admin-input" value={model.model} onChange={(event) => updateProviderModel(provider.id, model.id, { model: event.target.value })} placeholder="供应商模型名称" /></label>
+                      <div className={styles.modelFlags}>
+                        <label className={styles.compactToggle}><input type="checkbox" checked={model.enabled} onChange={(event) => updateProviderModel(provider.id, model.id, { enabled: event.target.checked })} /><span>前台可选</span></label>
+                        <label className={styles.compactToggle}><input type="checkbox" checked={model.supportsVision} onChange={(event) => updateProviderModel(provider.id, model.id, { supportsVision: event.target.checked })} /><span>支持图片</span></label>
+                        <label className={styles.compactToggle}><input type="checkbox" checked={model.supportsReasoning} onChange={(event) => updateProviderModel(provider.id, model.id, { supportsReasoning: event.target.checked })} /><span>支持思考流</span></label>
+                        <button type="button" className={styles.removeModel} onClick={() => removeProviderModel(provider.id, model.id)} disabled={provider.models.length === 1}>删除</button>
+                      </div>
+                      <label className={styles.defaultModel}><input type="radio" name="default-ai-model" checked={providerPool.defaultModelId === modelRef} onChange={() => setProviderPool((current) => current ? { ...current, defaultModelId: modelRef } : current)} /><span>设为默认模型</span></label>
+                    </div>;
+                  })}
+                </div>
+              </section>
+            ))}
+            {providerPoolLoaded && providerPool?.providers.length === 0 ? <p className={styles.providerPoolNote}>还没有模型池配置，点击“添加 API 节点”开始。</p> : null}
+            <button type="button" className="admin-button" disabled={providerPoolSaving || !providerPoolLoaded} onClick={() => void saveProviderPool()}>{providerPoolSaving ? "保存模型池中..." : "保存多模型配置"}</button>
+          </div>
+          <details className={styles.legacySettings}>
+            <summary>旧版单模型配置（兼容回退）</summary>
+            <p>仅当没有可用的多模型节点时使用。已有环境变量优先级仍然最高。</p>
           <div className={styles.aiFields}>
             <label className={styles.field}>
               <span>API Key</span>
@@ -331,6 +521,7 @@ export default function ChatNotificationsAdminPage() {
               {clearAi ? "保存后移除" : "移除后台配置"}
             </button>
           </div>
+          </details>
         </section>
 
         <section className={styles.channel}>
@@ -345,10 +536,66 @@ export default function ChatNotificationsAdminPage() {
             </span>
           </div>
           <p className={styles.channelNote}>
-            配置访客可切换的回答模式、站内查询能力、角色说明和使用限制。保存后立即作用于右下角对话。
+            核心行为指令是应用层最高设置；其他知识、模式和站内工具可以独立叠加或完全关闭。
           </p>
           {aiBehavior ? (
             <div className={styles.behaviorGrid}>
+              <label className={styles.field}>
+                <span>核心行为指令（应用层最高优先级）</span>
+                <textarea
+                  className="admin-input"
+                  rows={9}
+                  maxLength={8000}
+                  value={aiBehavior.systemPrompt}
+                  onChange={(event) => setAiBehavior({ ...aiBehavior, systemPrompt: event.target.value })}
+                  placeholder="直接定义 AI 的身份、语气、回答边界和互动方式；留空则不发送应用层核心指令。"
+                />
+                <small>保存后会直接作为 system 指令发送。这里不要填写 API Key；模型供应商自身规则仍由供应商决定。</small>
+              </label>
+
+              <section className={styles.promptLayers} aria-labelledby="prompt-layers-title">
+                <div className={styles.promptLayersHead}>
+                  <div>
+                    <span className={styles.fieldLabel} id="prompt-layers-title">附加机制</span>
+                    <p className={styles.fieldHint}>关闭全部附加机制后，接口只发送上面的核心行为指令和聊天历史。</p>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.coreOnlyButton}
+                    onClick={() => setAiBehavior({
+                      ...aiBehavior,
+                      promptControls: {
+                        useKnowledgeText: false,
+                        useModePrompt: false,
+                        useSiteContext: false,
+                        useFormattingPrompt: false,
+                        useLocalFallbacks: false,
+                      },
+                    })}
+                  >
+                    仅使用核心指令
+                  </button>
+                </div>
+                <div className={styles.promptLayerGrid}>
+                  {PROMPT_CONTROL_OPTIONS.map((option) => (
+                    <label key={option.key} className={styles.promptLayerOption}>
+                      <input
+                        type="checkbox"
+                        checked={aiBehavior.promptControls[option.key]}
+                        onChange={(event) => setAiBehavior({
+                          ...aiBehavior,
+                          promptControls: {
+                            ...aiBehavior.promptControls,
+                            [option.key]: event.target.checked,
+                          },
+                        })}
+                      />
+                      <span><strong>{option.label}</strong><small>{option.note}</small></span>
+                    </label>
+                  ))}
+                </div>
+              </section>
+
               <div className={styles.behaviorTop}>
                 <div className={styles.modeControl}>
                   <label className={styles.field}>
@@ -413,25 +660,16 @@ export default function ChatNotificationsAdminPage() {
                 </div>
               </div>
               <label className={styles.field}>
-                <span>系统提示词</span>
-                <textarea
-                  className="admin-input"
-                  rows={8}
-                  value={aiBehavior.systemPrompt}
-                  onChange={(event) => setAiBehavior({ ...aiBehavior, systemPrompt: event.target.value })}
-                />
-                <small>描述身份、语气、知识范围和回答方式。不要在这里填写 API Key。</small>
-              </label>
-              <label className={styles.field}>
                 <span>AI 知识补充文本</span>
                 <textarea
                   className="admin-input"
                   rows={7}
+                  maxLength={12000}
                   value={aiBehavior.knowledgeText}
                   onChange={(event) => setAiBehavior({ ...aiBehavior, knowledgeText: event.target.value })}
                   placeholder="补充博客模块、作者偏好、常用术语等稳定知识。模型会把它作为参考，不会替代实时检索结果。"
                 />
-                <small>这里写给 AI 看的背景资料，不要放 API Key、密码或访客隐私。</small>
+                <small>只有开启“附加知识文本”才会发送；可以保存为空。不要放 API Key、密码或访客隐私。</small>
               </label>
               <div className={styles.modePromptSection}>
                 <div>
@@ -466,11 +704,52 @@ export default function ChatNotificationsAdminPage() {
                             modePrompts: { ...aiBehavior.modePrompts, [option.value]: event.target.value },
                           })}
                         />
+                        <small>可以留空；关闭“附加模式指令”后所有模式都只保留名称，不改变回答行为。</small>
                       </label>
                     </div>
                   ))}
                 </div>
               </div>
+              <section className={styles.historySettings} aria-labelledby="history-settings-title">
+                <div>
+                  <span className={styles.fieldLabel} id="history-settings-title">独立 AI 页会话记录</span>
+                  <p className={styles.fieldHint}>只保存访客可见的对话内容；记录到期会由 MongoDB 自动清理，也可以在“AI 会话”后台手动删除。</p>
+                </div>
+                <label className={styles.historyToggle}>
+                  <input
+                    type="checkbox"
+                    checked={aiBehavior.conversationHistoryEnabled}
+                    onChange={(event) => setAiBehavior({ ...aiBehavior, conversationHistoryEnabled: event.target.checked })}
+                  />
+                  <span><strong>保存匿名会话</strong><small>关闭后 `/ai` 仍可聊天，但刷新页面不会保留记录。</small></span>
+                </label>
+                <div className={styles.historyLimits}>
+                  <label className={styles.field}>
+                    <span>自动保留天数</span>
+                    <input
+                      className="admin-input"
+                      type="number"
+                      min={1}
+                      max={365}
+                      disabled={!aiBehavior.conversationHistoryEnabled}
+                      value={aiBehavior.conversationRetentionDays}
+                      onChange={(event) => setAiBehavior({ ...aiBehavior, conversationRetentionDays: Number(event.target.value) })}
+                    />
+                  </label>
+                  <label className={styles.field}>
+                    <span>每位访客最多会话</span>
+                    <input
+                      className="admin-input"
+                      type="number"
+                      min={1}
+                      max={50}
+                      disabled={!aiBehavior.conversationHistoryEnabled}
+                      value={aiBehavior.maxConversationsPerVisitor}
+                      onChange={(event) => setAiBehavior({ ...aiBehavior, maxConversationsPerVisitor: Number(event.target.value) })}
+                    />
+                  </label>
+                </div>
+              </section>
               <div className={styles.aiFields}>
                 <label className={styles.field}>
                   <span>每日每 IP 次数</span>

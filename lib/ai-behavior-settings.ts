@@ -1,5 +1,9 @@
 import "server-only";
 import { getDb } from "@/lib/mongodb";
+import {
+  AI_PROMPT_CONTROL_DEFAULTS,
+  type AiPromptControls,
+} from "@/lib/ai-prompt";
 
 const SETTINGS_KEY = "aiBehavior";
 
@@ -22,7 +26,11 @@ export type AiBehavior = {
   enabledModes: AiMode[];
   modeLabels: AiModeText;
   modePrompts: AiModeText;
+  promptControls: AiPromptControls;
   capabilities: AiCapabilities;
+  conversationHistoryEnabled: boolean;
+  conversationRetentionDays: number;
+  maxConversationsPerVisitor: number;
   dailyLimit: number;
   maxMessageLength: number;
   maxHistoryMessages: number;
@@ -47,7 +55,7 @@ export const AI_MODE_PROMPT_DEFAULTS: AiModeText = {
 };
 
 export const AI_BEHAVIOR_DEFAULTS: AiBehavior = {
-  systemPrompt: `你是这个个人博客右下角的虚拟助手，名字叫甘蔗。
+  systemPrompt: `你是这个个人博客的 AI 助手，名字叫甘蔗。
 你的语气像朋友一样自然、简洁、温和，什么话题都可以聊。
 你可以介绍博客的首页、文章、相册、3D 星空相册、我的世界、旅行地图等内容。
   回答以中文为主，尽量简短；只有用户明确要求详细说明时才展开。`,
@@ -57,6 +65,7 @@ export const AI_BEHAVIOR_DEFAULTS: AiBehavior = {
   enabledModes: ["guide", "companion", "technical", "writer"],
   modeLabels: { ...AI_MODE_LABEL_DEFAULTS },
   modePrompts: { ...AI_MODE_PROMPT_DEFAULTS },
+  promptControls: { ...AI_PROMPT_CONTROL_DEFAULTS },
   capabilities: {
     searchArticles: true,
     searchPhotos: true,
@@ -65,6 +74,9 @@ export const AI_BEHAVIOR_DEFAULTS: AiBehavior = {
     recommendations: true,
     navigation: true,
   },
+  conversationHistoryEnabled: true,
+  conversationRetentionDays: 30,
+  maxConversationsPerVisitor: 20,
   dailyLimit: 20,
   maxMessageLength: 500,
   maxHistoryMessages: 6,
@@ -78,25 +90,44 @@ function clampNumber(value: unknown, fallback: number, min: number, max: number,
   return integer ? Math.round(bounded) : bounded;
 }
 
-function normalizeModeText(value: unknown, defaults: AiModeText, maxLength: number): AiModeText {
+function normalizeModeText(
+  value: unknown,
+  defaults: AiModeText,
+  maxLength: number,
+  allowEmpty = false
+): AiModeText {
   const source = value && typeof value === "object"
     ? value as Partial<Record<AiMode, unknown>>
     : {};
 
   return Object.fromEntries(
     AI_MODES.map((mode) => {
-      const text = typeof source[mode] === "string"
-        ? source[mode].trim().slice(0, maxLength)
-        : "";
-      return [mode, text || defaults[mode]];
+      if (typeof source[mode] !== "string") return [mode, defaults[mode]];
+      const text = source[mode].trim().slice(0, maxLength);
+      return [mode, allowEmpty ? text : text || defaults[mode]];
     })
   ) as AiModeText;
+}
+
+function normalizePromptControls(value: unknown): AiPromptControls {
+  const source = value && typeof value === "object"
+    ? value as Partial<AiPromptControls>
+    : {};
+
+  return Object.fromEntries(
+    Object.entries(AI_PROMPT_CONTROL_DEFAULTS).map(([key, fallback]) => [
+      key,
+      typeof source[key as keyof AiPromptControls] === "boolean"
+        ? source[key as keyof AiPromptControls]
+        : fallback,
+    ])
+  ) as AiPromptControls;
 }
 
 function normalizeBehavior(value: Partial<AiBehavior>): AiBehavior {
   const systemPrompt = typeof value.systemPrompt === "string"
     ? value.systemPrompt.trim().slice(0, 8000)
-    : "";
+    : AI_BEHAVIOR_DEFAULTS.systemPrompt;
   const knowledgeText = typeof value.knowledgeText === "string"
     ? value.knowledgeText.trim().slice(0, 12000)
     : AI_BEHAVIOR_DEFAULTS.knowledgeText;
@@ -119,12 +150,13 @@ function normalizeBehavior(value: Partial<AiBehavior>): AiBehavior {
       : {};
 
   return {
-    systemPrompt: systemPrompt || AI_BEHAVIOR_DEFAULTS.systemPrompt,
+    systemPrompt,
     knowledgeText,
     mode,
     enabledModes: enabledModes.length > 0 ? enabledModes : [AI_BEHAVIOR_DEFAULTS.mode],
     modeLabels: normalizeModeText(value.modeLabels, AI_MODE_LABEL_DEFAULTS, 40),
-    modePrompts: normalizeModeText(value.modePrompts, AI_MODE_PROMPT_DEFAULTS, 2400),
+    modePrompts: normalizeModeText(value.modePrompts, AI_MODE_PROMPT_DEFAULTS, 2400, true),
+    promptControls: normalizePromptControls(value.promptControls),
     capabilities: {
       searchArticles: typeof storedCapabilities.searchArticles === "boolean" ? storedCapabilities.searchArticles : AI_BEHAVIOR_DEFAULTS.capabilities.searchArticles,
       searchPhotos: typeof storedCapabilities.searchPhotos === "boolean" ? storedCapabilities.searchPhotos : AI_BEHAVIOR_DEFAULTS.capabilities.searchPhotos,
@@ -133,6 +165,23 @@ function normalizeBehavior(value: Partial<AiBehavior>): AiBehavior {
       recommendations: typeof storedCapabilities.recommendations === "boolean" ? storedCapabilities.recommendations : AI_BEHAVIOR_DEFAULTS.capabilities.recommendations,
       navigation: typeof storedCapabilities.navigation === "boolean" ? storedCapabilities.navigation : AI_BEHAVIOR_DEFAULTS.capabilities.navigation,
     },
+    conversationHistoryEnabled: typeof value.conversationHistoryEnabled === "boolean"
+      ? value.conversationHistoryEnabled
+      : AI_BEHAVIOR_DEFAULTS.conversationHistoryEnabled,
+    conversationRetentionDays: clampNumber(
+      value.conversationRetentionDays,
+      AI_BEHAVIOR_DEFAULTS.conversationRetentionDays,
+      1,
+      365,
+      true
+    ),
+    maxConversationsPerVisitor: clampNumber(
+      value.maxConversationsPerVisitor,
+      AI_BEHAVIOR_DEFAULTS.maxConversationsPerVisitor,
+      1,
+      50,
+      true
+    ),
     dailyLimit: clampNumber(value.dailyLimit, AI_BEHAVIOR_DEFAULTS.dailyLimit, 1, 1000, true),
     maxMessageLength: clampNumber(value.maxMessageLength, AI_BEHAVIOR_DEFAULTS.maxMessageLength, 50, 10000, true),
     maxHistoryMessages: clampNumber(value.maxHistoryMessages, AI_BEHAVIOR_DEFAULTS.maxHistoryMessages, 1, 30, true),
@@ -142,7 +191,9 @@ function normalizeBehavior(value: Partial<AiBehavior>): AiBehavior {
 }
 
 export function getAiModePrompt(mode: AiMode, prompts: AiModeText = AI_MODE_PROMPT_DEFAULTS) {
-  return prompts[mode] || AI_MODE_PROMPT_DEFAULTS[mode] || AI_MODE_PROMPT_DEFAULTS.guide;
+  return typeof prompts[mode] === "string"
+    ? prompts[mode]
+    : AI_MODE_PROMPT_DEFAULTS[mode] || AI_MODE_PROMPT_DEFAULTS.guide;
 }
 
 export async function getAiBehavior(): Promise<AiBehavior> {
@@ -168,7 +219,17 @@ export async function saveAiBehavior(behavior: Partial<AiBehavior>): Promise<AiB
     enabledModes: behavior.enabledModes ?? current.enabledModes,
     modeLabels: behavior.modeLabels ?? current.modeLabels,
     modePrompts: behavior.modePrompts ?? current.modePrompts,
+    promptControls: behavior.promptControls ?? current.promptControls,
     capabilities: behavior.capabilities ?? current.capabilities,
+    conversationHistoryEnabled: typeof behavior.conversationHistoryEnabled === "boolean"
+      ? behavior.conversationHistoryEnabled
+      : current.conversationHistoryEnabled,
+    conversationRetentionDays: typeof behavior.conversationRetentionDays === "number"
+      ? behavior.conversationRetentionDays
+      : current.conversationRetentionDays,
+    maxConversationsPerVisitor: typeof behavior.maxConversationsPerVisitor === "number"
+      ? behavior.maxConversationsPerVisitor
+      : current.maxConversationsPerVisitor,
     dailyLimit: typeof behavior.dailyLimit === "number" ? behavior.dailyLimit : current.dailyLimit,
     maxMessageLength: typeof behavior.maxMessageLength === "number" ? behavior.maxMessageLength : current.maxMessageLength,
     maxHistoryMessages: typeof behavior.maxHistoryMessages === "number" ? behavior.maxHistoryMessages : current.maxHistoryMessages,

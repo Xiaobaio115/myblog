@@ -132,6 +132,177 @@
   gap: 14px;
 }
 
+.providerPool {
+  display: grid;
+  gap: 14px;
+  margin: 6px 0 22px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 54%, transparent);
+}
+
+.providerPoolHead,
+.providerHead,
+.modelPoolHead,
+.providerHeadActions,
+.modelFlags {
+  display: flex;
+  align-items: center;
+}
+
+.providerPoolHead,
+.providerHead,
+.modelPoolHead {
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.providerPoolHead .fieldHint {
+  max-width: 700px;
+}
+
+.providerPoolHead button,
+.addModelButton {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.74rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.providerPoolHead button:hover,
+.providerPoolHead button:focus-visible,
+.addModelButton:hover,
+.addModelButton:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
+}
+
+.providerPoolNote {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.providerItem {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+}
+
+.providerHead > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.providerHead strong {
+  color: var(--text);
+  font-size: 0.86rem;
+}
+
+.providerHead small {
+  color: var(--text-soft);
+  font-size: 0.68rem;
+}
+
+.providerHeadActions {
+  gap: 13px;
+}
+
+.providerFields {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.7fr) minmax(220px, 1.35fr) minmax(180px, 0.95fr);
+  gap: 12px;
+}
+
+.modelPool {
+  display: grid;
+  gap: 10px;
+}
+
+.modelItem {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.7fr) minmax(180px, 1.1fr) minmax(0, 1.5fr);
+  align-items: end;
+  gap: 12px;
+  padding: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.modelFlags {
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.compactToggle,
+.defaultModel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.compactToggle input,
+.defaultModel input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--accent);
+}
+
+.removeProvider,
+.removeModel {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--danger-text);
+  font-size: 0.72rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.removeModel:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.defaultModel {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.legacySettings {
+  margin: 0 0 18px;
+  padding: 12px 0;
+  border-block: 1px solid var(--border);
+}
+
+.legacySettings summary {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.legacySettings > p {
+  margin: 8px 0 14px;
+  color: var(--text-soft);
+  font-size: 0.72rem;
+}
+
 .channelActions {
   display: flex;
   align-items: center;
@@ -177,8 +348,29 @@
   }
 
   .aiFields,
-  .webhookFields {
+  .webhookFields,
+  .providerFields {
     grid-template-columns: 1fr;
+  }
+
+  .providerPoolHead,
+  .providerHead,
+  .modelPoolHead {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .providerHeadActions {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .modelItem {
+    grid-template-columns: 1fr;
+  }
+
+  .defaultModel {
+    grid-column: auto;
   }
 
   .channelActions {
@@ -219,10 +411,133 @@
   align-items: start;
 }
 
+.promptLayers {
+  display: grid;
+  gap: 12px;
+  padding: 16px 0;
+  border-block: 1px solid var(--border);
+}
+
+.promptLayersHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.coreOnlyButton {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.coreOnlyButton:hover,
+.coreOnlyButton:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
+}
+
+.promptLayerGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 18px;
+}
+
+.promptLayerOption {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  color: var(--text-soft);
+  cursor: pointer;
+}
+
+.promptLayerOption input {
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.promptLayerOption > span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.promptLayerOption strong {
+  color: var(--text);
+  font-size: 0.82rem;
+}
+
+.promptLayerOption small {
+  color: var(--text-soft);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
 .modePromptSection {
   display: grid;
   gap: 12px;
   padding-top: 4px;
+}
+
+.historySettings {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.7fr);
+  gap: 16px 28px;
+  padding: 16px 0;
+  border-block: 1px solid var(--border);
+}
+
+.historyToggle {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  color: var(--text-soft);
+  cursor: pointer;
+}
+
+.historyToggle input {
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.historyToggle span {
+  display: grid;
+  gap: 3px;
+}
+
+.historyToggle strong {
+  color: var(--text);
+  font-size: 0.82rem;
+}
+
+.historyToggle small {
+  color: var(--text-soft);
+  font-size: 0.74rem;
+  line-height: 1.45;
+}
+
+.historyLimits {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(180px, 240px));
+  gap: 14px;
 }
 
 .fieldHint {
@@ -321,8 +636,24 @@
   .behaviorTop,
   .capabilityGrid,
   .modeAvailability,
-  .modePromptGrid {
+  .modePromptGrid,
+  .promptLayerGrid {
     grid-template-columns: 1fr;
+  }
+
+  .promptLayersHead {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .historySettings,
+  .historyLimits {
+    grid-template-columns: 1fr;
+  }
+
+  .coreOnlyButton {
+    width: 100%;
+    min-height: 44px;
   }
 }
 

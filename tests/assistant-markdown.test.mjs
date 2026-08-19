@@ -29,7 +29,7 @@ test("assistant Markdown renders code, emoji and common formatting", () => {
   assert.match(html, /😊/);
 });
 
-test("assistant Markdown drops raw HTML and unsafe links", () => {
+test("assistant Markdown drops raw HTML and unsafe links while allowing safe images", () => {
   const html = renderAssistantMarkdown('<script>alert("xss")</script>');
   const linkHtml = renderAssistantMarkdown("[危险](javascript:alert(1))");
   const imageHtml = renderAssistantMarkdown("![追踪图](https://example.com/pixel.gif)");
@@ -37,6 +37,6 @@ test("assistant Markdown drops raw HTML and unsafe links", () => {
   assert.doesNotMatch(html, /script|javascript:/i);
   assert.doesNotMatch(linkHtml, /javascript:/i);
   assert.match(linkHtml, /危险/);
-  assert.doesNotMatch(imageHtml, /<img/i);
+  assert.match(imageHtml, /<img[^>]+https:\/\/example\.com\/pixel\.gif/i);
   assert.match(imageHtml, /追踪图/);
 });

@@ -22,12 +22,26 @@ function isSafeLink(value: string) {
   }
 }
 
+function isSafeImage(value: string) {
+  try {
+    const url = new URL(value, INTERNAL_ORIGIN);
+    if (value.startsWith("/") && !value.startsWith("//")) return true;
+    return url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export function renderAssistantMarkdown(source: string) {
   const renderer = new marked.Renderer();
 
-  // AI output is untrusted: keep Markdown formatting but discard raw HTML and images.
+  // AI output is untrusted: discard raw HTML and allow only HTTPS or same-site images.
   renderer.html = () => "";
-  renderer.image = ({ text }) => escapeHtml(text || "图片");
+  renderer.image = ({ href, title, text }) => {
+    if (!isSafeImage(href)) return escapeHtml(text || "图片");
+    const titleAttribute = title ? ` title="${escapeHtml(title)}"` : "";
+    return `<img src="${escapeHtml(href)}" alt="${escapeHtml(text || "AI 图片")}"${titleAttribute} loading="lazy" decoding="async">`;
+  };
   renderer.link = function renderLink({ href, title, tokens }) {
     const label = this.parser.parseInline(tokens);
     if (!isSafeLink(href)) return label;
