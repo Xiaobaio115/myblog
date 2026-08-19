@@ -42,7 +42,7 @@ export default async function ProjectsPage() {
 
   return (
     <SiteFrame><div className="projects-page">
-      <ScrollReveal mode="heroFade">
+      <ScrollReveal mode="stickyHero">
       <section className={styles.hero}>
         <Image
           className={styles.heroImage}

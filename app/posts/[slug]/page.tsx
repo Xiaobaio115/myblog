@@ -131,6 +131,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
   if (!post) notFound();
 
   const title = post.title.trim() || "未命名文章";
+  const hasCover = Boolean(post.coverUrl?.trim());
   const content = post.content?.trim() || "";
   const { html, toc } = prepareMarkdown(content);
   const readingMinutes = getReadingMinutes(content);
@@ -149,9 +150,9 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
   return (
     <SiteFrame>
       <div className={styles.page}>
-        <ScrollReveal mode={post.coverUrl?.trim() ? "heroFade" : "reveal"}>
-          <header className={`${styles.header} ${post.coverUrl ? styles.headerWithCover : ""}`}>
-          {post.coverUrl?.trim() ? (
+        <ScrollReveal mode={hasCover ? "heroFade" : "reveal"}>
+          <header className={`${styles.header} ${hasCover ? styles.headerWithCover : ""}`}>
+          {hasCover ? (
             <>
               <SafeImage
                 src={post.coverUrl}
@@ -226,12 +227,10 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
           </ScrollReveal>
         ) : null}
 
-        <ScrollReveal mode="reveal">
-          <PostReadingExperience
-            html={html || "<p>这篇文章暂时没有正文，内容仍在整理中。</p>"}
-            toc={toc}
-          />
-        </ScrollReveal>
+        <PostReadingExperience
+          html={html || "<p>这篇文章暂时没有正文，内容仍在整理中。</p>"}
+          toc={toc}
+        />
 
         {seriesPosts.length > 1 ? (
           <ScrollReveal mode="reveal">

@@ -42,6 +42,45 @@ export function PostReadingExperience({
       setProgress(Math.min(100, Math.max(0, (travelled / available) * 100)));
     };
 
+    const narrativeBlocks = Array.from(article.children).filter(
+      (element): element is HTMLElement => element instanceof HTMLElement,
+    );
+    narrativeBlocks.forEach((block) => block.classList.add(styles.narrativeBlock));
+    const hasNativeViewTimeline = CSS.supports("animation-timeline: view()");
+
+    const updateNarrativeBlocks = () => {
+      if (hasNativeViewTimeline) return;
+      const viewportHeight = window.innerHeight;
+
+      narrativeBlocks.forEach((block) => {
+        const rect = block.getBoundingClientRect();
+        if (rect.bottom < -viewportHeight || rect.top > viewportHeight * 2) return;
+
+        let opacity = 1;
+        let shift = 0;
+
+        if (rect.top > viewportHeight * 0.62) {
+          const entry = Math.max(0, Math.min(1, (viewportHeight * 0.94 - rect.top) / (viewportHeight * 0.32)));
+          opacity = 0.08 + entry * 0.92;
+          shift = (1 - entry) * 36;
+        } else if (rect.bottom < viewportHeight * 0.2) {
+          const exit = Math.max(0, Math.min(1, (viewportHeight * 0.2 - rect.bottom) / (viewportHeight * 0.24)));
+          opacity = 1 - exit * 0.72;
+          shift = exit * -20;
+        }
+
+        block.style.setProperty("--narrative-opacity", String(opacity));
+        block.style.setProperty("--narrative-shift", `${shift}px`);
+      });
+    };
+
+    let narrativeFrame = 0;
+    const updateOnScroll = () => {
+      updateProgress();
+      if (narrativeFrame) cancelAnimationFrame(narrativeFrame);
+      narrativeFrame = requestAnimationFrame(updateNarrativeBlocks);
+    };
+
     const articleImages = Array.from(article.querySelectorAll("img"));
 
     const classifyImage = (image: HTMLImageElement) => {
@@ -85,14 +124,20 @@ export function PostReadingExperience({
       const heading = document.getElementById(id);
       if (heading) observer.observe(heading);
     });
-    updateProgress();
-    window.addEventListener("scroll", updateProgress, { passive: true });
-    window.addEventListener("resize", updateProgress);
+    updateOnScroll();
+    window.addEventListener("scroll", updateOnScroll, { passive: true });
+    window.addEventListener("resize", updateOnScroll);
 
     return () => {
       observer.disconnect();
-      window.removeEventListener("scroll", updateProgress);
-      window.removeEventListener("resize", updateProgress);
+      window.removeEventListener("scroll", updateOnScroll);
+      window.removeEventListener("resize", updateOnScroll);
+      cancelAnimationFrame(narrativeFrame);
+      narrativeBlocks.forEach((block) => {
+        block.classList.remove(styles.narrativeBlock);
+        block.style.removeProperty("--narrative-opacity");
+        block.style.removeProperty("--narrative-shift");
+      });
     };
   }, [html, toc]);
 

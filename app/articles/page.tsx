@@ -84,6 +84,7 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
   return (
     <SiteFrame><div className="articles-page">
       <div className={styles.layout}>
+        <ScrollReveal mode="reveal">
         <header className={styles.intro}>
           <div>
             {selectedSeries ? <Link href="/series" className={styles.backToSeries}>← 返回系列目录</Link> : null}
@@ -92,7 +93,9 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
           </div>
           <p>{introDescription}</p>
         </header>
+        </ScrollReveal>
 
+        <ScrollReveal mode="reveal">
         <div className={styles.tools}>
           <form action="/articles" method="get" className={styles.search}>
             {selectedTag ? <input type="hidden" name="tag" value={selectedTag} /> : null}
@@ -110,7 +113,9 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
             <Link key={tag} href={filterHref(tag)} aria-current={selectedTag === tag ? "page" : undefined} className={`${styles.tag} ${selectedTag === tag ? styles.active : ""}`}>{tag}</Link>
           ))}
         </nav>
+        </ScrollReveal>
 
+        <ScrollReveal mode="reveal">
         {seriesItems.length > 0 ? (
           <section className={styles.seriesRail} aria-label="文章系列">
             <div className={styles.seriesRailHead}>
@@ -142,6 +147,7 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
             <Link href="/series">打开系列目录 <span aria-hidden="true">↗</span></Link>
           </section>
         )}
+        </ScrollReveal>
 
         {lead ? (
           <section className={styles.editorial} aria-label={resultLabel}>
@@ -157,12 +163,14 @@ export default async function ArticlesPage({ searchParams }: ArticlesPageProps) 
             </div>
           </section>
         ) : (
-          <section className={styles.empty}>
-            <span aria-hidden>✦</span>
-            <h2>{query || selectedTag || selectedSeries ? "没有找到相符的文章" : "第一篇文章还在路上"}</h2>
-            <p>{query || selectedTag || selectedSeries ? "换一个关键词，或回到全部文章继续翻阅。" : "不妨先去照片墙看看最近的生活切片。"}</p>
-            <Link href={query || selectedTag || selectedSeries ? "/articles" : "/photos"}>{query || selectedTag || selectedSeries ? "清除筛选" : "去看照片"} →</Link>
-          </section>
+          <ScrollReveal mode="reveal">
+            <section className={styles.empty}>
+              <span aria-hidden>✦</span>
+              <h2>{query || selectedTag || selectedSeries ? "没有找到相符的文章" : "第一篇文章还在路上"}</h2>
+              <p>{query || selectedTag || selectedSeries ? "换一个关键词，或回到全部文章继续翻阅。" : "不妨先去照片墙看看最近的生活切片。"}</p>
+              <Link href={query || selectedTag || selectedSeries ? "/articles" : "/photos"}>{query || selectedTag || selectedSeries ? "清除筛选" : "去看照片"} →</Link>
+            </section>
+          </ScrollReveal>
         )}
       </div>
     </div></SiteFrame>

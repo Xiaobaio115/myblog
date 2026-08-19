@@ -45,7 +45,7 @@ export default async function SeriesPage() {
   return (
     <SiteFrame><div className="series-page">
       <main className={styles.page}>
-        <ScrollReveal mode="heroFade"><section className={styles.hero}>
+        <ScrollReveal mode="stickyHero"><section className={styles.hero}>
           <Image src="/poetic-images/hero-articles.jpg" alt="桌面上的文章与阅读记录" fill priority sizes="100vw" />
           <span className={styles.heroShade} aria-hidden="true" />
           <div className={styles.heroCopy}>
