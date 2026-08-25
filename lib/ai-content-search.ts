@@ -165,6 +165,17 @@ export function analyzeContentQuery(query: string): ContentQueryAnalysis {
   };
 }
 
+export function hasExplicitSiteContentIntent(query: string) {
+  const normalized = query.trim().toLowerCase();
+  return /文章|系列|笔记|随笔|博客|阅读|照片|相册|影像|星空|项目|作品|旅行|地图|城市|省份|足迹/.test(normalized);
+}
+
+export function hasExplicitSiteNavigationIntent(query: string) {
+  const normalized = query.trim().toLowerCase();
+  const requestsNavigation = /推荐|相关|类似|下一篇|查找|查询|搜索|找一下|找找|打开|跳转|入口|在哪里|在哪|查看|看看|浏览|带我|列出|有哪些|最近|最新/.test(normalized);
+  return requestsNavigation && hasExplicitSiteContentIntent(normalized);
+}
+
 export function createContentSearchPlan(
   analysis: ContentQueryAnalysis,
   capabilities: ContentSearchCapabilities

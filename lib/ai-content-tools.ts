@@ -13,6 +13,8 @@ import { isSafeInternalHref } from "@/lib/internal-href";
 import {
   analyzeContentQuery,
   createContentSearchPlan,
+  hasExplicitSiteContentIntent,
+  hasExplicitSiteNavigationIntent,
   rankArticleCandidates,
   scoreContentFields,
 } from "@/lib/ai-content-search";
@@ -101,10 +103,27 @@ function fallbackText(
 export async function buildAiContentContext(
   query: string,
   capabilities: AiCapabilities,
-  options: { currentPath?: string } = {}
+  options: {
+    currentPath?: string;
+    requireExplicitIntent?: boolean;
+    requireExplicitNavigation?: boolean;
+  } = {}
 ): Promise<AiContentContext> {
   const normalizedQuery = query.trim();
+  if (options.requireExplicitIntent && !hasExplicitSiteContentIntent(normalizedQuery)) {
+    return {
+      context: "",
+      fallbackText: "",
+      directReply: "",
+      actions: [],
+      matched: false,
+      sources: [],
+    };
+  }
   const analysis = analyzeContentQuery(normalizedQuery);
+  const navigationEnabled = capabilities.navigation && (
+    !options.requireExplicitNavigation || hasExplicitSiteNavigationIntent(normalizedQuery)
+  );
   const { recommendationIntent, articleIntent, photoIntent, projectIntent, travelIntent, terms } = analysis;
   if (recommendationIntent && !capabilities.recommendations) {
     return {
@@ -169,7 +188,7 @@ export async function buildAiContentContext(
     : [];
 
   const actions: ChatAction[] = [];
-  if (capabilities.navigation) {
+  if (navigationEnabled) {
     for (const post of posts.slice(0, 3)) {
       addAction(actions, { label: `阅读：${cleanText(post.title, 28)}`, href: articleHref(post.slug), kind: "article" });
     }
@@ -212,7 +231,7 @@ export async function buildAiContentContext(
   return {
     context: matched ? contextLines.join("\n") : "",
     fallbackText: matched || articleIntent || photoIntent || projectIntent || travelIntent
-      ? fallbackText(posts, photos, projects, travel, terms, capabilities.navigation)
+      ? fallbackText(posts, photos, projects, travel, terms, navigationEnabled)
       : "",
     directReply: "",
     actions: actions.slice(0, 6),

@@ -37,6 +37,52 @@
   font-size: 0.8rem;
 }
 
+/* 归属分组切换器 */
+.groupTabs {
+  display: flex;
+  gap: 8px;
+  padding: 14px 20px 0;
+}
+.groupTabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 750;
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+.groupTabs button:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 46%, var(--border));
+  color: var(--text);
+}
+.groupTabs button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+/* 条数徽标：底色跟着选中态走，未选中时压低对比度，避免和标题抢注意力 */
+.groupTabs button b {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 16%, transparent);
+  font-size: 0.7rem;
+}
+/* 两个 class 的后代选择器压过 .groupTabs button，靠特异性而不是 !important */
+.groupTabs .groupTabActive {
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--text);
+}
+.groupTabs .groupTabActive b {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
 .summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -224,6 +270,47 @@
 
 .messages article > div:first-child strong {
   color: var(--text);
+}
+/*
+  时间戳靠 auto 外边距推到右侧，而不是依赖父级的 space-between。
+  中间可能插入 0~2 个状态标记，space-between 会把它们均匀撑开，
+  时间戳的位置也跟着变。
+*/
+.messages article > div:first-child span {
+  margin-inline-start: auto;
+}
+/* 失败/被截断标记 */
+.messageFlag {
+  padding: 1px 7px;
+  border: 1px solid color-mix(in srgb, var(--danger-text) 34%, var(--border));
+  border-radius: 999px;
+  color: var(--danger-text);
+  font-size: 0.62rem;
+  font-style: normal;
+  font-weight: 750;
+}
+
+/* 开发者会话的自定义指令 */
+.detailInstructions {
+  margin-bottom: 14px;
+  padding: 10px 13px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+}
+.detailInstructions summary {
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+.detailInstructions p {
+  margin: 8px 0 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.7;
 }
 
 .messages p,

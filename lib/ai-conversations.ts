@@ -31,7 +31,13 @@ export type StoredChatMessage = {
   actions?: StoredChatAction[];
   reasoning?: string;
   imageNames?: string[];
+  /** 文本/代码附件的文件名，仅用于展示 */
+  fileNames?: string[];
   createdAt: string;
+  /** 该条是错误提示而非模型真实回答，重新载入后不参与上下文 */
+  errored?: boolean;
+  /** 模型因输出上限中断，重新载入后仍可继续生成 */
+  truncated?: boolean;
 };
 
 export type ConversationStoragePolicy = {
@@ -191,6 +197,11 @@ export function normalizeStoredMessages(value: unknown, maxUserMessageLength: nu
       imageNames: candidate.role === "user" && Array.isArray(candidate.imageNames)
         ? candidate.imageNames.map((name) => String(name).slice(0, 120)).slice(0, 3)
         : undefined,
+      fileNames: candidate.role === "user" && Array.isArray(candidate.fileNames)
+        ? candidate.fileNames.map((name) => String(name).slice(0, 120)).slice(0, 3)
+        : undefined,
+      errored: candidate.role === "assistant" && candidate.errored === true ? true : undefined,
+      truncated: candidate.role === "assistant" && candidate.truncated === true ? true : undefined,
       createdAt: createdAt.toISOString(),
     }];
   });

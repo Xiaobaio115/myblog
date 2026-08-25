@@ -36,6 +36,27 @@ export type AiBehavior = {
   maxHistoryMessages: number;
   maxOutputTokens: number;
   temperature: number;
+  /** 是否允许在聊天里附加图片与文件 */
+  uploadEnabled: boolean;
+  /** 上传限额的统计窗口天数 */
+  uploadWindowDays: number;
+  /** 每个 IP 在一个窗口内的上传次数上限 */
+  uploadLimitPerWindow: number;
+  /**
+   * 直传令牌有效期（分钟）。
+   * 这是一张真实的写入凭证，有效期内泄露即可被用来上传，配得越长风险越大。
+   */
+  uploadTokenTtlMinutes: number;
+  /**
+   * 后台 AI 页留给历史消息的 token 预算。
+   * 超出后早期对话会被压缩成摘要，而不是被直接截断丢弃。
+   */
+  contextBudgetTokens: number;
+  /**
+   * 压缩时至少保留多少条最近消息的原文（单位是条，一问一答算 2 条）。
+   * 调到比会话长度还大就等于关掉压缩：全量原文照发，代价是可能撞模型窗口。
+   */
+  contextVerbatimMessages: number;
 };
 
 const AI_MODES: AiMode[] = ["guide", "companion", "technical", "writer"];
@@ -78,10 +99,19 @@ export const AI_BEHAVIOR_DEFAULTS: AiBehavior = {
   conversationRetentionDays: 30,
   maxConversationsPerVisitor: 20,
   dailyLimit: 20,
-  maxMessageLength: 500,
-  maxHistoryMessages: 6,
-  maxOutputTokens: 300,
+  maxMessageLength: 2000,
+  maxHistoryMessages: 12,
+  // 300 tokens 只够约 200 个汉字，长回答必被截断；2048 是常见长度回答的稳妥默认值。
+  maxOutputTokens: 2048,
   temperature: 0.7,
+  uploadEnabled: true,
+  uploadWindowDays: 7,
+  uploadLimitPerWindow: 12,
+  uploadTokenTtlMinutes: 7 * 24 * 60,
+  // 取 32k：主流模型窗口普遍 ≥64k，留一半给摘要、系统提示和本轮输出，
+  // 既不会频繁触发摘要，也不至于把窗口撑满。
+  contextBudgetTokens: 32000,
+  contextVerbatimMessages: 8,
 };
 
 function clampNumber(value: unknown, fallback: number, min: number, max: number, integer = false) {
@@ -183,10 +213,49 @@ function normalizeBehavior(value: Partial<AiBehavior>): AiBehavior {
       true
     ),
     dailyLimit: clampNumber(value.dailyLimit, AI_BEHAVIOR_DEFAULTS.dailyLimit, 1, 1000, true),
-    maxMessageLength: clampNumber(value.maxMessageLength, AI_BEHAVIOR_DEFAULTS.maxMessageLength, 50, 10000, true),
-    maxHistoryMessages: clampNumber(value.maxHistoryMessages, AI_BEHAVIOR_DEFAULTS.maxHistoryMessages, 1, 30, true),
-    maxOutputTokens: clampNumber(value.maxOutputTokens, AI_BEHAVIOR_DEFAULTS.maxOutputTokens, 32, 4000, true),
+    maxMessageLength: clampNumber(value.maxMessageLength, AI_BEHAVIOR_DEFAULTS.maxMessageLength, 50, 32000, true),
+    maxHistoryMessages: clampNumber(value.maxHistoryMessages, AI_BEHAVIOR_DEFAULTS.maxHistoryMessages, 1, 60, true),
+    // 上限放宽到 32768，配合现代模型的长输出能力；实际可用值仍受供应商模型限制。
+    maxOutputTokens: clampNumber(value.maxOutputTokens, AI_BEHAVIOR_DEFAULTS.maxOutputTokens, 32, 32000, true),
     temperature: clampNumber(value.temperature, AI_BEHAVIOR_DEFAULTS.temperature, 0, 2),
+    uploadEnabled: typeof value.uploadEnabled === "boolean"
+      ? value.uploadEnabled
+      : AI_BEHAVIOR_DEFAULTS.uploadEnabled,
+    uploadWindowDays: clampNumber(value.uploadWindowDays, AI_BEHAVIOR_DEFAULTS.uploadWindowDays, 1, 365, true),
+    uploadLimitPerWindow: clampNumber(
+      value.uploadLimitPerWindow,
+      AI_BEHAVIOR_DEFAULTS.uploadLimitPerWindow,
+      1,
+      1000,
+      true
+    ),
+    // 上限 7 天。再长的写入凭证没有实际收益，只会放大泄露后的可利用窗口。
+    uploadTokenTtlMinutes: clampNumber(
+      value.uploadTokenTtlMinutes,
+      AI_BEHAVIOR_DEFAULTS.uploadTokenTtlMinutes,
+      1,
+      7 * 24 * 60,
+      true
+    ),
+    // 下限 4000：低于这个值 planContextCompression 会几乎每轮都触发摘要，
+    // 上限 200000：超出主流模型窗口后设得再高也没有意义。
+    contextBudgetTokens: clampNumber(
+      value.contextBudgetTokens,
+      AI_BEHAVIOR_DEFAULTS.contextBudgetTokens,
+      4000,
+      200000,
+      true
+    ),
+    // 上限 100000 而不是几十：这是给开发者自己用的，调到大于会话长度就等于关掉压缩，
+    // 属于「我知道会撞窗口，但我要全量原文」的正当选择，不该被产品逻辑拦住。
+    // 下限 1：至少要留下当轮提问的原文，否则模型连问题本身都看不到。
+    contextVerbatimMessages: clampNumber(
+      value.contextVerbatimMessages,
+      AI_BEHAVIOR_DEFAULTS.contextVerbatimMessages,
+      1,
+      100000,
+      true
+    ),
   };
 }
 
@@ -235,6 +304,22 @@ export async function saveAiBehavior(behavior: Partial<AiBehavior>): Promise<AiB
     maxHistoryMessages: typeof behavior.maxHistoryMessages === "number" ? behavior.maxHistoryMessages : current.maxHistoryMessages,
     maxOutputTokens: typeof behavior.maxOutputTokens === "number" ? behavior.maxOutputTokens : current.maxOutputTokens,
     temperature: typeof behavior.temperature === "number" ? behavior.temperature : current.temperature,
+    uploadEnabled: typeof behavior.uploadEnabled === "boolean" ? behavior.uploadEnabled : current.uploadEnabled,
+    uploadWindowDays: typeof behavior.uploadWindowDays === "number"
+      ? behavior.uploadWindowDays
+      : current.uploadWindowDays,
+    uploadLimitPerWindow: typeof behavior.uploadLimitPerWindow === "number"
+      ? behavior.uploadLimitPerWindow
+      : current.uploadLimitPerWindow,
+    uploadTokenTtlMinutes: typeof behavior.uploadTokenTtlMinutes === "number"
+      ? behavior.uploadTokenTtlMinutes
+      : current.uploadTokenTtlMinutes,
+    contextBudgetTokens: typeof behavior.contextBudgetTokens === "number"
+      ? behavior.contextBudgetTokens
+      : current.contextBudgetTokens,
+    contextVerbatimMessages: typeof behavior.contextVerbatimMessages === "number"
+      ? behavior.contextVerbatimMessages
+      : current.contextVerbatimMessages,
   });
   const db = await getDb();
   await db.collection("settings").updateOne(

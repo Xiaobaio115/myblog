@@ -6,6 +6,19 @@ import { buildAiContentContext, type ChatAction } from "@/lib/ai-content-tools";
 import { composeAiSystemPrompt } from "@/lib/ai-prompt";
 import { getPublicAiModels, resolveAiModel } from "@/lib/ai-provider-settings";
 import { readSseEvents } from "@/lib/ai-sse";
+import { verifyAdminRequest } from "@/lib/admin-session";
+import {
+  buildAttachmentContext,
+  normalizeAttachments,
+  normalizeImages,
+} from "@/lib/ai-attachments";
+import {
+  planContextCompression,
+  renderTranscriptForSummary,
+  resolveHistoryBudget,
+  SUMMARY_SYSTEM_PROMPT,
+  wrapSummaryAsContext,
+} from "@/lib/ai-context-budget";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,10 +38,7 @@ type IncomingChatMessage = {
 
 type SseEventName = "meta" | "status" | "reasoning" | "content" | "image" | "done" | "error";
 
-const MAX_IMAGES = 3;
-const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
-const MAX_TOTAL_IMAGE_BYTES = 8 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const DEVELOPER_MAX_MESSAGE_LENGTH = 1_000_000;
 
 function getDailyLimit(configuredLimit: number) {
   const envValue = Number(process.env.AI_DAILY_LIMIT);
@@ -47,6 +57,33 @@ function getTodayKey() {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+/**
+ * 从供应商错误响应体里取出人类可读的原因。
+ * 兼容 OpenAI 风格 { error: { message } }、{ error: "..." } 与 { message: "..." }；
+ * 解析不出结构时退回截断后的纯文本，避免把整段 HTML 报错页塞给用户。
+ */
+function extractProviderErrorMessage(raw: string) {
+  const text = raw.trim();
+  if (!text) return "";
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (isRecord(parsed)) {
+      const errorField = parsed.error;
+      if (typeof errorField === "string" && errorField.trim()) return errorField.trim().slice(0, 300);
+      if (isRecord(errorField) && typeof errorField.message === "string" && errorField.message.trim()) {
+        return errorField.message.trim().slice(0, 300);
+      }
+      if (typeof parsed.message === "string" && parsed.message.trim()) {
+        return parsed.message.trim().slice(0, 300);
+      }
+    }
+  } catch {
+    // 非 JSON 响应，走下方纯文本兜底
+  }
+  if (text.startsWith("<")) return "";
+  return text.replace(/\s+/g, " ").slice(0, 300);
 }
 
 function getLocalReply(text: string) {
@@ -151,35 +188,6 @@ async function checkDailyLimit(request: Request, configuredLimit: number) {
   }
 }
 
-function normalizeImages(value: unknown) {
-  if (value === undefined || value === null) return { images: [] as string[], error: "" };
-  if (!Array.isArray(value)) return { images: [] as string[], error: "图片参数格式不正确。" };
-  if (value.length > MAX_IMAGES) {
-    return { images: [] as string[], error: `最多只能上传 ${MAX_IMAGES} 张图片。` };
-  }
-
-  let totalBytes = 0;
-  const images: string[] = [];
-  for (const item of value) {
-    const dataUrl = String(item || "");
-    const match = dataUrl.match(/^data:(image\/(?:jpeg|png|webp|gif));base64,((?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?)$/i);
-    if (!match || !ALLOWED_IMAGE_TYPES.has(match[1].toLowerCase())) {
-      return { images: [] as string[], error: "图片格式不正确，仅支持 JPG、PNG、WebP 和 GIF。" };
-    }
-    const padding = match[2].endsWith("==") ? 2 : match[2].endsWith("=") ? 1 : 0;
-    const bytes = (match[2].length * 3) / 4 - padding;
-    if (bytes <= 0 || bytes > MAX_IMAGE_BYTES) {
-      return { images: [] as string[], error: "单张图片不能超过 4MB。" };
-    }
-    if (totalBytes + bytes > MAX_TOTAL_IMAGE_BYTES) {
-      return { images: [] as string[], error: "图片总大小不能超过 8MB。" };
-    }
-    totalBytes += bytes;
-    images.push(dataUrl);
-  }
-  return { images, error: "" };
-}
-
 function normalizeIncomingMessages(value: unknown): IncomingChatMessage[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((message) => {
@@ -236,9 +244,13 @@ function parseProviderDelta(value: unknown) {
         thinking?: unknown;
         images?: unknown;
       };
+      finish_reason?: unknown;
     }>;
   } : {};
-  const delta = json.choices?.[0]?.delta || {};
+  const choice = json.choices?.[0];
+  const delta = choice?.delta || {};
+  // 供应商用 finish_reason 说明本次生成为何结束：length 表示撞上 max_tokens 被截断。
+  const finishReason = typeof choice?.finish_reason === "string" ? choice.finish_reason : "";
   let content = "";
   const images: string[] = [];
 
@@ -262,7 +274,7 @@ function parseProviderDelta(value: unknown) {
       if (image) images.push(image);
     }
   }
-  return { content, reasoning, images: Array.from(new Set(images)).slice(0, 4) };
+  return { content, reasoning, images: Array.from(new Set(images)).slice(0, 4), finishReason };
 }
 
 export async function POST(request: Request) {
@@ -281,6 +293,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "请求内容格式不正确。" }, { status: 400 });
     }
     const body = parsedBody;
+    const developerMode = body.developerMode === true;
+    if (developerMode && !verifyAdminRequest(request)) {
+      return NextResponse.json({ error: "管理员身份已失效，请重新登录。" }, { status: 401 });
+    }
     const behavior = await getAiBehavior();
     const rawMessages = normalizeIncomingMessages(body.messages);
     const lastUserMessage = rawMessages.filter((message) => message.role === "user").at(-1);
@@ -288,14 +304,16 @@ export async function POST(request: Request) {
     const wantsSse = body.responseFormat === "sse";
     const normalizedImages = normalizeImages(body.images);
     const images = normalizedImages.images;
+    const normalizedAttachments = normalizeAttachments(body.attachments);
 
     if (!userText) {
       return NextResponse.json({ error: "消息不能为空。" }, { status: 400 });
     }
 
-    if (userText.length > behavior.maxMessageLength) {
+    const maxMessageLength = developerMode ? DEVELOPER_MAX_MESSAGE_LENGTH : behavior.maxMessageLength;
+    if (userText.length > maxMessageLength) {
       return NextResponse.json(
-        { error: `消息太长了，请控制在 ${behavior.maxMessageLength} 字以内。` },
+        { error: `单条消息太长了，请控制在 ${maxMessageLength} 字以内。` },
         { status: 400 }
       );
     }
@@ -304,16 +322,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: normalizedImages.error }, { status: 400 });
     }
 
-    const limit = await checkDailyLimit(request, behavior.dailyLimit);
-    if (!limit.allowed) {
-      return NextResponse.json(
-        { error: `今天聊天次数已经用完了。每位访客每天最多 ${limit.dailyLimit} 次。` },
-        { status: 429 }
-      );
+    if (normalizedAttachments.error) {
+      return NextResponse.json({ error: normalizedAttachments.error }, { status: 400 });
+    }
+    const attachmentContext = buildAttachmentContext(normalizedAttachments.attachments);
+
+    if (!developerMode) {
+      const limit = await checkDailyLimit(request, behavior.dailyLimit);
+      if (!limit.allowed) {
+        return NextResponse.json(
+          { error: `今天聊天次数已经用完了。每位访客每天最多 ${limit.dailyLimit} 次。` },
+          { status: 429 }
+        );
+      }
     }
 
     const pageUrl =
       typeof body.pageUrl === "string" ? body.pageUrl.slice(0, 500) : undefined;
+    const isWorkspace = body.surface === "workspace";
     const requestedMode = typeof body.mode === "string" ? body.mode : "";
     const activeMode = behavior.enabledModes.includes(requestedMode as AiMode)
       ? requestedMode as AiMode
@@ -322,9 +348,11 @@ export async function POST(request: Request) {
     if (images.length > 0 && !selectedModel?.supportsVision) {
       return NextResponse.json({ error: "当前模型未开启图片理解能力，请选择带“视觉”标记的模型。" }, { status: 400 });
     }
-    const contentContext = behavior.promptControls.useSiteContext
+    const contentContext = !developerMode && behavior.promptControls.useSiteContext
       ? await buildAiContentContext(userText, behavior.capabilities, {
           currentPath: getPagePath(pageUrl),
+          requireExplicitIntent: isWorkspace,
+          requireExplicitNavigation: isWorkspace,
         })
       : {
           context: "",
@@ -334,56 +362,97 @@ export async function POST(request: Request) {
           matched: false,
           sources: [] as string[],
         };
-    const userAgent = request.headers.get("user-agent") || undefined;
-    after(() =>
-      notifyOwnerOfChatMessage({
-        message: userText,
-        pageUrl,
-        userAgent,
-      })
-    );
+    if (!developerMode) {
+      const userAgent = request.headers.get("user-agent") || undefined;
+      after(() =>
+        notifyOwnerOfChatMessage({
+          message: userText,
+          pageUrl,
+          userAgent,
+        })
+      );
+    }
 
-    const textFallback = images.length === 0 ? contentContext.fallbackText : "";
+    // 带附件时不能走站内抢答/本地兜底：那些分支完全不会调用模型，
+    // 用户附上的文件也就白传了。
+    const hasAttachments = normalizedAttachments.attachments.length > 0;
+    const skipLocalShortcut = images.length > 0 || hasAttachments;
 
-    if (images.length === 0 && contentContext.directReply) {
+    const textFallback = !skipLocalShortcut ? contentContext.fallbackText : "";
+
+    if (!skipLocalShortcut && contentContext.directReply) {
       return streamLocalText(contentContext.directReply, contentContext.actions, activeMode, {
         sse: wantsSse,
         modelId: selectedModel?.id,
       });
     }
 
-    const localReply = images.length === 0 && behavior.promptControls.useLocalFallbacks
+    const localReply = !developerMode && !skipLocalShortcut && behavior.promptControls.useLocalFallbacks
       ? getLocalReply(userText)
       : "";
-    if (!contentContext.matched && textFallback) {
-      return streamLocalText(textFallback, contentContext.actions, activeMode, {
-        sse: wantsSse,
-        modelId: selectedModel?.id,
-      });
-    }
+
+    // 站内检索没有命中时不再抢答。过去这里会直接返回「暂时没有在站内找到…」并且
+    // 完全跳过模型调用，导致「帮我生成一个…」这类正常请求被误判成站内搜索失败。
+    // 现在只把「未找到站内内容」作为提示写进上下文，交给模型正常回答。
 
     const apiKey = selectedModel?.apiKey || "";
     const baseUrl = selectedModel?.baseUrl || "";
     const model = selectedModel?.model || "";
 
+    // 模型三要素缺失属于配置问题，必须明确暴露：过去这里会退回站内检索文案，
+    // 导致「模型没配好」被伪装成「站内没搜到内容」，无法定位真实故障。
     if (!apiKey || !baseUrl || !model) {
-      if (textFallback) {
-        return streamLocalText(textFallback, contentContext.actions, activeMode, { sse: wantsSse });
-      }
-      if (localReply) {
-        return streamLocalText(localReply, contentContext.actions, activeMode, { sse: wantsSse });
-      }
-      return NextResponse.json({ error: "服务端 AI 配置不完整。" }, { status: 500 });
+      const missing = [
+        !baseUrl ? "API Base URL" : "",
+        !apiKey ? "API Key" : "",
+        !model ? "模型名称" : "",
+      ].filter(Boolean);
+      console.error("AI provider config incomplete:", {
+        providerId: selectedModel?.providerId,
+        modelId: selectedModel?.id,
+        missing,
+      });
+      return NextResponse.json(
+        {
+          error: `AI 模型配置不完整，缺少：${missing.join("、")}。请在后台「AI 与通知」中补全后重试。`,
+          code: "provider_config_incomplete",
+        },
+        { status: 503 }
+      );
     }
 
+    // 站内检索未命中时，把这个事实作为上下文告知模型（而不是替模型作答），
+    // 这样模型既不会编造站内不存在的内容，也能正常完成写作、问答等与站内无关的请求。
+    const siteContext = developerMode
+      ? [contentContext.context, attachmentContext].filter(Boolean).join("\n\n")
+      : [
+          contentContext.context,
+          !contentContext.matched && textFallback
+            ? "站内检索提示：本次没有找到与用户问题匹配的站内公开内容。请不要凭空编造站内文章、照片或项目；如果用户的请求本身与站内内容无关（例如写作、翻译、编程、闲聊），请直接正常回答。"
+            : "",
+          attachmentContext,
+        ]
+          .filter(Boolean)
+          .join("\n\n");
+
+    /**
+     * 会话级自定义指令。只在后台 AI 页生效：这是管理员给单个会话设定的角色/输出要求，
+     * 前台的人格统一由后台 systemPrompt 管理，不接受请求方自带指令。
+     */
+    const customInstructions = developerMode
+      ? String(body.instructions || "").slice(0, 4000).trim()
+      : "";
+
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000);
-    const systemPrompt = composeAiSystemPrompt({
-      systemPrompt: behavior.systemPrompt,
-      knowledgeText: behavior.knowledgeText,
-      modePrompt: getAiModePrompt(activeMode, behavior.modePrompts),
-      controls: behavior.promptControls,
-    });
+    const timeoutId = setTimeout(() => controller.abort(), developerMode ? 300000 : 60000);
+    const systemPrompt = developerMode
+      ? customInstructions
+      : composeAiSystemPrompt({
+          systemPrompt: behavior.systemPrompt,
+          knowledgeText: behavior.knowledgeText,
+          modePrompt: getAiModePrompt(activeMode, behavior.modePrompts),
+          controls: behavior.promptControls,
+        });
 
     // 规范化 baseUrl：如果只是域名（如 https://new.xkool.cfd），自动加 /v1
     let normalizedUrl = baseUrl.replace(/\/$/, "");
@@ -397,6 +466,73 @@ export async function POST(request: Request) {
       : `${normalizedUrl}/chat/completions`;
 
     console.log("[chat] calling AI:", { originalBaseUrl: baseUrl, url, model, keyLen: apiKey?.length || 0 });
+
+    /**
+     * 上下文压缩：把早期对话交给模型压成摘要，只保留近期原文。
+     *
+     * 仅在后台 AI 页（developerMode）启用。前台受 maxHistoryMessages 限制，
+     * 本来就不会把历史全量发出去，不需要这一步。
+     *
+     * 摘要失败时返回空字符串而不是抛错：压缩是优化手段，不该让它的失败
+     * 连带整轮对话失败——退化成「按原样发送、可能撞窗口」仍然比直接报错好。
+     */
+    async function summarizeTranscript(transcript: string) {
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: SUMMARY_SYSTEM_PROMPT },
+              { role: "user", content: transcript },
+            ],
+            max_tokens: 1200,
+            temperature: 0.2,
+            stream: false,
+          }),
+        });
+        if (!response.ok) {
+          console.error("context summarization failed:", response.status);
+          return "";
+        }
+        const json = await response.json();
+        const content = json?.choices?.[0]?.message?.content;
+        return typeof content === "string" ? content : "";
+      } catch (error) {
+        console.error("context summarization error:", error);
+        return "";
+      }
+    }
+
+    let historyMessages = rawMessages;
+    let compressionSummary = "";
+    if (developerMode) {
+      const historyBudget = resolveHistoryBudget(behavior.contextBudgetTokens, [
+        systemPrompt,
+        siteContext,
+      ]);
+      const plan = planContextCompression(
+        rawMessages.map((message) => ({
+          role: message.role === "assistant" ? ("assistant" as const) : ("user" as const),
+          content: String(message.content || ""),
+        })),
+        historyBudget,
+        behavior.contextVerbatimMessages
+      );
+      if (plan.needsCompression) {
+        const summary = await summarizeTranscript(renderTranscriptForSummary(plan.toSummarize));
+        // 压缩失败就按原样发送：宁可撞窗口报错，也不能静默丢掉早期上下文。
+        if (summary) {
+          compressionSummary = wrapSummaryAsContext(summary);
+          historyMessages = rawMessages.slice(-plan.verbatim.length);
+        }
+      }
+    }
 
     let aiResponse: Response;
     try {
@@ -413,52 +549,92 @@ export async function POST(request: Request) {
             ...(systemPrompt
               ? [{ role: "system" as const, content: systemPrompt }]
               : []),
-            ...(contentContext.context
-              ? [{ role: "system" as const, content: contentContext.context }]
+            ...(siteContext
+              ? [{ role: "system" as const, content: siteContext }]
               : []),
-            ...normalizeMessages(rawMessages, behavior.maxHistoryMessages, behavior.maxMessageLength, images),
+            ...(compressionSummary
+              ? [{ role: "system" as const, content: compressionSummary }]
+              : []),
+            ...normalizeMessages(
+              historyMessages,
+              developerMode ? historyMessages.length : behavior.maxHistoryMessages,
+              maxMessageLength,
+              images
+            ),
           ],
-          max_tokens: behavior.maxOutputTokens,
-          temperature: behavior.temperature,
+          ...(developerMode ? {} : {
+            max_tokens: behavior.maxOutputTokens,
+            temperature: behavior.temperature,
+          }),
           stream: true,
         }),
       });
     } catch (error) {
       clearTimeout(timeoutId);
-      if (textFallback) {
-        console.error("AI provider request failed; using indexed content fallback:", error);
-        return streamLocalText(textFallback, contentContext.actions, activeMode, {
-          sse: wantsSse,
-          modelId: selectedModel?.id,
-        });
-      }
+      const aborted = error instanceof Error && error.name === "AbortError";
+      console.error("AI provider request failed:", {
+        providerId: selectedModel?.providerId,
+        modelId: selectedModel?.id,
+        baseUrl,
+        model,
+        aborted,
+        error,
+      });
+      // 固定兜底只在站长明确开启时使用，且必须声明这是离线回答，避免用户以为模型正常工作。
       if (localReply) {
-        console.error("AI provider request failed; using local reply fallback:", error);
-        return streamLocalText(localReply, contentContext.actions, activeMode, {
-          sse: wantsSse,
-          modelId: selectedModel?.id,
-        });
+        return streamLocalText(
+          `${localReply}\n\n> 说明：模型接口当前无法访问，以上是博客内置的离线回答。`,
+          contentContext.actions,
+          activeMode,
+          { sse: wantsSse, modelId: selectedModel?.id }
+        );
       }
-      throw error;
+      return NextResponse.json(
+        {
+          error: aborted
+            ? "模型接口响应超时，请稍后再试。"
+            : "无法连接模型接口，请检查后台 AI 配置中的 Base URL 与网络连通性。",
+          code: aborted ? "provider_timeout" : "provider_unreachable",
+        },
+        { status: 504 }
+      );
     }
 
     if (!aiResponse.ok || !aiResponse.body) {
       clearTimeout(timeoutId);
       const errorText = await aiResponse.text().catch(() => "");
-      console.error("AI provider error:", { status: aiResponse.status, url, model, errorText });
-      if (textFallback) {
-        return streamLocalText(textFallback, contentContext.actions, activeMode, {
-          sse: wantsSse,
-          modelId: selectedModel?.id,
-        });
-      }
+      const status = aiResponse.status;
+      console.error("AI provider error:", { status, url, model, errorText: errorText.slice(0, 2000) });
+
+      // 按供应商状态码给出可直接处理的提示，而不是笼统的「服务不可用」。
+      const providerHint =
+        status === 401 || status === 403
+          ? "模型接口拒绝了 API Key（鉴权失败），请在后台核对 Key 是否有效或已过期。"
+          : status === 404
+            ? `模型接口找不到模型「${model}」，请核对模型名称与 Base URL 是否匹配。`
+            : status === 429
+              ? "模型接口触发了限流（429），请稍后再试或更换模型节点。"
+              : status >= 500
+                ? "模型接口自身返回了服务端错误，请稍后再试或更换模型节点。"
+                : `模型接口返回异常状态 ${status}。`;
+      const providerDetail = extractProviderErrorMessage(errorText);
+
       if (localReply) {
-        return streamLocalText(localReply, contentContext.actions, activeMode, {
-          sse: wantsSse,
-          modelId: selectedModel?.id,
-        });
+        return streamLocalText(
+          `${localReply}\n\n> 说明：${providerHint}以上是博客内置的离线回答。`,
+          contentContext.actions,
+          activeMode,
+          { sse: wantsSse, modelId: selectedModel?.id }
+        );
       }
-      return NextResponse.json({ error: "AI 服务暂时不可用。" }, { status: 502 });
+      return NextResponse.json(
+        {
+          error: providerDetail ? `${providerHint}（接口信息：${providerDetail}）` : providerHint,
+          code: "provider_error",
+          providerStatus: status,
+        },
+        { status: 502 }
+      );
     }
 
     const encoder = new TextEncoder();
@@ -471,8 +647,10 @@ export async function POST(request: Request) {
         const sendEvent = (event: SseEventName, data: unknown) => {
           streamController.enqueue(encoder.encode(encodeSseEvent(event, data)));
         };
+        let truncatedByLimit = false;
         const processProviderData = (data: unknown) => {
           const delta = parseProviderDelta(data);
+          if (delta.finishReason === "length") truncatedByLimit = true;
           if (delta.reasoning && wantsSse) sendEvent("reasoning", { delta: delta.reasoning });
           if (delta.content) {
             if (wantsSse) sendEvent("content", { delta: delta.content });
@@ -487,7 +665,7 @@ export async function POST(request: Request) {
         if (wantsSse) {
           sendEvent("meta", {
             actions: contentContext.actions,
-            mode: activeMode,
+            mode: developerMode ? undefined : activeMode,
             modelId: selectedModel?.id || "",
           });
           sendEvent("status", {
@@ -510,7 +688,12 @@ export async function POST(request: Request) {
           buffer += decoder.decode();
           readSseEvents(buffer, { flush: true }).events.forEach((event) => processProviderData(event.data));
 
-          if (wantsSse) sendEvent("done", {});
+          // 撞上输出上限时明确告知前端，前端据此显示「继续」入口，
+          // 避免用户看到一句话说到一半就停、却不知道发生了什么。
+          if (wantsSse) sendEvent("done", { truncated: truncatedByLimit });
+          else if (truncatedByLimit) {
+            streamController.enqueue(encoder.encode("\n\n> 回答因达到输出长度上限而中断。"));
+          }
           streamController.close();
         } catch (error) {
           console.error("chat stream error:", error);
@@ -528,7 +711,12 @@ export async function POST(request: Request) {
       "Cache-Control": "no-cache",
       "X-Accel-Buffering": "no",
     });
-    addChatMetadata(headers, contentContext.actions, activeMode);
+    addChatMetadata(headers, contentContext.actions, developerMode ? undefined : activeMode);
+    // 告知前端本轮压缩了多少条早期消息。压缩是静默发生的，不提示的话，
+    // 用户会以为模型「忘事」，而不知道早期原文已经被换成摘要。
+    if (compressionSummary) {
+      headers.set("X-Chat-Compressed", String(rawMessages.length - historyMessages.length));
+    }
     return new Response(stream, { headers });
   } catch (error: unknown) {
     const err = error instanceof Error ? error : null;
@@ -543,7 +731,11 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const developerMode = new URL(request.url).searchParams.get("developerMode") === "1";
+  if (developerMode && !verifyAdminRequest(request)) {
+    return NextResponse.json({ error: "管理员身份已失效，请重新登录。" }, { status: 401 });
+  }
   const [behavior, modelPool] = await Promise.all([getAiBehavior(), getPublicAiModels()]);
   return NextResponse.json(
     {
@@ -554,8 +746,9 @@ export async function GET() {
         label: behavior.modeLabels[value],
       })),
       capabilities: behavior.capabilities,
-      maxMessageLength: behavior.maxMessageLength,
-      conversationHistoryEnabled: behavior.conversationHistoryEnabled,
+      maxMessageLength: developerMode ? DEVELOPER_MAX_MESSAGE_LENGTH : behavior.maxMessageLength,
+      conversationHistoryEnabled: developerMode ? true : behavior.conversationHistoryEnabled,
+      developerMode,
       defaultModelId: modelPool.defaultModelId,
       models: modelPool.models,
     },

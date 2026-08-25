@@ -35,6 +35,25 @@ export function verifyAdminSessionToken(candidate: string | null | undefined) {
   return Boolean(expected && candidate && constantTimeEqual(candidate, expected));
 }
 
+function getCookieValue(request: Request, name: string) {
+  const rawCookie = request.headers.get("cookie") || "";
+  for (const item of rawCookie.split(";")) {
+    const separator = item.indexOf("=");
+    if (separator < 0 || item.slice(0, separator).trim() !== name) continue;
+    try {
+      return decodeURIComponent(item.slice(separator + 1).trim());
+    } catch {
+      return "";
+    }
+  }
+  return "";
+}
+
+export function verifyAdminRequest(request: Request) {
+  return verifyAdminPassword(request.headers.get("x-admin-password")) ||
+    verifyAdminSessionToken(getCookieValue(request, ADMIN_SESSION_COOKIE));
+}
+
 export async function hasAdminSession() {
   const cookieStore = await cookies();
   return verifyAdminSessionToken(cookieStore.get(ADMIN_SESSION_COOKIE)?.value);

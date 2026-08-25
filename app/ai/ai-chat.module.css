@@ -27,6 +27,14 @@
   --ai-accent: #e2659c;
 }
 
+.developerPage {
+  --ai-accent: #177a68;
+}
+
+:global([data-theme="dark"]) .developerPage {
+  --ai-accent: #55b9a4;
+}
+
 .sidebar {
   position: relative;
   z-index: 30;
@@ -72,6 +80,20 @@
   border: 1px solid var(--ai-line);
   border-radius: 50%;
   background: var(--ai-surface);
+}
+
+.developerBrandMark {
+  display: grid;
+  place-items: center;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--ai-line);
+  border-radius: 50%;
+  background: var(--ai-surface);
+  color: var(--ai-accent);
+  font-size: 0.58rem;
+  letter-spacing: 0;
 }
 
 .brand span {
@@ -326,16 +348,192 @@
   font-size: 0.72rem;
 }
 
-.modelSelect select {
+.instructionsToggle {
   min-height: 36px;
-  max-width: 190px;
-  padding: 0 28px 0 10px;
+  padding: 0 12px;
+  border: 1px solid var(--ai-line);
+  border-radius: 6px;
+  background: var(--ai-surface);
+  color: var(--ai-muted);
+  font: inherit;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.instructionsToggle[data-active="true"] {
+  border-color: color-mix(in srgb, var(--ai-accent) 58%, var(--ai-line));
+  color: var(--ai-accent);
+}
+
+.instructionsToggle:hover,
+.instructionsToggle:focus-visible {
+  border-color: var(--ai-accent);
+  color: var(--ai-accent);
+  outline: none;
+}
+
+.modelPicker {
+  position: relative;
+}
+
+.modelPickerButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 300px;
+  min-height: 36px;
+  padding: 0 9px 0 11px;
   border: 1px solid var(--ai-line);
   border-radius: 6px;
   background: var(--ai-surface);
   color: var(--ai-text);
   font: inherit;
-  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.modelPickerButton:hover:not(:disabled),
+.modelPickerButton:focus-visible {
+  border-color: var(--ai-accent);
+  outline: none;
+}
+
+.modelPickerButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* 供应商名小一号压在模型名上方：模型名是每次要读的信息，供应商只是消歧 */
+.modelPickerLabel {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  text-align: left;
+}
+
+.modelPickerLabel small {
+  overflow: hidden;
+  color: var(--ai-muted);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.modelPickerLabel strong {
+  overflow: hidden;
+  font-size: 0.74rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modelBadge,
+.modelBadgeMuted {
+  flex: 0 0 auto;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.modelBadge {
+  background: color-mix(in srgb, var(--ai-accent) 14%, transparent);
+  color: var(--ai-accent);
+}
+
+.modelBadgeMuted {
+  background: color-mix(in srgb, var(--ai-line) 40%, transparent);
+  color: var(--ai-muted);
+}
+
+.modelPickerCaret {
+  flex: 0 0 auto;
+  color: var(--ai-muted);
+  font-size: 0.62rem;
+}
+
+.modelPickerMenu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  right: 0;
+  width: min(320px, calc(100vw - 32px));
+  max-height: min(60vh, 420px);
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--ai-line);
+  border-radius: 8px;
+  background: var(--ai-surface);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.16);
+}
+
+.modelPickerMenu:focus-visible {
+  outline: none;
+}
+
+.modelPickerGroup + .modelPickerGroup {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid color-mix(in srgb, var(--ai-line) 55%, transparent);
+}
+
+.modelPickerGroupLabel {
+  display: block;
+  padding: 5px 8px 3px;
+  color: var(--ai-muted);
+  font-size: 0.58rem;
+  font-weight: 750;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.modelPickerOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.modelPickerOption[data-active="true"] {
+  background: color-mix(in srgb, var(--ai-accent) 9%, transparent);
+}
+
+.modelPickerOption[data-selected="true"] .modelPickerOptionName {
+  color: var(--ai-accent);
+  font-weight: 700;
+}
+
+.modelPickerOptionName {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ai-text);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modelPickerOptionName i {
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  font-style: normal;
+}
+
+.modelPickerOptionTags {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 4px;
 }
 
 .closeLink,
@@ -402,6 +600,21 @@
   border-radius: 50%;
   background: var(--ai-surface);
   box-shadow: 0 18px 46px rgba(0, 0, 0, 0.08);
+}
+
+.developerMark {
+  display: grid;
+  place-items: center;
+  width: 82px;
+  height: 82px;
+  border: 1px solid var(--ai-line);
+  border-radius: 50%;
+  background: var(--ai-surface);
+  color: var(--ai-accent);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.08);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0;
 }
 
 .emptyState > div:nth-child(2) {
@@ -527,6 +740,14 @@
 .messageAvatar img {
   width: 100%;
   height: 100%;
+}
+
+.developerMessageAvatar {
+  display: grid;
+  place-items: center;
+  color: var(--ai-accent);
+  font-size: 0.58rem;
+  font-weight: 800;
 }
 
 .messageContent {
@@ -712,6 +933,130 @@
   margin-top: 18px;
 }
 
+/* 最后一条回答下方的「继续生成 / 重新生成」入口 */
+.replyActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.replyActions button {
+  padding: 7px 13px;
+  border: 1px solid var(--ai-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ai-text-soft, var(--ai-text));
+  font-size: 0.74rem;
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.replyActions button:hover {
+  border-color: var(--ai-accent);
+  color: var(--ai-accent);
+}
+
+.replyActions button:focus-visible {
+  outline: 2px solid var(--ai-accent);
+  outline-offset: 2px;
+}
+
+/*
+  编辑态放宽气泡宽度。用户气泡平时是 min(78%, 660px)，
+  那是为了让「谁在说话」一眼可辨；但编辑长提问时这个宽度会把文字挤成窄条，
+  所以编辑期间按内容区满宽显示，退出编辑再收回去。
+*/
+.userMessage .messageContentEditing {
+  max-width: 100%;
+  width: 100%;
+}
+
+/*
+  编辑上一条提问时替换气泡正文的输入区。
+  用 grid 而不是绝对定位：文本框跟着气泡走，行数变化时消息列表自然重排。
+*/
+.editBox {
+  display: grid;
+  gap: 8px;
+}
+
+.editBox textarea {
+  width: 100%;
+  min-height: 72px;
+  max-height: 320px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--ai-accent) 42%, var(--ai-line));
+  border-radius: 6px;
+  background: var(--ai-bg);
+  color: var(--ai-text);
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  resize: vertical;
+}
+
+.editBox textarea:focus-visible {
+  border-color: var(--ai-accent);
+  outline: none;
+}
+
+.editActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ai-muted);
+  font-size: 0.68rem;
+}
+
+/* 字数计数占满剩余空间，把两个按钮推到右侧，与发送区的视觉方向一致 */
+.editActions span {
+  margin-inline-end: auto;
+}
+
+.editActions button {
+  padding: 5px 12px;
+  border: 1px solid var(--ai-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ai-text-soft, var(--ai-text));
+  font: inherit;
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+.editActions button:hover:not(:disabled) {
+  border-color: var(--ai-accent);
+  color: var(--ai-accent);
+}
+
+.editActions button:focus-visible {
+  outline: 2px solid var(--ai-accent);
+  outline-offset: 2px;
+}
+
+.editActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/*
+  用后代选择器（两个 class）压过上面的 .editActions button（一个 class + 一个标签），
+  靠特异性而不是 !important 取胜，后续再加样式时不会被锁死。
+*/
+.editActions .editPrimary {
+  border-color: var(--ai-accent);
+  background: var(--ai-accent);
+  color: #fff;
+}
+
+/* 主按钮悬停只压暗背景：通用 hover 会把文字刷成强调色，在强调色底上等于看不见 */
+.editActions .editPrimary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ai-accent) 86%, #000);
+  color: #fff;
+}
+
 .actionList a {
   display: flex;
   align-items: center;
@@ -847,6 +1192,79 @@
 .statusMessage {
   color: var(--ai-muted);
   font-size: 0.7rem;
+}
+
+.instructionsPanel {
+  display: grid;
+  gap: 6px;
+  width: min(820px, 100%);
+  padding: 12px 14px;
+  border: 1px solid var(--ai-line);
+  border-radius: 8px;
+  background: var(--ai-surface);
+}
+
+.instructionsPanel label {
+  display: grid;
+  gap: 2px;
+  color: var(--ai-text);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.instructionsPanel label em {
+  color: var(--ai-muted);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 400;
+}
+
+.instructionsPanel textarea {
+  width: 100%;
+  max-height: 220px;
+  padding: 8px 10px;
+  border: 1px solid var(--ai-line);
+  border-radius: 6px;
+  background: var(--ai-bg);
+  color: var(--ai-text);
+  font: inherit;
+  font-size: 0.76rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.instructionsPanel textarea:focus-visible {
+  border-color: color-mix(in srgb, var(--ai-accent) 58%, var(--ai-line));
+  outline: none;
+}
+
+.instructionsFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--ai-muted);
+  font-size: 0.68rem;
+}
+
+.instructionsFooter button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ai-muted);
+  font: inherit;
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+.instructionsFooter button:hover:not(:disabled),
+.instructionsFooter button:focus-visible:not(:disabled) {
+  color: var(--ai-accent);
+  outline: none;
+}
+
+.instructionsFooter button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .composer:focus-within {
@@ -1005,8 +1423,9 @@
     max-width: 112px;
   }
 
-  .modelSelect select {
-    max-width: 130px;
+  /* 780~520px：仍在顶栏，但收窄到不挤掉标题；能力徽章优先保留 */
+  .modelPickerButton {
+    max-width: 176px;
   }
 
   .messageList {
@@ -1057,7 +1476,8 @@
     display: none;
   }
 
-  .modelSelect {
+  /* 移动端顶栏没有横向余量，模型切换交给侧边栏里的原生 select */
+  .modelPicker {
     display: none;
   }
 
@@ -1104,6 +1524,11 @@
   }
 
   .emptyState > img {
+    width: 70px;
+    height: 70px;
+  }
+
+  .developerMark {
     width: 70px;
     height: 70px;
   }

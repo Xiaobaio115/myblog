@@ -37,6 +37,12 @@ type AiBehavior = {
   maxHistoryMessages: number;
   maxOutputTokens: number;
   temperature: number;
+  uploadEnabled: boolean;
+  uploadWindowDays: number;
+  uploadLimitPerWindow: number;
+  uploadTokenTtlMinutes: number;
+  contextBudgetTokens: number;
+  contextVerbatimMessages: number;
 };
 
 type SettingsSummary = {
@@ -428,16 +434,16 @@ export default function ChatNotificationsAdminPage() {
                 </div>
                 <div className={styles.providerFields}>
                   <label className={styles.field}><span>节点名称</span><input className="admin-input" value={provider.label} onChange={(event) => updateProvider(provider.id, { label: event.target.value })} placeholder="例如：主力模型接口" /></label>
-                  <label className={styles.field}><span>API Base URL</span><input className="admin-input" type="url" value={provider.baseUrl} onChange={(event) => updateProvider(provider.id, { baseUrl: event.target.value })} placeholder="https://.../v1" /></label>
-                  <label className={styles.field}><span>API Key</span><input className="admin-input" type="password" autoComplete="off" value={provider.apiKey || ""} onChange={(event) => updateProvider(provider.id, { apiKey: event.target.value })} placeholder={provider.apiKeyConfigured ? "已配置，留空保持不变" : "sk-..."} /></label>
+                  <label className={styles.field}><span>API Base URL<em className={styles.fieldHint}>必填，只填到 /v1 即可</em></span><input className="admin-input" type="url" value={provider.baseUrl} onChange={(event) => updateProvider(provider.id, { baseUrl: event.target.value })} placeholder="https://.../v1" /></label>
+                  <label className={styles.field}><span>API Key<em className={styles.fieldHint}>必填</em></span><input className="admin-input" type="password" autoComplete="off" value={provider.apiKey || ""} onChange={(event) => updateProvider(provider.id, { apiKey: event.target.value })} placeholder={provider.apiKeyConfigured ? "已配置，留空保持不变" : "sk-..."} /></label>
                 </div>
                 <div className={styles.modelPoolHead}><span className={styles.fieldLabel}>节点模型</span><button type="button" className={styles.addModelButton} onClick={() => addProviderModel(provider.id)}>＋ 添加模型</button></div>
                 <div className={styles.modelPool}>
                   {provider.models.map((model) => {
                     const modelRef = `${provider.id}:${model.id}`;
                     return <div className={styles.modelItem} key={model.id}>
-                      <label className={styles.field}><span>显示名称</span><input className="admin-input" value={model.label} onChange={(event) => updateProviderModel(provider.id, model.id, { label: event.target.value })} placeholder="例如：GPT-4o" /></label>
-                      <label className={styles.field}><span>模型 ID</span><input className="admin-input" value={model.model} onChange={(event) => updateProviderModel(provider.id, model.id, { model: event.target.value })} placeholder="供应商模型名称" /></label>
+                      <label className={styles.field}><span>模型名称<em className={styles.fieldHint}>必填，发送给接口</em></span><input className="admin-input" value={model.model} onChange={(event) => updateProviderModel(provider.id, model.id, { model: event.target.value })} placeholder="例如：gpt-4o" /></label>
+                      <label className={styles.field}><span>显示名称<em className={styles.fieldHint}>可选，前台展示用</em></span><input className="admin-input" value={model.label} onChange={(event) => updateProviderModel(provider.id, model.id, { label: event.target.value })} placeholder="留空则与模型名称相同" /></label>
                       <div className={styles.modelFlags}>
                         <label className={styles.compactToggle}><input type="checkbox" checked={model.enabled} onChange={(event) => updateProviderModel(provider.id, model.id, { enabled: event.target.checked })} /><span>前台可选</span></label>
                         <label className={styles.compactToggle}><input type="checkbox" checked={model.supportsVision} onChange={(event) => updateProviderModel(provider.id, model.id, { supportsVision: event.target.checked })} /><span>支持图片</span></label>
@@ -723,6 +729,14 @@ export default function ChatNotificationsAdminPage() {
                   />
                   <span><strong>保存匿名会话</strong><small>关闭后 `/ai` 仍可聊天，但刷新页面不会保留记录。</small></span>
                 </label>
+                <label className={styles.historyToggle}>
+                  <input
+                    type="checkbox"
+                    checked={aiBehavior.uploadEnabled}
+                    onChange={(event) => setAiBehavior({ ...aiBehavior, uploadEnabled: event.target.checked })}
+                  />
+                  <span><strong>允许访客上传附件</strong><small>关闭后访客无法附加图片与文件，管理员仍可使用。</small></span>
+                </label>
                 <div className={styles.historyLimits}>
                   <label className={styles.field}>
                     <span>自动保留天数</span>
@@ -763,34 +777,34 @@ export default function ChatNotificationsAdminPage() {
                   />
                 </label>
                 <label className={styles.field}>
-                  <span>单条消息上限</span>
+                  <span>单条消息上限<em className={styles.fieldHint}>字符数</em></span>
                   <input
                     className="admin-input"
                     type="number"
                     min={50}
-                    max={10000}
+                    max={32000}
                     value={aiBehavior.maxMessageLength}
                     onChange={(event) => setAiBehavior({ ...aiBehavior, maxMessageLength: Number(event.target.value) })}
                   />
                 </label>
                 <label className={styles.field}>
-                  <span>保留历史消息</span>
+                  <span>保留历史消息<em className={styles.fieldHint}>条数，越大越费 token</em></span>
                   <input
                     className="admin-input"
                     type="number"
                     min={1}
-                    max={30}
+                    max={60}
                     value={aiBehavior.maxHistoryMessages}
                     onChange={(event) => setAiBehavior({ ...aiBehavior, maxHistoryMessages: Number(event.target.value) })}
                   />
                 </label>
                 <label className={styles.field}>
-                  <span>最大输出 tokens</span>
+                  <span>最大输出 tokens<em className={styles.fieldHint}>过小会让长回答被截断</em></span>
                   <input
                     className="admin-input"
                     type="number"
                     min={32}
-                    max={4000}
+                    max={32000}
                     value={aiBehavior.maxOutputTokens}
                     onChange={(event) => setAiBehavior({ ...aiBehavior, maxOutputTokens: Number(event.target.value) })}
                   />
@@ -805,6 +819,62 @@ export default function ChatNotificationsAdminPage() {
                     step={0.1}
                     value={aiBehavior.temperature}
                     onChange={(event) => setAiBehavior({ ...aiBehavior, temperature: Number(event.target.value) })}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>上传限额窗口<em className={styles.fieldHint}>天数，按 IP 滑动统计</em></span>
+                  <input
+                    className="admin-input"
+                    type="number"
+                    min={1}
+                    max={365}
+                    value={aiBehavior.uploadWindowDays}
+                    onChange={(event) => setAiBehavior({ ...aiBehavior, uploadWindowDays: Number(event.target.value) })}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>窗口内上传次数<em className={styles.fieldHint}>每 IP，管理员不受限</em></span>
+                  <input
+                    className="admin-input"
+                    type="number"
+                    min={1}
+                    max={1000}
+                    value={aiBehavior.uploadLimitPerWindow}
+                    onChange={(event) => setAiBehavior({ ...aiBehavior, uploadLimitPerWindow: Number(event.target.value) })}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>直传令牌有效期<em className={styles.fieldHint}>分钟，越长泄露风险越大</em></span>
+                  <input
+                    className="admin-input"
+                    type="number"
+                    min={1}
+                    max={10080}
+                    value={aiBehavior.uploadTokenTtlMinutes}
+                    onChange={(event) => setAiBehavior({ ...aiBehavior, uploadTokenTtlMinutes: Number(event.target.value) })}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>后台上下文预算<em className={styles.fieldHint}>tokens，超出后早期对话自动转摘要</em></span>
+                  <input
+                    className="admin-input"
+                    type="number"
+                    min={4000}
+                    max={200000}
+                    step={1000}
+                    value={aiBehavior.contextBudgetTokens}
+                    onChange={(event) => setAiBehavior({ ...aiBehavior, contextBudgetTokens: Number(event.target.value) })}
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>保留原文条数<em className={styles.fieldHint}>条，一问一答算 2 条；调大于会话长度即关闭压缩</em></span>
+                  <input
+                    className="admin-input"
+                    type="number"
+                    min={1}
+                    max={100000}
+                    value={aiBehavior.contextVerbatimMessages}
+                    onChange={(event) => setAiBehavior({ ...aiBehavior, contextVerbatimMessages: Number(event.target.value) })}
                   />
                 </label>
               </div>

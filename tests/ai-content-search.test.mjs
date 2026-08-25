@@ -4,6 +4,8 @@ import {
   analyzeContentQuery,
   createContentSearchPlan,
   extractContentTerms,
+  hasExplicitSiteContentIntent,
+  hasExplicitSiteNavigationIntent,
   rankArticleCandidates,
 } from "../lib/ai-content-search.ts";
 import { isSafeInternalHref } from "../lib/internal-href.ts";
@@ -23,6 +25,18 @@ test("generic content phrases are not treated as search keywords", () => {
   assert.deepEqual(extractContentTerms("找一些照片看看"), []);
   assert.deepEqual(extractContentTerms("看看我的项目"), []);
   assert.deepEqual(extractContentTerms("推荐 React 技术文章"), ["react", "技术"]);
+});
+
+test("full chat only invokes site recommendations for explicit site content", () => {
+  assert.equal(hasExplicitSiteContentIntent("帮我解释 React 状态管理"), false);
+  assert.equal(hasExplicitSiteContentIntent("今天心情不好，陪我聊聊"), false);
+  assert.equal(hasExplicitSiteContentIntent("推荐几篇 React 文章"), true);
+  assert.equal(hasExplicitSiteContentIntent("打开旅行地图"), true);
+  assert.equal(hasExplicitSiteContentIntent("看看你的照片"), true);
+  assert.equal(hasExplicitSiteNavigationIntent("帮我写一篇文章"), false);
+  assert.equal(hasExplicitSiteNavigationIntent("分析一下文章结构"), false);
+  assert.equal(hasExplicitSiteNavigationIntent("推荐几篇 React 文章"), true);
+  assert.equal(hasExplicitSiteNavigationIntent("打开旅行地图"), true);
 });
 
 test("domain-specific recommendations do not trigger unrelated sources", () => {

@@ -547,6 +547,15 @@
   line-height: 1.55;
 }
 
+/* 内联在字段标签里的说明文字，用于区分必填项与可选项 */
+.field > span > .fieldHint {
+  margin: 0 0 0 6px;
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 500;
+  opacity: 0.75;
+}
+
 .modePromptGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
