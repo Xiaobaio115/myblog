@@ -40,6 +40,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       // 直接透传：normalizeInstructions 内部区分 undefined（保留）与空串（清空）。
       instructions: body?.instructions,
       messages: body?.messages,
+      // 刻意不接受 projectId，理由同访客侧：归属只走 PATCH /[id]/project，
+      // 那里会校验目标项目。留两个入口的话校验早晚漏掉一处。
     });
     return conversation ? NextResponse.json({ conversation }) : missingConversation();
   } catch (error) {

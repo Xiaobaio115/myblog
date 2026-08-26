@@ -57,6 +57,9 @@ export async function PATCH(
       messages: body?.messages,
       maxUserMessageLength: behavior.maxMessageLength,
       retentionDays: policy.retentionDays,
+      // 刻意不接受 projectId：这个接口每发一条消息都会调用一次，
+      // 归属只在「移动」时改变，走 PATCH /[id]/project——那里会校验目标项目
+      // 是否存在且归自己。两个接口都能改归属的话，校验早晚会漏掉一处。
     });
     return conversation ? NextResponse.json({ conversation }) : missingVisitor();
   } catch (error) {

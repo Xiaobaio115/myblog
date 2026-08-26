@@ -5,6 +5,7 @@ import {
   deleteAllDeveloperConversations,
   listDeveloperConversations,
 } from "@/lib/ai-developer-conversations";
+import { getProject } from "@/lib/ai-projects";
 import { getDb, isMongoConfigured } from "@/lib/mongodb";
 
 export const runtime = "nodejs";
@@ -45,11 +46,20 @@ export async function POST(request: Request) {
     if (!hasUserMessage) {
       return NextResponse.json({ error: "请先发送一条消息再创建会话。" }, { status: 400 });
     }
+    const db = await getDb();
+    // 校验目标项目存在，理由同 [id]/project 路由。
+    const requestedProjectId = typeof body?.projectId === "string" ? body.projectId.trim() : "";
+    const projectId = requestedProjectId
+      && await getProject(db, requestedProjectId, { group: "developer" })
+      ? requestedProjectId
+      : "";
+
     const conversation = await createDeveloperConversation({
-      db: await getDb(),
+      db,
       modelId: String(body?.modelId || ""),
       instructions: body?.instructions,
       messages: body?.messages,
+      projectId,
     });
     return NextResponse.json({ conversation }, { status: 201 });
   } catch (error) {

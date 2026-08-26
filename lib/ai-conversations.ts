@@ -54,6 +54,8 @@ export type ConversationSummary = {
   createdAt: string;
   updatedAt: string;
   expiresAt: string;
+  /** 所属项目 id，空串表示未分组 */
+  projectId: string;
 };
 
 export type ConversationDetail = ConversationSummary & {
@@ -74,6 +76,8 @@ type AiConversationDocument = {
   createdAt: Date;
   updatedAt: Date;
   expiresAt: Date;
+  /** 所属项目。历史文档没有这个字段，读取时一律回落成空串 */
+  projectId?: string;
 };
 
 type VisitorIdentity = {
@@ -216,6 +220,7 @@ function toSummary(document: WithId<AiConversationDocument>): ConversationSummar
     createdAt: document.createdAt.toISOString(),
     updatedAt: document.updatedAt.toISOString(),
     expiresAt: document.expiresAt.toISOString(),
+    projectId: document.projectId || "",
   };
 }
 
@@ -229,6 +234,8 @@ export async function ensureConversationIndexes(db: Db) {
       collection(db).createIndex({ visitorHash: 1, updatedAt: -1 }),
       collection(db).createIndex({ updatedAt: -1 }),
       collection(db).createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 }),
+      // 删除项目时要把它名下的会话批量退回未分组
+      collection(db).createIndex({ visitorHash: 1, projectId: 1 }),
     ]).then(() => undefined).catch((error) => {
       indexesReady = null;
       throw error;
@@ -282,6 +289,7 @@ export async function createVisitorConversation(input: {
   messages: unknown;
   maxUserMessageLength: number;
   policy: ConversationStoragePolicy;
+  projectId?: string;
 }) {
   await ensureConversationIndexes(input.db);
   const messages = normalizeStoredMessages(input.messages, input.maxUserMessageLength);
@@ -295,6 +303,7 @@ export async function createVisitorConversation(input: {
     createdAt: now,
     updatedAt: now,
     expiresAt: getExpiresAt(input.policy.retentionDays),
+    projectId: input.projectId || "",
   };
   const result = await collection(input.db).insertOne(document);
   await Promise.all([
@@ -319,6 +328,8 @@ export async function updateVisitorConversation(input: {
   messages: unknown;
   maxUserMessageLength: number;
   retentionDays: number;
+  /** undefined 表示不改动归属；空串表示移出项目 */
+  projectId?: string;
 }) {
   if (!ObjectId.isValid(input.id)) return null;
   await ensureConversationIndexes(input.db);
@@ -334,11 +345,48 @@ export async function updateVisitorConversation(input: {
         messageCount: messages.length,
         updatedAt: now,
         expiresAt: getExpiresAt(input.retentionDays),
+        ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
       },
     },
     { returnDocument: "after" }
   );
   return document ? toDetail(document) : null;
+}
+
+/** 只改归属，不动消息内容。用于「移入项目 / 移出项目」。 */
+export async function setVisitorConversationProject(input: {
+  db: Db;
+  id: string;
+  visitorHash: string;
+  projectId: string;
+}) {
+  if (!ObjectId.isValid(input.id)) return null;
+  await ensureConversationIndexes(input.db);
+  const document = await collection(input.db).findOneAndUpdate(
+    { _id: new ObjectId(input.id), visitorHash: input.visitorHash },
+    { $set: { projectId: input.projectId, updatedAt: new Date() } },
+    { returnDocument: "after" }
+  );
+  return document ? toSummary(document) : null;
+}
+
+/**
+ * 把某个项目名下的会话全部退回未分组。
+ *
+ * 删除项目时调用。不删会话本身——那是用户的真实产出，
+ * 而项目只是它的分组容器。
+ */
+export async function detachVisitorConversationsFromProject(input: {
+  db: Db;
+  visitorHash: string;
+  projectId: string;
+}) {
+  await ensureConversationIndexes(input.db);
+  const result = await collection(input.db).updateMany(
+    { visitorHash: input.visitorHash, projectId: input.projectId },
+    { $set: { projectId: "" } }
+  );
+  return result.modifiedCount;
 }
 
 export async function deleteVisitorConversation(db: Db, id: string, visitorHash: string) {

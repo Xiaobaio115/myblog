@@ -40,6 +40,8 @@ export type DeveloperConversationSummary = {
   createdAt: string;
   updatedAt: string;
   expiresAt: "";
+  /** 所属项目 id，空串表示未分组 */
+  projectId: string;
 };
 
 export type DeveloperConversationDetail = DeveloperConversationSummary & {
@@ -54,6 +56,8 @@ type DeveloperConversationDocument = {
   messageCount: number;
   createdAt: Date;
   updatedAt: Date;
+  /** 所属项目。历史文档没有这个字段，读取时一律回落成空串 */
+  projectId?: string;
 };
 
 type DeveloperMessageDocument = {
@@ -84,6 +88,8 @@ export async function ensureDeveloperConversationIndexes(db: Db) {
   if (!indexesReady) {
     indexesReady = Promise.all([
       conversations(db).createIndex({ updatedAt: -1 }),
+      // 删除项目时要把它名下的会话批量退回未分组
+      conversations(db).createIndex({ projectId: 1 }),
       messages(db).createIndex({ conversationId: 1, position: 1 }),
       messages(db).createIndex({ conversationId: 1, messageId: 1 }, { unique: true }),
     ]).then(() => undefined).catch((error) => {
@@ -150,6 +156,7 @@ function toSummary(document: WithId<DeveloperConversationDocument>): DeveloperCo
     createdAt: document.createdAt.toISOString(),
     updatedAt: document.updatedAt.toISOString(),
     expiresAt: "",
+    projectId: document.projectId || "",
   };
 }
 
@@ -209,6 +216,7 @@ export async function createDeveloperConversation(input: {
   modelId: string;
   instructions?: unknown;
   messages: unknown;
+  projectId?: string;
 }) {
   await ensureDeveloperConversationIndexes(input.db);
   const normalized = normalizeDeveloperMessages(input.messages);
@@ -221,6 +229,7 @@ export async function createDeveloperConversation(input: {
     messageCount: 0,
     createdAt: now,
     updatedAt: now,
+    projectId: input.projectId || "",
   };
   const inserted = await conversations(input.db).insertOne(document);
   const messageCount = await saveMessages(input.db, inserted.insertedId, normalized);
@@ -260,6 +269,8 @@ export async function updateDeveloperConversation(input: {
   modelId: string;
   instructions?: unknown;
   messages: unknown;
+  /** undefined 表示不改动归属；空串表示移出项目 */
+  projectId?: string;
 }) {
   if (!ObjectId.isValid(input.id)) return null;
   await ensureDeveloperConversationIndexes(input.db);
@@ -281,10 +292,40 @@ export async function updateDeveloperConversation(input: {
           : normalizeInstructions(input.instructions),
         messageCount,
         updatedAt: new Date(),
+        ...(input.projectId === undefined ? {} : { projectId: input.projectId }),
       },
     }
   );
   return getDeveloperConversation(input.db, input.id);
+}
+
+/** 只改归属，不动消息内容。用于「移入项目 / 移出项目」。 */
+export async function setDeveloperConversationProject(input: {
+  db: Db;
+  id: string;
+  projectId: string;
+}) {
+  if (!ObjectId.isValid(input.id)) return null;
+  await ensureDeveloperConversationIndexes(input.db);
+  const document = await conversations(input.db).findOneAndUpdate(
+    { _id: new ObjectId(input.id) },
+    { $set: { projectId: input.projectId, updatedAt: new Date() } },
+    { returnDocument: "after" }
+  );
+  return document ? toSummary(document) : null;
+}
+
+/** 把某个项目名下的会话全部退回未分组。删除项目时调用，不删会话本身。 */
+export async function detachDeveloperConversationsFromProject(input: {
+  db: Db;
+  projectId: string;
+}) {
+  await ensureDeveloperConversationIndexes(input.db);
+  const result = await conversations(input.db).updateMany(
+    { projectId: input.projectId },
+    { $set: { projectId: "" } }
+  );
+  return result.modifiedCount;
 }
 
 export async function deleteDeveloperConversation(db: Db, id: string) {

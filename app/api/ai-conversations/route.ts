@@ -8,6 +8,7 @@ import {
   getVisitorIdentity,
   listVisitorConversations,
 } from "@/lib/ai-conversations";
+import { getProject } from "@/lib/ai-projects";
 import { getDb, isMongoConfigurationError, isMongoConfigured } from "@/lib/mongodb";
 
 export const runtime = "nodejs";
@@ -59,6 +60,15 @@ export async function POST(request: Request) {
     const visitor = getVisitorIdentity(request, true)!;
     const mode = resolveMode(body?.mode, behavior.enabledModes, behavior.mode);
     const db = await getDb();
+
+    // 校验目标项目归属，理由同 [id]/project 路由：未校验的 projectId 会让
+    // 会话落在一个解析不出的分组里，在侧栏中既不在项目下也不在未分组里。
+    const requestedProjectId = typeof body?.projectId === "string" ? body.projectId.trim() : "";
+    const projectId = requestedProjectId
+      && await getProject(db, requestedProjectId, { group: "visitor", visitorHash: visitor.hash })
+      ? requestedProjectId
+      : "";
+
     const conversation = await createVisitorConversation({
       db,
       visitorHash: visitor.hash,
@@ -66,6 +76,7 @@ export async function POST(request: Request) {
       messages: body?.messages,
       maxUserMessageLength: behavior.maxMessageLength,
       policy,
+      projectId,
     });
     const response = NextResponse.json({ conversation }, { status: 201 });
     return attachVisitorCookie(response, visitor);

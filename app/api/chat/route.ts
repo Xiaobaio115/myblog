@@ -1,5 +1,8 @@
 import { after, NextResponse } from "next/server";
-import { getDb } from "@/lib/mongodb";
+import { getDb, isMongoConfigured } from "@/lib/mongodb";
+import { resolveProjectOwner } from "@/lib/ai-project-owner";
+import { orderInstructionTexts } from "@/lib/ai-project-context";
+import { getProjectInjection } from "@/lib/ai-projects";
 import { notifyOwnerOfChatMessage } from "@/lib/chat-notify";
 import { getAiBehavior, getAiModePrompt, type AiMode } from "@/lib/ai-behavior-settings";
 import { buildAiContentContext, type ChatAction } from "@/lib/ai-content-tools";
@@ -7,6 +10,7 @@ import { composeAiSystemPrompt } from "@/lib/ai-prompt";
 import { getPublicAiModels, resolveAiModel } from "@/lib/ai-provider-settings";
 import { readSseEvents } from "@/lib/ai-sse";
 import { verifyAdminRequest } from "@/lib/admin-session";
+import { describeFailure, type ProviderFailure } from "@/lib/ai-error-messages";
 import {
   buildAttachmentContext,
   normalizeAttachments,
@@ -278,6 +282,9 @@ function parseProviderDelta(value: unknown) {
 }
 
 export async function POST(request: Request) {
+  // 提到 try 外面：外层 catch 也要按身份决定说多少，
+  // 而 err.message 可能带着主机名、端点地址或驱动细节。默认按访客处理。
+  let developerMode = false;
   try {
     const contentLength = Number(request.headers.get("content-length") || 0);
     if (contentLength > 12 * 1024 * 1024) {
@@ -293,7 +300,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "请求内容格式不正确。" }, { status: 400 });
     }
     const body = parsedBody;
-    const developerMode = body.developerMode === true;
+    developerMode = body.developerMode === true;
     if (developerMode && !verifyAdminRequest(request)) {
       return NextResponse.json({ error: "管理员身份已失效，请重新登录。" }, { status: 401 });
     }
@@ -414,8 +421,9 @@ export async function POST(request: Request) {
       });
       return NextResponse.json(
         {
-          error: `AI 模型配置不完整，缺少：${missing.join("、")}。请在后台「AI 与通知」中补全后重试。`,
-          code: "provider_config_incomplete",
+          error: describeFailure({ kind: "config_incomplete", missing }, developerMode),
+          // code 本身也是诊断信息（它告诉访客「站长后台配错了」），只给开发者。
+          ...(developerMode ? { code: "provider_config_incomplete" } : {}),
         },
         { status: 503 }
       );
@@ -443,6 +451,34 @@ export async function POST(request: Request) {
       ? String(body.instructions || "").slice(0, 4000).trim()
       : "";
 
+    /**
+     * 项目级共享上下文：同一项目下的每轮对话都自动带上项目指令与项目文件。
+     *
+     * 归属由 Cookie 决定而不是由请求里的 projectId 决定，所以传别人的 id 只会
+     * 查不到（getProjectInjection 内部按 owner 过滤），不会读到别人的项目。
+     * 取不到就当没有项目：项目是增强，不该让整轮对话失败。
+     */
+    let projectInstructionContext = "";
+    let projectFileContext = "";
+    const requestedProjectId =
+      typeof body.projectId === "string" ? body.projectId.trim() : "";
+    if (requestedProjectId && isMongoConfigured()) {
+      try {
+        const owner = resolveProjectOwner(request, developerMode);
+        if (owner) {
+          const injection = await getProjectInjection(
+            await getDb(),
+            requestedProjectId,
+            owner.owner
+          );
+          projectInstructionContext = injection.instructionContext;
+          projectFileContext = injection.fileContext;
+        }
+      } catch (error) {
+        console.error("load project injection failed:", error);
+      }
+    }
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), developerMode ? 300000 : 60000);
     const systemPrompt = developerMode
@@ -453,6 +489,14 @@ export async function POST(request: Request) {
           modePrompt: getAiModePrompt(activeMode, behavior.modePrompts),
           controls: behavior.promptControls,
         });
+
+    // 顺序即优先级，规则见 orderInstructionTexts。
+    const instructionTexts = orderInstructionTexts({
+      sitePrompt: developerMode ? "" : systemPrompt,
+      projectInstructions: projectInstructionContext,
+      conversationInstructions: developerMode ? systemPrompt : "",
+      group: developerMode ? "developer" : "visitor",
+    });
 
     // 规范化 baseUrl：如果只是域名（如 https://new.xkool.cfd），自动加 /v1
     let normalizedUrl = baseUrl.replace(/\/$/, "");
@@ -512,8 +556,11 @@ export async function POST(request: Request) {
     let historyMessages = rawMessages;
     let compressionSummary = "";
     if (developerMode) {
+      // 项目指令与项目文件也占预算。漏算的话，项目一填满，留给历史的空间
+      // 就会被悄悄挤掉，表现为「开了项目后 AI 突然记不住前面说过的话」。
       const historyBudget = resolveHistoryBudget(behavior.contextBudgetTokens, [
-        systemPrompt,
+        ...instructionTexts,
+        projectFileContext,
         siteContext,
       ]);
       const plan = planContextCompression(
@@ -546,8 +593,10 @@ export async function POST(request: Request) {
         body: JSON.stringify({
           model,
           messages: [
-            ...(systemPrompt
-              ? [{ role: "system" as const, content: systemPrompt }]
+            ...instructionTexts.map((content) => ({ role: "system" as const, content })),
+            // 项目文件是资料而不是指令，和站内检索上下文同级，放在指令之后。
+            ...(projectFileContext
+              ? [{ role: "system" as const, content: projectFileContext }]
               : []),
             ...(siteContext
               ? [{ role: "system" as const, content: siteContext }]
@@ -583,7 +632,10 @@ export async function POST(request: Request) {
       // 固定兜底只在站长明确开启时使用，且必须声明这是离线回答，避免用户以为模型正常工作。
       if (localReply) {
         return streamLocalText(
-          `${localReply}\n\n> 说明：模型接口当前无法访问，以上是博客内置的离线回答。`,
+          `${localReply}\n\n> 说明：${describeFailure(
+            { kind: aborted ? "timeout" : "unreachable" },
+            developerMode
+          )}以上是博客内置的离线回答。`,
           contentContext.actions,
           activeMode,
           { sse: wantsSse, modelId: selectedModel?.id }
@@ -591,10 +643,8 @@ export async function POST(request: Request) {
       }
       return NextResponse.json(
         {
-          error: aborted
-            ? "模型接口响应超时，请稍后再试。"
-            : "无法连接模型接口，请检查后台 AI 配置中的 Base URL 与网络连通性。",
-          code: aborted ? "provider_timeout" : "provider_unreachable",
+          error: describeFailure({ kind: aborted ? "timeout" : "unreachable" }, developerMode),
+          ...(developerMode ? { code: aborted ? "provider_timeout" : "provider_unreachable" } : {}),
         },
         { status: 504 }
       );
@@ -606,22 +656,28 @@ export async function POST(request: Request) {
       const status = aiResponse.status;
       console.error("AI provider error:", { status, url, model, errorText: errorText.slice(0, 2000) });
 
-      // 按供应商状态码给出可直接处理的提示，而不是笼统的「服务不可用」。
-      const providerHint =
-        status === 401 || status === 403
-          ? "模型接口拒绝了 API Key（鉴权失败），请在后台核对 Key 是否有效或已过期。"
-          : status === 404
-            ? `模型接口找不到模型「${model}」，请核对模型名称与 Base URL 是否匹配。`
-            : status === 429
-              ? "模型接口触发了限流（429），请稍后再试或更换模型节点。"
-              : status >= 500
-                ? "模型接口自身返回了服务端错误，请稍后再试或更换模型节点。"
-                : `模型接口返回异常状态 ${status}。`;
-      const providerDetail = extractProviderErrorMessage(errorText);
+      // 按供应商状态码分类。开发者拿到完整诊断，访客只知道「忙」还是「坏」——
+      // 状态码、模型名、供应商原文都会暴露站点用的是哪家渠道。
+      const failure: ProviderFailure = {
+        kind:
+          status === 401 || status === 403
+            ? "auth"
+            : status === 404
+              ? "model_not_found"
+              : status === 429
+                ? "rate_limited"
+                : status >= 500
+                  ? "provider_server"
+                  : "provider_status",
+        status,
+        model,
+        detail: extractProviderErrorMessage(errorText),
+      };
 
       if (localReply) {
+        // 这条说明会进入「回复正文」而不是错误字段，是最容易被漏掉的泄露口。
         return streamLocalText(
-          `${localReply}\n\n> 说明：${providerHint}以上是博客内置的离线回答。`,
+          `${localReply}\n\n> 说明：${describeFailure(failure, developerMode)}以上是博客内置的离线回答。`,
           contentContext.actions,
           activeMode,
           { sse: wantsSse, modelId: selectedModel?.id }
@@ -629,9 +685,8 @@ export async function POST(request: Request) {
       }
       return NextResponse.json(
         {
-          error: providerDetail ? `${providerHint}（接口信息：${providerDetail}）` : providerHint,
-          code: "provider_error",
-          providerStatus: status,
+          error: describeFailure(failure, developerMode),
+          ...(developerMode ? { code: "provider_error", providerStatus: status } : {}),
         },
         { status: 502 }
       );
@@ -722,10 +777,14 @@ export async function POST(request: Request) {
     const err = error instanceof Error ? error : null;
     console.error("POST /api/chat error:", error);
 
-    const message =
+    // err.message 是未经审查的任意文本（可能来自 fetch、MongoDB 驱动或第三方 SDK），
+    // 里面常有主机名和端点地址，绝不能原样回给访客。完整内容已经写进上面的日志。
+    const message = describeFailure(
       err?.name === "AbortError"
-        ? "模型接口响应超时，请稍后再试。"
-        : err?.message || "聊天服务暂时不可用。";
+        ? { kind: "timeout" }
+        : { kind: "internal", internalMessage: err?.message },
+      developerMode
+    );
 
     return NextResponse.json({ error: message }, { status: 500 });
   }

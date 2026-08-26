@@ -8,6 +8,10 @@ import { renderAssistantMarkdown } from "@/lib/assistant-markdown";
 import { readSseEvents } from "@/lib/ai-sse";
 import { describeResendFallout, findLastUserIndex, mergeImagesByUrl, planResend } from "@/lib/ai-message-resend";
 import { ModelPicker } from "./ModelPicker";
+import { ItemMenu } from "./ItemMenu";
+import { ProjectPanel, type ProjectDetail, type ProjectSummary } from "./ProjectPanel";
+import { isTextLikeFile, readFileAsText } from "./text-files";
+import { useDialogDismiss } from "./use-dialog-dismiss";
 import styles from "./ai-chat.module.css";
 
 type AiMode = "guide" | "companion" | "technical" | "writer";
@@ -54,6 +58,8 @@ type ConversationSummary = {
   modelId?: string;
   /** 仅后台 AI 页：会话级自定义指令 */
   instructions?: string;
+  /** 所属项目 id。空串表示未分组 */
+  projectId?: string;
 };
 
 type ConversationDetail = ConversationSummary & { messages: ChatMessage[] };
@@ -130,15 +136,6 @@ function readFileAsDataUrl(file: File) {
   });
 }
 
-function readFileAsText(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error(`读取 ${file.name} 失败。`));
-    reader.readAsText(file);
-  });
-}
-
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const MAX_IMAGE_COUNT = 3;
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -149,34 +146,6 @@ const MAX_TEXT_FILE_COUNT = 3;
 const MAX_TEXT_FILE_BYTES = 256 * 1024;
 /** 单个文件注入提示词的字符上限，避免一个大文件吃掉整个上下文窗口 */
 const MAX_TEXT_FILE_CHARS = 20000;
-
-/**
- * 文本/代码附件的扩展名白名单。
- *
- * 不按 MIME 判断：浏览器给 .ts、.vue、.rs 之类的文件常常报空字符串或
- * application/octet-stream，只看 MIME 会把正常代码文件全部拒掉。
- */
-const TEXT_FILE_EXTENSIONS = new Set([
-  "txt", "md", "markdown", "rst", "log", "csv", "tsv",
-  "json", "jsonc", "yaml", "yml", "toml", "ini", "env", "conf", "properties",
-  "xml", "html", "htm", "css", "scss", "sass", "less",
-  "js", "jsx", "mjs", "cjs", "ts", "tsx", "mts", "cts", "vue", "svelte",
-  "py", "rb", "go", "rs", "java", "kt", "kts", "swift", "c", "h", "cpp", "hpp", "cc", "cs",
-  "php", "sh", "bash", "zsh", "fish", "ps1", "sql", "graphql", "gql",
-  "dockerfile", "gitignore", "editorconfig", "lua", "r", "pl", "dart", "scala", "ex", "exs",
-]);
-
-function getFileExtension(name: string) {
-  const lower = name.toLowerCase();
-  const dot = lower.lastIndexOf(".");
-  if (dot === -1) return lower;
-  return lower.slice(dot + 1);
-}
-
-function isTextLikeFile(file: File) {
-  if (file.type.startsWith("text/")) return true;
-  return TEXT_FILE_EXTENSIONS.has(getFileExtension(file.name));
-}
 
 // 附件正文的拼装放在服务端（app/api/chat/route.ts 的 buildAttachmentContext）：
 // 客户端只负责读取与截断，避免两边各写一份格式各自漂移。
@@ -248,6 +217,18 @@ export default function AiChatPage({ developerMode = false }: { developerMode?: 
   const [retentionDays, setRetentionDays] = useState(30);
 
   /**
+   * 项目：一组共享指令与共享文件的对话容器。
+   *
+   * activeProjectId 同时是两件事的开关：侧栏只列这个项目下的会话，
+   * 并且新会话默认落在这个项目里。空串表示「未分组」视图。
+   */
+  const [projects, setProjects] = useState<ProjectSummary[]>([]);
+  const [activeProjectId, setActiveProjectId] = useState("");
+  const [projectPanel, setProjectPanel] = useState<ProjectDetail | null>(null);
+  const [movingConversation, setMovingConversation] = useState<ConversationSummary | null>(null);
+  const projectQuery = developerMode ? "?developerMode=1" : "";
+
+  /**
    * 切换模型。
    *
    * 只在必要时丢弃待发送图片：图片可能是刚上传上去的几 MB 文件，
@@ -276,6 +257,25 @@ export default function AiChatPage({ developerMode = false }: { developerMode?: 
     [activeConversationId, conversations]
   );
 
+  /** 项目依赖会话持久化。存不下会话就不显示项目入口。 */
+  const projectsAvailable = historyEnabled;
+
+  const activeProject = useMemo(
+    () => projects.find((project) => project.id === activeProjectId) || null,
+    [activeProjectId, projects]
+  );
+
+  /**
+   * 侧栏只显示当前视图下的会话。
+   *
+   * 没选项目时显示未分组的会话而不是全部：否则项目里的会话会同时出现在
+   * 两个地方，用户无法判断某条会话到底归在哪里。
+   */
+  const visibleConversations = useMemo(
+    () => conversations.filter((conversation) => (conversation.projectId || "") === activeProjectId),
+    [activeProjectId, conversations]
+  );
+
   const upsertConversation = useCallback((conversation: ConversationSummary) => {
     setConversations((current) => [
       conversation,
@@ -287,9 +287,12 @@ export default function AiChatPage({ developerMode = false }: { developerMode?: 
     let active = true;
     async function loadInitialData() {
       try {
-        const [configResponse, historyResponse] = await Promise.all([
+        const [configResponse, historyResponse, projectResponse] = await Promise.all([
           fetch(developerMode ? "/api/chat?developerMode=1" : "/api/chat", { cache: "no-store" }),
           fetch(conversationBase, { cache: "no-store" }),
+          // 项目读取失败不影响聊天，所以单独 catch 成 null 而不是让整个 Promise.all 挂掉。
+          fetch(`/api/ai-projects${developerMode ? "?developerMode=1" : ""}`, { cache: "no-store" })
+            .catch(() => null),
         ]);
         const config = configResponse.ok ? await configResponse.json() as ChatConfig : {};
         const configuredModes = Array.isArray(config.modes) && config.modes.length > 0
@@ -320,6 +323,12 @@ export default function AiChatPage({ developerMode = false }: { developerMode?: 
             setConversations(Array.isArray(history.conversations) ? history.conversations : []);
             setRetentionDays(developerMode ? 0 : history.policy?.retentionDays || 30);
           }
+        }
+
+        if (projectResponse?.ok) {
+          const data = await projectResponse.json().catch(() => null) as
+            { projects?: ProjectSummary[] } | null;
+          if (active && Array.isArray(data?.projects)) setProjects(data.projects);
         }
       } catch {
         if (active) setNotice("会话记录暂时不可用，但仍可以继续聊天。");
@@ -394,6 +403,9 @@ export default function AiChatPage({ developerMode = false }: { developerMode?: 
       const conversation = data?.conversation;
       if (!response.ok || !conversation) throw new Error(data?.error || "读取会话失败。");
       setActiveConversationId(conversation.id);
+      // 视图跟着会话走：打开一条属于某项目的会话时，侧栏也切到那个项目，
+      // 否则会话在列表里看不见，而后续回答又确实带着项目指令，很难对上。
+      setActiveProjectId(conversation.projectId || "");
       if (!developerMode) {
         setMode(modeOptions.some((item) => item.value === conversation.mode)
           ? conversation.mode
@@ -423,6 +435,8 @@ export default function AiChatPage({ developerMode = false }: { developerMode?: 
         mode,
         modelId,
         messages: toStoredMessages(nextMessages),
+        // 新会话落在当前视图所在的项目里，和侧栏看到的位置一致。
+        projectId: activeProjectId,
         ...(developerMode ? { instructions } : {}),
       }),
     });
@@ -465,15 +479,89 @@ export default function AiChatPage({ developerMode = false }: { developerMode?: 
     }
   }
 
-  async function clearConversations() {
-    if (!conversations.length || !window.confirm("确定清空你的全部 AI 会话吗？此操作无法恢复。")) return;
+  async function createProject() {
+    const name = window.prompt("新项目名称");
+    if (name === null) return;
+    if (!name.trim()) {
+      setNotice("项目名称不能为空。");
+      return;
+    }
     try {
-      const response = await fetch(conversationBase, { method: "DELETE" });
-      if (!response.ok) throw new Error("清空会话失败。");
-      setConversations([]);
-      startNewConversation();
+      const response = await fetch(`/api/ai-projects${projectQuery}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      const data = await response.json().catch(() => null) as
+        { project?: ProjectDetail; error?: string } | null;
+      if (!response.ok || !data?.project) throw new Error(data?.error || "创建项目失败。");
+      setProjects((current) => [data.project!, ...current]);
+      setActiveProjectId(data.project.id);
+      // 建完直接打开设置：项目的价值全在共享指令和文件上，
+      // 只留一个空名字的话用户还得再找一次入口。
+      setProjectPanel(data.project);
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "清空会话失败。");
+      setNotice(error instanceof Error ? error.message : "创建项目失败。");
+    }
+  }
+
+  async function openProjectSettings(id: string) {
+    try {
+      const response = await fetch(`/api/ai-projects/${id}${projectQuery}`, { cache: "no-store" });
+      const data = await response.json().catch(() => null) as
+        { project?: ProjectDetail; error?: string } | null;
+      if (!response.ok || !data?.project) throw new Error(data?.error || "读取项目失败。");
+      setProjectPanel(data.project);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "读取项目失败。");
+    }
+  }
+
+  async function deleteProject(project: ProjectSummary) {
+    if (!window.confirm(
+      `确定删除项目「${project.name}」吗？项目里的对话不会被删除，会退回「未分组」。`
+    )) return;
+    try {
+      const response = await fetch(`/api/ai-projects/${project.id}${projectQuery}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new Error(data?.error || "删除项目失败。");
+      }
+      setProjects((current) => current.filter((item) => item.id !== project.id));
+      // 会话本身留着，只是归属被服务端清空了，本地同步一次即可。
+      setConversations((current) => current.map((item) => (
+        (item.projectId || "") === project.id ? { ...item, projectId: "" } : item
+      )));
+      if (activeProjectId === project.id) setActiveProjectId("");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "删除项目失败。");
+    }
+  }
+
+  /**
+   * 移入/移出项目。projectId 传空串表示移出。
+   *
+   * 走专用的 /project 子路由而不是会话 PATCH：后者按整份消息覆盖保存，
+   * 而从侧栏移动一条没打开的会话时客户端手里没有它的消息。
+   */
+  async function moveConversationToProject(conversationId: string, projectId: string) {
+    try {
+      const response = await fetch(`${conversationBase}/${conversationId}/project`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ projectId }),
+      });
+      const data = await response.json().catch(() => null) as
+        { conversation?: ConversationSummary; error?: string } | null;
+      if (!response.ok || !data?.conversation) throw new Error(data?.error || "移动会话失败。");
+      upsertConversation(data.conversation);
+      setMovingConversation(null);
+      setActiveProjectId(projectId);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "移动会话失败。");
+      setMovingConversation(null);
     }
   }
 
@@ -651,6 +739,9 @@ export default function AiChatPage({ developerMode = false }: { developerMode?: 
           developerMode,
           mode,
           modelId,
+          // 项目指令与项目文件由服务端按 id 读取后注入，不从客户端传内容：
+          // 否则任何人改一下请求体就能给自己换一套系统指令。
+          ...(activeProjectId ? { projectId: activeProjectId } : {}),
           ...(developerMode && instructions.trim() ? { instructions } : {}),
           images: attachImages.map((image) => image.url),
           // 文本附件单独传，不拼进消息正文：正文要受 maxMessageLength（默认 2000 字）限制，
@@ -884,8 +975,66 @@ export default function AiChatPage({ developerMode = false }: { developerMode?: 
           ) : null}
         </div>
 
+        {/*
+          会话记录不可用时整块隐藏：项目是会话的容器，会话存不下来的话，
+          项目里永远是空的。与其显示一个注定空转的入口，不如不显示。
+        */}
+        {projectsAvailable ? (
+          <>
+            <div className={styles.historyHead}>
+              <span>项目</span>
+              <button
+                type="button"
+                className={styles.projectAddButton}
+                onClick={() => void createProject()}
+                title="新建项目"
+              >
+                ＋
+              </button>
+            </div>
+            <nav className={styles.projectList} aria-label="AI 项目">
+              <div className={`${styles.projectItem} ${activeProjectId === "" ? styles.projectItemActive : ""}`}>
+                <button type="button" onClick={() => setActiveProjectId("")}>
+                  <strong>未分组</strong>
+                  <small>不属于任何项目的对话</small>
+                </button>
+              </div>
+              {projects.map((project) => (
+                <div
+                  key={project.id}
+                  className={`${styles.projectItem} ${project.id === activeProjectId ? styles.projectItemActive : ""}`}
+                >
+                  <button type="button" onClick={() => setActiveProjectId(project.id)}>
+                    <strong>{project.name}</strong>
+                    <small>
+                      {project.instructions ? "有指令" : "无指令"}
+                      {project.fileCount > 0 ? ` · ${project.fileCount} 个文件` : ""}
+                    </small>
+                  </button>
+                  <ItemMenu
+                    label={`更多操作：项目 ${project.name}`}
+                    actions={[
+                      {
+                        key: "settings",
+                        label: "项目设置",
+                        onSelect: () => void openProjectSettings(project.id),
+                      },
+                      {
+                        key: "delete",
+                        label: "删除项目",
+                        danger: true,
+                        onSelect: () => void deleteProject(project),
+                      },
+                    ]}
+                  />
+                </div>
+              ))}
+            </nav>
+          </>
+        ) : null}
+
         <div className={styles.historyHead}>
-          <span>最近对话</span>
+          <span>{activeProject ? `${activeProject.name} 的对话` : "最近对话"}</span>
           {historyLoading ? <small>读取中</small> : historyEnabled ? <small>{developerMode ? "永久保存" : `保留 ${retentionDays} 天`}</small> : null}
         </div>
         <nav className={styles.historyList} aria-label="AI 会话历史">
@@ -896,10 +1045,12 @@ export default function AiChatPage({ developerMode = false }: { developerMode?: 
                 : "会话记录未开启，本页仍可临时对话。"}
             </p>
           ) : null}
-          {!historyLoading && historyEnabled && conversations.length === 0 ? (
-            <p className={styles.historyEmpty}>新对话会显示在这里。</p>
+          {!historyLoading && historyEnabled && visibleConversations.length === 0 ? (
+            <p className={styles.historyEmpty}>
+              {activeProject ? "这个项目下还没有对话。新对话会自动归到这里。" : "新对话会显示在这里。"}
+            </p>
           ) : null}
-          {conversations.map((conversation) => (
+          {visibleConversations.map((conversation) => (
             <div
               key={conversation.id}
               className={`${styles.historyItem} ${conversation.id === activeConversationId ? styles.historyItemActive : ""}`}
@@ -908,15 +1059,25 @@ export default function AiChatPage({ developerMode = false }: { developerMode?: 
                 <strong>{conversation.title}</strong>
                 <small>{formatConversationDate(conversation.updatedAt)} · {conversation.messageCount} 条</small>
               </button>
-              <button
-                type="button"
-                className={styles.historyDelete}
-                onClick={() => void deleteConversation(conversation.id)}
-                aria-label={`删除会话：${conversation.title}`}
-                title="删除会话"
-              >
-                ×
-              </button>
+              <ItemMenu
+                label={`更多操作：${conversation.title}`}
+                actions={[
+                  {
+                    key: "move",
+                    label: "移动到项目…",
+                    // 一个项目都没有时移动没有意义，但仍然显示出来：
+                    // 直接隐藏会让人以为这个功能不存在。
+                    disabled: projects.length === 0 && !conversation.projectId,
+                    onSelect: () => setMovingConversation(conversation),
+                  },
+                  {
+                    key: "delete",
+                    label: "删除会话",
+                    danger: true,
+                    onSelect: () => void deleteConversation(conversation.id),
+                  },
+                ]}
+              />
             </div>
           ))}
         </nav>
@@ -925,10 +1086,16 @@ export default function AiChatPage({ developerMode = false }: { developerMode?: 
             <ThemeToggle />
             <span>切换明暗主题</span>
           </div>
-          {historyEnabled && conversations.length > 0 ? (
-            <button type="button" onClick={() => void clearConversations()}>{developerMode ? "清空开发者记录" : "清空我的记录"}</button>
-          ) : null}
-          <span>{developerMode ? "不会自动过期，可在这里手动清理。" : "记录会自动过期，管理员也可清理。"}</span>
+          {/*
+            这里原来有个「清空全部记录」按钮，已移除：它紧挨着主题切换键，
+            误触一次就抹掉全部历史，而正常使用几乎不需要一键全删——
+            要删就在每条会话的「⋯」菜单里逐条删。
+          */}
+          <span>
+            {developerMode
+              ? "不会自动过期。要删除请用每条会话的「⋯」菜单。"
+              : "记录会自动过期，管理员也可清理。"}
+          </span>
         </div>
       </aside>
 
@@ -947,7 +1114,14 @@ export default function AiChatPage({ developerMode = false }: { developerMode?: 
           </button>
           <div className={styles.conversationTitle}>
             <strong>{activeConversation?.title || "新对话"}</strong>
-            <span>{sending ? "正在生成回答" : historyEnabled ? developerMode ? "开发者会话永久保存" : "对话会自动保存" : "临时对话"}</span>
+            <span>
+              {/*
+                手机上侧栏是收起的，看不到项目选中态。项目指令会实际影响回答，
+                所以必须在这里标出来，否则用户无法解释「为什么答得跟平时不一样」。
+              */}
+              {activeProject ? <b className={styles.projectBadge}>{activeProject.name}</b> : null}
+              {sending ? "正在生成回答" : historyEnabled ? developerMode ? "开发者会话永久保存" : "对话会自动保存" : "临时对话"}
+            </span>
           </div>
           <div className={styles.topbarActions}>
             {developerMode ? (
@@ -1212,6 +1386,83 @@ export default function AiChatPage({ developerMode = false }: { developerMode?: 
           <p>AI 可能会犯错，重要信息请自行核实。</p>
         </footer>
       </section>
+
+      {projectPanel ? (
+        <ProjectPanel
+          project={projectPanel}
+          developerMode={developerMode}
+          onClose={() => setProjectPanel(null)}
+          onSaved={(saved) => {
+            setProjects((current) => current.map((item) => (item.id === saved.id ? saved : item)));
+          }}
+        />
+      ) : null}
+
+      {movingConversation ? (
+        <MoveToProjectDialog
+          conversation={movingConversation}
+          projects={projects}
+          onCancel={() => setMovingConversation(null)}
+          onConfirm={(projectId) => void moveConversationToProject(movingConversation.id, projectId)}
+        />
+      ) : null}
     </main>
+  );
+}
+
+/**
+ * 「移动到项目」选择框。
+ *
+ * 单独一个组件是为了让选中项用 useState 初始化即可——
+ * 每次打开都是新挂载，不需要 effect 同步 props。
+ */
+function MoveToProjectDialog({
+  conversation,
+  projects,
+  onCancel,
+  onConfirm,
+}: {
+  conversation: ConversationSummary;
+  projects: ProjectSummary[];
+  onCancel: () => void;
+  onConfirm: (projectId: string) => void;
+}) {
+  const [selected, setSelected] = useState(conversation.projectId || "");
+
+  useDialogDismiss(onCancel);
+
+  return (
+    <div className={styles.projectPanelBackdrop} role="presentation" onClick={onCancel}>
+      <div
+        className={styles.moveDialog}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`移动会话：${conversation.title}`}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <strong>移动到项目</strong>
+        <p className={styles.projectHint}>{conversation.title}</p>
+        <label className={styles.projectField}>
+          <span>目标项目</span>
+          <select value={selected} onChange={(event) => setSelected(event.target.value)}>
+            <option value="">未分组</option>
+            {projects.map((project) => (
+              <option value={project.id} key={project.id}>{project.name}</option>
+            ))}
+          </select>
+        </label>
+        <div className={styles.projectPanelFoot}>
+          <button type="button" onClick={onCancel}>取消</button>
+          <button
+            type="button"
+            className={styles.projectSaveButton}
+            disabled={selected === (conversation.projectId || "")}
+            onClick={() => onConfirm(selected)}
+          >
+            移动
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
