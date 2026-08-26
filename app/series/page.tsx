@@ -5,7 +5,8 @@ import { SiteFrame } from "@/app/components/site-frame";
 import { ScrollReveal } from "@/app/components/scroll-reveal";
 import { SafeImage } from "@/app/components/safe-image";
 import { getAllSeries, getPublishedPosts, type Post } from "@/lib/content";
-import { getAllSeriesMeta, SERIES_CATEGORIES } from "@/lib/series";
+import { getAllSeriesMeta } from "@/lib/series-db";
+import { SERIES_CATEGORIES } from "@/lib/series";
 import styles from "./series-page.module.css";
 
 export const dynamic = "force-dynamic";
