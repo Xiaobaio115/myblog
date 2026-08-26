@@ -54,59 +54,6 @@ export const worldLogs = [
   "未来：加入更完整的旅行地图、留言板和项目页",
 ];
 
-export const travelDestinations = [
-  {
-    id: "yunnan-dali",
-    name: "云南 · 大理",
-    date: "2025.08",
-    desc: "苍山、洱海、古城和白云，每一处都适合慢慢走。",
-    cover: "",
-    photos: [] as string[],
-    tags: ["古城", "洱海", "苍山", "白族文化"],
-    sections: [] as { caption: string; photos: string[] }[],
-  },
-  {
-    id: "sichuan-chengdu",
-    name: "四川 · 成都",
-    date: "2025.05",
-    desc: "宽窄巷子、火锅、熊猫，以及一种不慌不忙的生活节奏。",
-    cover: "",
-    photos: [] as string[],
-    tags: ["火锅", "宽窄巷子", "熊猫", "慢生活"],
-    sections: [] as { caption: string; photos: string[] }[],
-  },
-  {
-    id: "tibet-lhasa",
-    name: "西藏 · 拉萨",
-    date: "2024.07",
-    desc: "离天空很近的地方。高原、寺庙和转经筒让人重新理解生活。",
-    cover: "",
-    photos: [] as string[],
-    tags: ["布达拉宫", "高原", "藏族文化", "纳木错"],
-    sections: [] as { caption: string; photos: string[] }[],
-  },
-  {
-    id: "zhejiang-hangzhou",
-    name: "浙江 · 杭州",
-    date: "2024.03",
-    desc: "西湖、灵隐寺和一杯龙井，是江南的温柔切面。",
-    cover: "",
-    photos: [] as string[],
-    tags: ["西湖", "龙井", "灵隐寺", "江南"],
-    sections: [] as { caption: string; photos: string[] }[],
-  },
-  {
-    id: "guangdong-zhuhai",
-    name: "广东 · 珠海",
-    date: "2023.12",
-    desc: "干净安静的海滨城市，适合看海风、长桥和日落。",
-    cover: "",
-    photos: [] as string[],
-    tags: ["海滨", "情侣路", "港珠澳大桥", "海鲜"],
-    sections: [] as { caption: string; photos: string[] }[],
-  },
-];
-
 
 // TODO(上线前): 在 /admin 或此文件中补上真实的家乡地区。目前 details[0] 是中性占位。
 export const hometownContent = {

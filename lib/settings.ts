@@ -2,7 +2,7 @@ import { getDb } from "@/lib/mongodb";
 import { resolveNavItems, type NavItemSetting } from "@/lib/nav-items";
 import { profile as defaultProfile, socials as defaultSocials, skills as defaultSkills, education as defaultEducation } from "@/data/profile";
 import { projects as defaultProjects } from "@/data/projects";
-import { travelDestinations as defaultTravel, worldSections as defaultWorldSections } from "@/data/world";
+import { worldSections as defaultWorldSections } from "@/data/world";
 
 export type ProfileSetting = {
   name: string;
@@ -21,7 +21,6 @@ export type SkillItem = string | { name: string; iconUrl?: string };
 export type SkillGroup = { group: string; items: SkillItem[] };
 export type EducationItem = { time: string; title: string; desc: string; tags: string[] };
 export type ProjectItem = { title: string; status: string; desc: string; stack: string[]; href: string };
-export type TravelItem = { id: string; name: string; date: string; desc: string; cover: string; coverPosition?: string; photos: string[]; tags: string[]; sections: ContentSection[] };
 export type ContentSection = { caption: string; photos: string[]; tag?: string };
 export type WorldSectionSetting = { id: string; eyebrow: string; title: string; desc: string; cover: string; icon: string; tags: string[]; photos: string[]; sections: ContentSection[] };
 export type HomeHeroSlideSetting = {
@@ -74,7 +73,6 @@ export type AllSettings = {
   skills: SkillGroup[];
   education: EducationItem[];
   projects: ProjectItem[];
-  travel: TravelItem[];
   world: WorldSectionSetting[];
   homeHero: HomeHeroSlideSetting[];
   nav: NavItemSetting[];
@@ -120,11 +118,6 @@ export async function getEducationSetting(): Promise<EducationItem[]> {
 export async function getProjectsSetting(): Promise<ProjectItem[]> {
   return get("projects", defaultProjects);
 }
-
-export async function getTravelSetting(): Promise<TravelItem[]> {
-  return get("travel", defaultTravel);
-}
-
 
 export async function getWorldSectionsSetting(): Promise<WorldSectionSetting[]> {
   const fallback: WorldSectionSetting[] = defaultWorldSections.map((s) => ({

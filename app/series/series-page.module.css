@@ -76,3 +76,50 @@
   }
 }
 @media (prefers-reduced-motion: reduce) { .seriesImageElement, .openLink span { transition: none; } }
+
+/* Category filter tabs */
+.categoryTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 1.5rem 0 0.5rem;
+}
+
+.categoryTab {
+  display: inline-block;
+  padding: 0.45rem 1.1rem;
+  border: 1px solid var(--border, rgba(255,255,255,.12));
+  border-radius: 999px;
+  color: var(--text-soft, #9b9ba5);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.categoryTab:hover {
+  color: #fff;
+  border-color: rgba(255,255,255,.3);
+}
+
+.categoryTabActive {
+  background: #f19ac2;
+  border-color: #f19ac2;
+  color: #0b0c10;
+}
+
+.categoryTabActive:hover {
+  color: #0b0c10;
+  background: #f4aed0;
+  border-color: #f4aed0;
+}
+
+.categoryBadge {
+  display: inline-block;
+  padding: 0.12rem 0.55rem;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.5;
+}

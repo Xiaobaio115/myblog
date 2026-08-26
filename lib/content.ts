@@ -1,5 +1,11 @@
 import { getDb, isMongoConfigurationError } from "@/lib/mongodb";
 
+export type ContentBlock = {
+  caption: string;
+  photos: string[];
+  tag?: string;
+};
+
 export type Post = {
   _id: string;
   title: string;
@@ -14,6 +20,7 @@ export type Post = {
   views?: number;
   published?: boolean;
   isPrivate?: boolean;
+  contentBlocks?: ContentBlock[];
   createdAt?: Date | string;
   updatedAt?: Date | string;
 };
@@ -107,6 +114,13 @@ function mapPost(document: RawDocument): Post {
         : Number(document.views ?? 0),
     published: document.published !== false,
     isPrivate: Boolean(document.isPrivate),
+    contentBlocks: Array.isArray(document.contentBlocks)
+      ? (document.contentBlocks as RawDocument[]).map((block) => ({
+          caption: block.caption ? String(block.caption) : "",
+          photos: Array.isArray(block.photos) ? block.photos.map((p) => String(p)).filter(Boolean) : [],
+          tag: block.tag ? String(block.tag) : undefined,
+        }))
+      : undefined,
     createdAt:
       document.createdAt instanceof Date || typeof document.createdAt === "string"
         ? document.createdAt

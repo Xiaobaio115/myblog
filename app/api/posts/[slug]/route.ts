@@ -184,6 +184,25 @@ export async function PATCH(request: Request, { params }: RouteProps) {
     if (body.published !== undefined) patch.published = body.published !== false;
     if (body.isPrivate !== undefined) patch.isPrivate = Boolean(body.isPrivate);
 
+    if (body.contentBlocks !== undefined) {
+      if (
+        body.contentBlocks === null ||
+        (Array.isArray(body.contentBlocks) && body.contentBlocks.length === 0)
+      ) {
+        unset.contentBlocks = "";
+      } else if (Array.isArray(body.contentBlocks)) {
+        patch.contentBlocks = (body.contentBlocks as Record<string, unknown>[]).map(
+          (block) => ({
+            caption: String(block.caption ?? "").trim(),
+            photos: Array.isArray(block.photos)
+              ? block.photos.map((p: unknown) => String(p).trim()).filter(Boolean)
+              : [],
+            ...(block.tag ? { tag: String(block.tag).trim() } : {}),
+          })
+        );
+      }
+    }
+
     const resolvedNextSlug = (patch.slug as string | undefined) ?? currentSlug;
     patch.updatedAt = new Date();
 

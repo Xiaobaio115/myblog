@@ -13,6 +13,8 @@ import {
   saveDraft,
   type PostFormShape,
 } from "@/app/admin/posts/post-form-utils";
+import { ContentBlocksEditor } from "@/app/admin/posts/content-blocks-editor";
+import type { ContentBlock } from "@/lib/content";
 import type { PostVisit } from "@/lib/content";
 import { adminFetch, getAdminPassword } from "@/lib/admin-api";
 import styles from "../post-editor-form.module.css";
@@ -30,6 +32,7 @@ type EditablePost = {
   views?: number;
   published?: boolean;
   isPrivate?: boolean;
+  contentBlocks?: ContentBlock[];
 };
 
 type EditorProps = {
@@ -41,6 +44,7 @@ type EditorProps = {
 type EditorForm = PostFormShape & {
   series: string;
   seriesOrder: string;
+  contentBlocks: ContentBlock[];
 };
 
 function formatVisitTime(value?: Date | string) {
@@ -83,6 +87,7 @@ export function PostEditor({
       series: post.series || "",
       seriesOrder:
         typeof post.seriesOrder === "number" ? String(post.seriesOrder) : "",
+      contentBlocks: post.contentBlocks || [],
     }),
     [post]
   );
@@ -155,6 +160,7 @@ export function PostEditor({
               : null,
           published,
           isPrivate,
+          contentBlocks: form.contentBlocks,
         },
         fallbackError: "保存文章失败。",
       });
@@ -372,6 +378,14 @@ export function PostEditor({
           <p>支持 Markdown 与实时预览</p>
         </div>
         <MarkdownEditor value={form.content} onChange={(content) => setForm({ ...form, content })} disabled={saving || deleting} />
+      </section>
+
+      <section className={styles.formSection} aria-labelledby="edit-post-blocks">
+        <ContentBlocksEditor
+          blocks={form.contentBlocks}
+          onChange={(contentBlocks) => setForm({ ...form, contentBlocks })}
+          disabled={saving || deleting}
+        />
       </section>
 
       <div className={styles.actionBar}>

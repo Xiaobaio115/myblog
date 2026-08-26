@@ -30,8 +30,8 @@ const SECTION_META: Record<
     fallbackCover: "/poetic-images/world-school.jpg",
   },
   travel: {
-    href: "/world/travel",
-    cta: "进入旅行探索",
+    href: "/series?category=travel",
+    cta: "进入旅行系列",
     tone: "tone-travel",
     fallbackCover: "/poetic-images/hero-home.jpg",
   },

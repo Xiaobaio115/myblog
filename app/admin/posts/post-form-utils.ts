@@ -1,3 +1,5 @@
+import type { ContentBlock } from "@/lib/content";
+
 export type PostFormShape = {
   title: string;
   slug: string;
@@ -5,6 +7,7 @@ export type PostFormShape = {
   tags: string;
   coverUrl: string;
   content: string;
+  contentBlocks?: ContentBlock[];
 };
 
 type ValidatablePostForm = PostFormShape & {

@@ -13,6 +13,8 @@ import {
   saveDraft,
   type PostFormShape,
 } from "@/app/admin/posts/post-form-utils";
+import { ContentBlocksEditor } from "@/app/admin/posts/content-blocks-editor";
+import type { ContentBlock } from "@/lib/content";
 import { adminFetch, getAdminPassword } from "@/lib/admin-api";
 import styles from "../post-editor-form.module.css";
 
@@ -21,6 +23,7 @@ const DRAFT_KEY = "admin_post_draft_new";
 type NewPostForm = PostFormShape & {
   series: string;
   seriesOrder: string;
+  contentBlocks: ContentBlock[];
 };
 
 const initialForm: NewPostForm = {
@@ -32,6 +35,7 @@ const initialForm: NewPostForm = {
   content: "",
   series: "",
   seriesOrder: "",
+  contentBlocks: [],
 };
 
 export default function AdminNewPostPage() {
@@ -115,6 +119,7 @@ export default function AdminNewPostPage() {
             form.series.trim() && form.seriesOrder
               ? Number(form.seriesOrder)
               : null,
+          contentBlocks: form.contentBlocks,
           published: true,
           isPrivate,
         },
@@ -224,6 +229,14 @@ export default function AdminNewPostPage() {
             <p>支持 Markdown 与实时预览</p>
           </div>
           <MarkdownEditor value={form.content} onChange={(content) => setForm({ ...form, content })} disabled={submitting} />
+        </section>
+
+        <section className={styles.formSection} aria-labelledby="new-post-blocks">
+          <ContentBlocksEditor
+            blocks={form.contentBlocks}
+            onChange={(contentBlocks) => setForm({ ...form, contentBlocks })}
+            disabled={submitting}
+          />
         </section>
 
         <div className={styles.actionBar}>

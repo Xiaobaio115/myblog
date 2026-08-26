@@ -49,6 +49,15 @@ const adminPassword = request.headers.get("x-admin-password");
       rawSeriesOrder === undefined || rawSeriesOrder === null || rawSeriesOrder === ""
         ? undefined
         : Number(rawSeriesOrder);
+    const contentBlocks = Array.isArray(body.contentBlocks)
+      ? (body.contentBlocks as Record<string, unknown>[]).map((block) => ({
+          caption: String(block.caption ?? "").trim(),
+          photos: Array.isArray(block.photos)
+            ? block.photos.map((p: unknown) => String(p).trim()).filter(Boolean)
+            : [],
+          ...(block.tag ? { tag: String(block.tag).trim() } : {}),
+        }))
+      : undefined;
     const published = body.published !== false;
     const isPrivate = Boolean(body.isPrivate);
 
@@ -103,6 +112,7 @@ const adminPassword = request.headers.get("x-admin-password");
       tags,
       ...(series ? { series } : {}),
       ...(series && seriesOrder !== undefined ? { seriesOrder } : {}),
+      ...(contentBlocks ? { contentBlocks } : {}),
       published,
       isPrivate,
       views: 0,

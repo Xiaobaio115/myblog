@@ -5,7 +5,6 @@ import {
   getSkillsSetting,
   getEducationSetting,
   getProjectsSetting,
-  getTravelSetting,
   getWorldSectionsSetting,
   getHomeHeroSetting,
   getNavSetting,
@@ -28,19 +27,18 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "密码错误。" }, { status: 401 });
     }
 
-    const [profile, socials, skills, education, projects, travel, world, homeHero, nav] = await Promise.all([
+    const [profile, socials, skills, education, projects, world, homeHero, nav] = await Promise.all([
       getProfileSetting(),
       getSocialsSetting(),
       getSkillsSetting(),
       getEducationSetting(),
       getProjectsSetting(),
-      getTravelSetting(),
       getWorldSectionsSetting(),
       getHomeHeroSetting(),
       getNavSetting(),
     ]);
 
-    return NextResponse.json({ profile, socials, skills, education, projects, travel, world, homeHero, nav });
+    return NextResponse.json({ profile, socials, skills, education, projects, world, homeHero, nav });
   } catch (error) {
     console.error("GET /api/settings error:", error);
     return NextResponse.json({ error: "读取设置失败。" }, { status: 500 });
@@ -62,7 +60,7 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const { key, value } = body as { key: string; value: unknown };
 
-    const allowed = ["profile", "socials", "skills", "education", "projects", "travel", "world", "homeHero", "nav"];
+    const allowed = ["profile", "socials", "skills", "education", "projects", "world", "homeHero", "nav"];
     if (!allowed.includes(key)) {
       return NextResponse.json({ error: "不支持的设置 key。" }, { status: 400 });
     }

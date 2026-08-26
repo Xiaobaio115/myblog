@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAdminPosts, getAllSeries, type Post } from "@/lib/content";
+import { SeriesMetaEditor } from "./series-meta-editor";
 import styles from "./series-admin.module.css";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,8 @@ export default async function AdminSeriesPage() {
 
   return (
     <main className="admin-dashboard">
+      <SeriesMetaEditor />
+
       <div className="admin-page-head">
         <div>
           <div className="admin-badge">SERIES</div>
