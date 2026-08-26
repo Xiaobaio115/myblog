@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { verifyAdminRequest } from "@/lib/admin-session";
 import {
   createDeveloperConversation,
-  deleteAllDeveloperConversations,
   listDeveloperConversations,
 } from "@/lib/ai-developer-conversations";
 import { getProject } from "@/lib/ai-projects";
@@ -68,13 +67,9 @@ export async function POST(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
-  if (!verifyAdminRequest(request)) return unauthorized();
-  try {
-    const deletedCount = await deleteAllDeveloperConversations(await getDb());
-    return NextResponse.json({ success: true, deletedCount });
-  } catch (error) {
-    console.error("DELETE /api/ai-developer-conversations error:", error);
-    return NextResponse.json({ error: "清空开发者会话失败。" }, { status: 500 });
-  }
-}
+/*
+  这里原来有一个 DELETE，用来一次清空全部开发者会话。已移除，理由同访客侧。
+  开发者会话不会自动过期，是长期积累的记录，一次误调用的代价比访客侧更高。
+  站长确实需要清空时走 /api/ai-conversations/admin：那里要求密码，
+  并且必须显式指明分组，少传或拼错会报 400 而不是按默认组删。
+*/

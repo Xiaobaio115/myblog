@@ -3,6 +3,7 @@ import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 import { ObjectId, type Db, type WithId } from "mongodb";
 import { isSafeInternalHref } from "@/lib/internal-href";
+import { prepareContentForStorage } from "@/lib/ai-image-output";
 import type { AiMode } from "@/lib/ai-behavior-settings";
 
 export const AI_VISITOR_COOKIE = "lqpp_ai_visitor";
@@ -182,7 +183,10 @@ export function normalizeStoredMessages(value: unknown, maxUserMessageLength: nu
     const maxLength = candidate.role === "user"
       ? Math.min(MAX_STORED_USER_MESSAGE_LENGTH, Math.max(50, maxUserMessageLength))
       : MAX_ASSISTANT_MESSAGE_LENGTH;
-    const content = String(candidate.content || "").slice(0, maxLength);
+    // 先处理内联图片再截断：base64 被从中间切断就是一张坏图，
+    // 而且断的位置在正文里看不出来。理由详见 prepareContentForStorage。
+    const content = prepareContentForStorage(String(candidate.content || ""), maxLength)
+      .slice(0, maxLength);
     if (!content.trim()) return [];
     const parsedDate = new Date(String(candidate.createdAt || ""));
     const createdAt = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
@@ -395,10 +399,11 @@ export async function deleteVisitorConversation(db: Db, id: string, visitorHash:
   return result.deletedCount > 0;
 }
 
-export async function deleteAllVisitorConversations(db: Db, visitorHash: string) {
-  const result = await collection(db).deleteMany({ visitorHash });
-  return result.deletedCount;
-}
+/*
+  这里原来有 deleteAllVisitorConversations，随「一次清空全部」的接口一并删除。
+  站长清理访客会话用 deleteAllAdminConversations，那条路径需要密码。
+  留着一个没人调用的批量删除导出，迟早会被当成现成工具再接上去。
+*/
 
 export async function listAdminConversations(db: Db, limit = 100) {
   await ensureConversationIndexes(db);

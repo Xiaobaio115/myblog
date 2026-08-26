@@ -3,7 +3,6 @@ import { getAiBehavior, type AiMode } from "@/lib/ai-behavior-settings";
 import {
   attachVisitorCookie,
   createVisitorConversation,
-  deleteAllVisitorConversations,
   getConversationPolicy,
   getVisitorIdentity,
   listVisitorConversations,
@@ -87,15 +86,10 @@ export async function POST(request: Request) {
   }
 }
 
-export async function DELETE(request: Request) {
-  try {
-    const visitor = getVisitorIdentity(request);
-    if (!visitor) return NextResponse.json({ success: true, deletedCount: 0 });
-    const db = await getDb();
-    const deletedCount = await deleteAllVisitorConversations(db, visitor.hash);
-    return NextResponse.json({ success: true, deletedCount });
-  } catch (error) {
-    console.error("DELETE /api/ai-conversations error:", error);
-    return NextResponse.json({ error: "清空会话失败。" }, { status: 500 });
-  }
-}
+/*
+  这里原来有一个 DELETE，用来一次清空当前访客的全部会话。已连同前端入口一并移除：
+  它没有任何不可替代的用途——逐条删走 DELETE /api/ai-conversations/[id]，
+  站长清理走带密码的 /api/ai-conversations/admin——而留着就等于留了一个
+  无需确认、一次调用即抹掉全部历史的端点。按钮删掉但接口还在，只是把误触
+  从「点错」变成了「请求错」，风险并没有消失。
+*/

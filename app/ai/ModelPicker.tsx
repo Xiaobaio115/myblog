@@ -156,6 +156,7 @@ export function ModelPicker({
           )}
         </span>
         {selected?.supportsVision ? <em className={styles.modelBadge}>视觉</em> : null}
+        {selected?.supportsImageOutput ? <em className={styles.modelBadge}>生图</em> : null}
         {selected?.supportsReasoning ? <em className={styles.modelBadge}>思考</em> : null}
         <b className={styles.modelPickerCaret} aria-hidden="true">▾</b>
       </button>
@@ -206,8 +207,9 @@ export function ModelPicker({
                     </span>
                     <span className={styles.modelPickerOptionTags}>
                       {model.supportsVision ? <em className={styles.modelBadge}>视觉</em> : null}
+                      {model.supportsImageOutput ? <em className={styles.modelBadge}>生图</em> : null}
                       {model.supportsReasoning ? <em className={styles.modelBadge}>思考</em> : null}
-                      {!model.supportsVision && !model.supportsReasoning
+                      {!model.supportsVision && !model.supportsImageOutput && !model.supportsReasoning
                         ? <em className={styles.modelBadgeMuted}>纯文本</em>
                         : null}
                     </span>

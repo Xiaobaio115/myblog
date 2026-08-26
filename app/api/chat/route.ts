@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { put } from "@vercel/blob";
 import { after, NextResponse } from "next/server";
 import { getDb, isMongoConfigured } from "@/lib/mongodb";
 import { resolveProjectOwner } from "@/lib/ai-project-owner";
@@ -11,6 +13,16 @@ import { getPublicAiModels, resolveAiModel } from "@/lib/ai-provider-settings";
 import { readSseEvents } from "@/lib/ai-sse";
 import { verifyAdminRequest } from "@/lib/admin-session";
 import { describeFailure, type ProviderFailure } from "@/lib/ai-error-messages";
+import {
+  generatedImageFileName,
+  generatedImageKey,
+  MAX_IMAGES_PER_REPLY,
+  MAX_INLINE_IMAGE_BYTES,
+  normalizeGeneratedImage,
+  stripInlineImageData,
+  toDataUrl,
+  type GeneratedImage,
+} from "@/lib/ai-image-output";
 import {
   buildAttachmentContext,
   normalizeAttachments,
@@ -210,7 +222,9 @@ function normalizeMessages(
 ) {
   const normalized = messages.slice(-maxHistory).map<ChatMessage>((message) => ({
     role: message.role === "assistant" ? "assistant" : "user",
-    content: String(message.content || "").slice(0, maxLength),
+    // 内联图片在这里剥掉，理由见 stripInlineImageData：
+    // 生成的图以 markdown 留在正文里，带着 base64 进历史会逐轮累积，把上下文吃光。
+    content: stripInlineImageData(String(message.content || "")).slice(0, maxLength),
   }));
   if (images.length > 0) {
     const lastUserIndex = normalized.findLastIndex((message) => message.role === "user");
@@ -228,14 +242,42 @@ function normalizeMessages(
   return normalized;
 }
 
-function normalizeProviderImage(value: unknown) {
-  if (typeof value === "string" && /^https:\/\//i.test(value)) return value;
-  if (!value || typeof value !== "object") return "";
-  const candidate = value as { url?: unknown; image_url?: { url?: unknown } | string };
-  const url = typeof candidate.image_url === "string"
-    ? candidate.image_url
-    : candidate.image_url?.url || candidate.url;
-  return typeof url === "string" && /^https:\/\//i.test(url) ? url : "";
+/**
+ * 把生成的图片落到 Blob，返回可长期访问的 https 地址。
+ *
+ * 不直接把 base64 塞给前端：图片会以 markdown 的形式存进会话正文，
+ * 一张 1MB 的图 base64 后约 1.37MB，几张就能把会话文档推向 MongoDB 的 16MB 上限，
+ * 而且每次读取会话都要把这堆字节重新传一遍。
+ *
+ * 未配置 Blob（自托管场景）时小图退回内联，大图放弃并说明原因——
+ * 这里沿用附件上传的既有口径，保证功能不完全失效。
+ */
+type PersistedImage =
+  | { ok: true; url: string }
+  | { ok: false; notice: string };
+
+async function persistGeneratedImage(image: GeneratedImage): Promise<PersistedImage> {
+  if (image.kind === "url") return { ok: true, url: image.url };
+  if (!process.env.BLOB_READ_WRITE_TOKEN) {
+    if (image.bytes <= MAX_INLINE_IMAGE_BYTES) return { ok: true, url: toDataUrl(image) };
+    return {
+      ok: false,
+      notice: "模型生成了一张图片，但服务端未配置 BLOB_READ_WRITE_TOKEN，图片体积过大无法内联显示。",
+    };
+  }
+  try {
+    const blob = await put(
+      generatedImageFileName(image, `${Date.now()}-${randomUUID().slice(0, 8)}`),
+      Buffer.from(image.base64, "base64"),
+      { access: "public", addRandomSuffix: true, contentType: image.mediaType }
+    );
+    return { ok: true, url: blob.url };
+  } catch (error) {
+    console.error("persist generated image failed:", error);
+    // 传不上去也别丢图：小图还能内联，总比用户什么都看不到好。
+    if (image.bytes <= MAX_INLINE_IMAGE_BYTES) return { ok: true, url: toDataUrl(image) };
+    return { ok: false, notice: "模型生成了一张图片，但上传图床失败，未能显示。" };
+  }
 }
 
 function parseProviderDelta(value: unknown) {
@@ -247,6 +289,9 @@ function parseProviderDelta(value: unknown) {
         reasoning?: unknown;
         thinking?: unknown;
         images?: unknown;
+        // Gemini 兼容层把生成的图片挂在这里，不走 content 数组。
+        inlineData?: unknown;
+        inline_data?: unknown;
       };
       finish_reason?: unknown;
     }>;
@@ -256,29 +301,41 @@ function parseProviderDelta(value: unknown) {
   // 供应商用 finish_reason 说明本次生成为何结束：length 表示撞上 max_tokens 被截断。
   const finishReason = typeof choice?.finish_reason === "string" ? choice.finish_reason : "";
   let content = "";
-  const images: string[] = [];
+  const images: GeneratedImage[] = [];
+  const seen = new Set<string>();
+  const collect = (value: unknown) => {
+    const image = normalizeGeneratedImage(value);
+    if (!image) return;
+    const key = generatedImageKey(image);
+    if (seen.has(key)) return;
+    seen.add(key);
+    images.push(image);
+  };
 
   if (typeof delta.content === "string") {
     content = delta.content;
   } else if (Array.isArray(delta.content)) {
     for (const part of delta.content) {
       if (!part || typeof part !== "object") continue;
-      const typedPart = part as { type?: unknown; text?: unknown; image_url?: unknown; url?: unknown };
+      const typedPart = part as {
+        type?: unknown;
+        text?: unknown;
+        image_url?: unknown;
+        url?: unknown;
+        inlineData?: unknown;
+        inline_data?: unknown;
+        b64_json?: unknown;
+      };
       if (typedPart.type === "text" && typeof typedPart.text === "string") content += typedPart.text;
-      const image = normalizeProviderImage(typedPart.image_url || typedPart.url);
-      if (image) images.push(image);
+      collect(typedPart.image_url ?? typedPart.url ?? typedPart.inlineData ?? typedPart.inline_data ?? typedPart);
     }
   }
 
   const reasoningValue = delta.reasoning_content ?? delta.reasoning ?? delta.thinking;
   const reasoning = typeof reasoningValue === "string" ? reasoningValue : "";
-  if (Array.isArray(delta.images)) {
-    for (const imageValue of delta.images) {
-      const image = normalizeProviderImage(imageValue);
-      if (image) images.push(image);
-    }
-  }
-  return { content, reasoning, images: Array.from(new Set(images)).slice(0, 4), finishReason };
+  if (Array.isArray(delta.images)) delta.images.forEach(collect);
+  collect(delta.inlineData ?? delta.inline_data);
+  return { content, reasoning, images: images.slice(0, MAX_IMAGES_PER_REPLY), finishReason };
 }
 
 export async function POST(request: Request) {
@@ -355,6 +412,7 @@ export async function POST(request: Request) {
     if (images.length > 0 && !selectedModel?.supportsVision) {
       return NextResponse.json({ error: "当前模型未开启图片理解能力，请选择带“视觉”标记的模型。" }, { status: 400 });
     }
+    const wantsImageOutput = selectedModel?.supportsImageOutput === true;
     const contentContext = !developerMode && behavior.promptControls.useSiteContext
       ? await buildAiContentContext(userText, behavior.capabilities, {
           currentPath: getPagePath(pageUrl),
@@ -615,6 +673,10 @@ export async function POST(request: Request) {
             max_tokens: behavior.maxOutputTokens,
             temperature: behavior.temperature,
           }),
+          // 想要图片就得明确要求。缺了这一项，即便模型本身会画图，
+          // OpenAI 兼容层也只按纯文本返回——这正是之前「配了多模态却从来不出图」的根因。
+          // 只在后台勾了「能生图」时才带上：不支持的模型收到这个字段多数直接报 400。
+          ...(wantsImageOutput ? { modalities: ["text", "image"] } : {}),
           stream: true,
         }),
       });
@@ -703,7 +765,10 @@ export async function POST(request: Request) {
           streamController.enqueue(encoder.encode(encodeSseEvent(event, data)));
         };
         let truncatedByLimit = false;
-        const processProviderData = (data: unknown) => {
+        let imageCount = 0;
+        // 改成 async 是为了等 Blob 上传完再发地址。必须逐个 await 而不是并发：
+        // 事件顺序就是正文顺序，抢跑会让图片插到句子中间。
+        const processProviderData = async (data: unknown) => {
           const delta = parseProviderDelta(data);
           if (delta.finishReason === "length") truncatedByLimit = true;
           if (delta.reasoning && wantsSse) sendEvent("reasoning", { delta: delta.reasoning });
@@ -711,9 +776,20 @@ export async function POST(request: Request) {
             if (wantsSse) sendEvent("content", { delta: delta.content });
             else streamController.enqueue(encoder.encode(delta.content));
           }
-          for (const imageUrl of delta.images) {
-            if (wantsSse) sendEvent("image", { url: imageUrl });
-            else streamController.enqueue(encoder.encode(`\n\n![AI 生成图片](${imageUrl})\n\n`));
+          for (const image of delta.images) {
+            if (imageCount >= MAX_IMAGES_PER_REPLY) break;
+            imageCount += 1;
+            const persisted = await persistGeneratedImage(image);
+            if (!persisted.ok) {
+              // 落不下来就明确说出来。静默丢弃会让用户以为模型没画，
+              // 而实际上图已经生成、只是没能显示，两者的处理方式完全不同。
+              const notice = `\n\n> ${persisted.notice}\n\n`;
+              if (wantsSse) sendEvent("content", { delta: notice });
+              else streamController.enqueue(encoder.encode(notice));
+              continue;
+            }
+            if (wantsSse) sendEvent("image", { url: persisted.url });
+            else streamController.enqueue(encoder.encode(`\n\n![AI 生成图片](${persisted.url})\n\n`));
           }
         };
 
@@ -737,11 +813,13 @@ export async function POST(request: Request) {
             buffer += decoder.decode(value, { stream: true });
             const parsed = readSseEvents(buffer);
             buffer = parsed.remainder;
-            parsed.events.forEach((event) => processProviderData(event.data));
+            for (const event of parsed.events) await processProviderData(event.data);
           }
 
           buffer += decoder.decode();
-          readSseEvents(buffer, { flush: true }).events.forEach((event) => processProviderData(event.data));
+          for (const event of readSseEvents(buffer, { flush: true }).events) {
+            await processProviderData(event.data);
+          }
 
           // 撞上输出上限时明确告知前端，前端据此显示「继续」入口，
           // 避免用户看到一句话说到一半就停、却不知道发生了什么。

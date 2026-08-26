@@ -955,6 +955,23 @@
   outline: none;
 }
 
+/* 带文字的返回入口：比圆形图标按钮更宽，所以自己撑宽度而不是沿用 38px 的方框 */
+.exitLink {
+  display: inline-flex;
+  gap: 6px;
+  width: auto;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.exitLabel {
+  font-size: 0.82rem;
+}
+
 .menuButton {
   display: none;
 }
@@ -1812,6 +1829,16 @@
 
   .menuButton {
     display: inline-grid;
+  }
+
+  /* 窄屏顶栏要同时放菜单键、模型选择、回答模式，没有余量给文字，退回纯图标 */
+  .exitLabel {
+    display: none;
+  }
+
+  .exitLink {
+    width: 38px;
+    padding: 0;
   }
 
   .modeSelect select {

@@ -1,12 +1,14 @@
 import type { ReactNode } from "react";
 import { SiteHeader } from "@/app/components/site-header";
 import { SiteFooter } from "@/app/components/site-footer";
-import { getProfileSetting } from "@/lib/settings";
+import { getProfileSetting, getNavSetting } from "@/lib/settings";
+import { visibleNavItems } from "@/lib/nav-items";
 import { getPublishedPosts, getLatestPhotos } from "@/lib/content";
 
 export async function SiteFrame({ children }: { children: ReactNode }) {
-  const [profile, posts, photos] = await Promise.all([
+  const [profile, nav, posts, photos] = await Promise.all([
     getProfileSetting(),
+    getNavSetting(),
     getPublishedPosts(100),
     getLatestPhotos(999),
   ]);
@@ -14,6 +16,7 @@ export async function SiteFrame({ children }: { children: ReactNode }) {
   return (
     <main className="site-shell">
       <SiteHeader
+        navItems={visibleNavItems(nav)}
         profileName={profile.name}
         profileTagline={profile.tagline}
         profileAvatarUrl={profile.avatarUrl}

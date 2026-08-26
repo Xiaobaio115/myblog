@@ -1,6 +1,7 @@
 import "server-only";
 
 import { ObjectId, type Db, type WithId } from "mongodb";
+import { prepareContentForStorage } from "@/lib/ai-image-output";
 
 const CONVERSATION_COLLECTION = "ai_developer_conversations";
 const MESSAGE_COLLECTION = "ai_developer_messages";
@@ -118,7 +119,10 @@ function normalizeDeveloperMessages(value: unknown) {
     if (!item || typeof item !== "object") return [];
     const candidate = item as Partial<DeveloperChatMessage>;
     if (candidate.role !== "user" && candidate.role !== "assistant") return [];
-    const content = String(candidate.content || "").slice(0, MAX_MESSAGE_LENGTH);
+    // 同访客侧：内联图片要在截断之前处理掉，否则 base64 会断在半个字符上。
+    // 这里的上限是 100 万字符，一张 512KB 的内联图就占掉七成。
+    const content = prepareContentForStorage(String(candidate.content || ""), MAX_MESSAGE_LENGTH)
+      .slice(0, MAX_MESSAGE_LENGTH);
     if (!content.trim()) return [];
     const parsedDate = new Date(String(candidate.createdAt || ""));
     const createdAt = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;

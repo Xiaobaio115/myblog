@@ -15,6 +15,14 @@ export type AiProviderModel = {
   enabled: boolean;
   supportsVision: boolean;
   supportsReasoning: boolean;
+  /**
+   * 能否生成图片。
+   *
+   * 和 supportsVision 是两件事：后者说的是「能看图」（输入），这一项说的是「能画图」（输出）。
+   * 之所以要单独开关而不是自动探测：请求体里要不要带 modalities 只能事先决定，
+   * 而对不支持的模型带上它，多数供应商会直接报 400 把整轮对话打断。
+   */
+  supportsImageOutput: boolean;
 };
 
 export type AiProvider = {
@@ -37,6 +45,7 @@ export type PublicAiModel = {
   providerLabel: string;
   supportsVision: boolean;
   supportsReasoning: boolean;
+  supportsImageOutput: boolean;
 };
 
 export type ResolvedAiModel = PublicAiModel & {
@@ -116,6 +125,7 @@ function normalizeModel(value: Partial<AiProviderModel>): AiProviderModel | null
     enabled: value.enabled !== false,
     supportsVision: value.supportsVision === true,
     supportsReasoning: value.supportsReasoning === true,
+    supportsImageOutput: value.supportsImageOutput === true,
   };
 }
 
@@ -199,6 +209,7 @@ async function getLegacyPool(): Promise<AiProviderPool> {
         enabled: true,
         supportsVision: false,
         supportsReasoning: false,
+        supportsImageOutput: false,
       }],
     }],
   };
@@ -218,6 +229,7 @@ function flattenModels(pool: AiProviderPool): ResolvedAiModel[] {
       providerLabel: provider.label,
       supportsVision: model.supportsVision,
       supportsReasoning: model.supportsReasoning,
+      supportsImageOutput: model.supportsImageOutput,
       providerId: provider.id,
       baseUrl: provider.baseUrl,
       apiKey: provider.apiKey,
@@ -240,6 +252,7 @@ export async function getPublicAiModels() {
       providerLabel: model.providerLabel,
       supportsVision: model.supportsVision,
       supportsReasoning: model.supportsReasoning,
+      supportsImageOutput: model.supportsImageOutput,
     })),
   };
 }
@@ -315,6 +328,7 @@ export function createEmptyAdminProvider(): AdminAiProvider {
       enabled: true,
       supportsVision: false,
       supportsReasoning: false,
+      supportsImageOutput: false,
     }],
   };
 }

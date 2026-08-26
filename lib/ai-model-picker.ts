@@ -11,6 +11,7 @@ export type PickerModel = {
   providerLabel: string;
   supportsVision: boolean;
   supportsReasoning: boolean;
+  supportsImageOutput: boolean;
 };
 
 export type ModelGroup = { provider: string; models: PickerModel[] };

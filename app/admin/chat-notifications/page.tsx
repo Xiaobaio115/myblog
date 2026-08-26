@@ -66,6 +66,7 @@ type AdminAiModel = {
   enabled: boolean;
   supportsVision: boolean;
   supportsReasoning: boolean;
+  supportsImageOutput: boolean;
 };
 
 type AdminAiProvider = {
@@ -247,7 +248,7 @@ export default function ChatNotificationsAdminPage() {
         apiKey: "",
         apiKeyConfigured: false,
         enabled: true,
-        models: [{ id: modelId, label: "新模型", model: "", enabled: true, supportsVision: false, supportsReasoning: false }],
+        models: [{ id: modelId, label: "新模型", model: "", enabled: true, supportsVision: false, supportsReasoning: false, supportsImageOutput: false }],
       }],
     } : current);
   }
@@ -266,7 +267,7 @@ export default function ChatNotificationsAdminPage() {
     setProviderPool((current) => current ? {
       ...current,
       providers: current.providers.map((provider) => provider.id === providerId
-        ? { ...provider, models: [...provider.models, { id: modelId, label: "新模型", model: "", enabled: true, supportsVision: false, supportsReasoning: false }] }
+        ? { ...provider, models: [...provider.models, { id: modelId, label: "新模型", model: "", enabled: true, supportsVision: false, supportsReasoning: false, supportsImageOutput: false }] }
         : provider),
     } : current);
   }
@@ -446,7 +447,8 @@ export default function ChatNotificationsAdminPage() {
                       <label className={styles.field}><span>显示名称<em className={styles.fieldHint}>可选，前台展示用</em></span><input className="admin-input" value={model.label} onChange={(event) => updateProviderModel(provider.id, model.id, { label: event.target.value })} placeholder="留空则与模型名称相同" /></label>
                       <div className={styles.modelFlags}>
                         <label className={styles.compactToggle}><input type="checkbox" checked={model.enabled} onChange={(event) => updateProviderModel(provider.id, model.id, { enabled: event.target.checked })} /><span>前台可选</span></label>
-                        <label className={styles.compactToggle}><input type="checkbox" checked={model.supportsVision} onChange={(event) => updateProviderModel(provider.id, model.id, { supportsVision: event.target.checked })} /><span>支持图片</span></label>
+                        <label className={styles.compactToggle}><input type="checkbox" checked={model.supportsVision} onChange={(event) => updateProviderModel(provider.id, model.id, { supportsVision: event.target.checked })} /><span>能看图</span></label>
+                        <label className={styles.compactToggle}><input type="checkbox" checked={model.supportsImageOutput} onChange={(event) => updateProviderModel(provider.id, model.id, { supportsImageOutput: event.target.checked })} /><span>能生图</span></label>
                         <label className={styles.compactToggle}><input type="checkbox" checked={model.supportsReasoning} onChange={(event) => updateProviderModel(provider.id, model.id, { supportsReasoning: event.target.checked })} /><span>支持思考流</span></label>
                         <button type="button" className={styles.removeModel} onClick={() => removeProviderModel(provider.id, model.id)} disabled={provider.models.length === 1}>删除</button>
                       </div>

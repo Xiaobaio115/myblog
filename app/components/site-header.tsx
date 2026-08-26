@@ -5,8 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ThemeToggle } from "./theme-toggle";
+import { DEFAULT_NAV_ITEMS, type NavItemSetting } from "@/lib/nav-items";
 
 type SiteHeaderProps = {
+  /** 后台配置好的、已经过滤掉隐藏项的导航。缺省时用代码里的默认导航。 */
+  navItems?: NavItemSetting[];
   profileName?: string;
   profileTagline?: string;
   profileAvatarUrl?: string;
@@ -14,17 +17,6 @@ type SiteHeaderProps = {
   postCount?: number;
   photoCount?: number;
 };
-
-const NAV_ITEMS = [
-  { href: "/", label: "首页", icon: "⌂" },
-  { href: "/articles", label: "文章", icon: "✎" },
-  { href: "/series", label: "系列", icon: "≋" },
-  { href: "/world", label: "我的世界", icon: "◈" },
-  { href: "/photos", label: "相册", icon: "✦" },
-  { href: "/about", label: "关于我", icon: "◎" },
-  { href: "/projects", label: "项目", icon: "▤" },
-  { href: "/guestbook", label: "留言", icon: "✉" },
-];
 
 function isActive(pathname: string, href: string) {
   if (href === "/") return pathname === "/";
@@ -50,6 +42,7 @@ const SearchIcon = () => (
 );
 
 export function SiteHeader({
+  navItems,
   profileName = "LQPP",
   profileTagline = "Stay hungry, stay foolish.",
   profileAvatarUrl = "",
@@ -57,6 +50,7 @@ export function SiteHeader({
   postCount = 0,
   photoCount = 0,
 }: SiteHeaderProps) {
+  const items = navItems && navItems.length > 0 ? navItems : DEFAULT_NAV_ITEMS;
   const pathname = usePathname();
   const router = useRouter();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -111,9 +105,9 @@ export function SiteHeader({
           </Link>
 
           <div className="nav-links">
-            {NAV_ITEMS.map((item) => (
+            {items.map((item) => (
               <Link
-                key={item.href}
+                key={item.id}
                 href={item.href}
                 className={`nav-btn ${isActive(pathname, item.href) ? "active" : ""}`}
                 aria-current={isActive(pathname, item.href) ? "page" : undefined}
@@ -205,9 +199,9 @@ export function SiteHeader({
             </div>
 
             <div className="mobile-nav-links">
-              {NAV_ITEMS.map((item) => (
+              {items.map((item) => (
                 <Link
-                  key={item.href}
+                  key={item.id}
                   href={item.href}
                   className={`mobile-nav-link ${isActive(pathname, item.href) ? "active" : ""}`}
                   aria-current={isActive(pathname, item.href) ? "page" : undefined}

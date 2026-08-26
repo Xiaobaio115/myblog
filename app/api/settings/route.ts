@@ -8,9 +8,11 @@ import {
   getTravelSetting,
   getWorldSectionsSetting,
   getHomeHeroSetting,
+  getNavSetting,
   saveSetting,
   normalizeHomeHeroSetting,
 } from "@/lib/settings";
+import { normalizeNavSetting, MAX_NAV_ITEMS } from "@/lib/nav-items";
 import { verifyAdminPassword } from "@/lib/admin-session";
 
 export const runtime = "nodejs";
@@ -26,7 +28,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "密码错误。" }, { status: 401 });
     }
 
-    const [profile, socials, skills, education, projects, travel, world, homeHero] = await Promise.all([
+    const [profile, socials, skills, education, projects, travel, world, homeHero, nav] = await Promise.all([
       getProfileSetting(),
       getSocialsSetting(),
       getSkillsSetting(),
@@ -35,9 +37,10 @@ export async function GET(request: Request) {
       getTravelSetting(),
       getWorldSectionsSetting(),
       getHomeHeroSetting(),
+      getNavSetting(),
     ]);
 
-    return NextResponse.json({ profile, socials, skills, education, projects, travel, world, homeHero });
+    return NextResponse.json({ profile, socials, skills, education, projects, travel, world, homeHero, nav });
   } catch (error) {
     console.error("GET /api/settings error:", error);
     return NextResponse.json({ error: "读取设置失败。" }, { status: 500 });
@@ -59,9 +62,21 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const { key, value } = body as { key: string; value: unknown };
 
-    const allowed = ["profile", "socials", "skills", "education", "projects", "travel", "world", "homeHero"];
+    const allowed = ["profile", "socials", "skills", "education", "projects", "travel", "world", "homeHero", "nav"];
     if (!allowed.includes(key)) {
       return NextResponse.json({ error: "不支持的设置 key。" }, { status: 400 });
+    }
+
+    if (key === "nav") {
+      const normalizedNav = normalizeNavSetting(value);
+      if (!normalizedNav) {
+        return NextResponse.json(
+          { error: `导航栏数据不正确：至多 ${MAX_NAV_ITEMS} 项，每项都要有名称、站内路径（以 / 开头），且至少保留一项显示。` },
+          { status: 400 }
+        );
+      }
+      await saveSetting(key, normalizedNav);
+      return NextResponse.json({ success: true });
     }
 
     const nextValue = key === "homeHero" ? normalizeHomeHeroSetting(value) : value;

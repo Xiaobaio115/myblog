@@ -1,4 +1,5 @@
 import { getDb } from "@/lib/mongodb";
+import { resolveNavItems, type NavItemSetting } from "@/lib/nav-items";
 import { profile as defaultProfile, socials as defaultSocials, skills as defaultSkills, education as defaultEducation } from "@/data/profile";
 import { projects as defaultProjects } from "@/data/projects";
 import { travelDestinations as defaultTravel, worldSections as defaultWorldSections } from "@/data/world";
@@ -76,6 +77,7 @@ export type AllSettings = {
   travel: TravelItem[];
   world: WorldSectionSetting[];
   homeHero: HomeHeroSlideSetting[];
+  nav: NavItemSetting[];
 };
 
 async function get<T>(key: string, fallback: T): Promise<T> {
@@ -225,6 +227,12 @@ export async function getHomeHeroSetting(): Promise<HomeHeroSlideSetting[]> {
   });
 
   return normalized.length > 0 ? normalized : DEFAULT_HOME_HERO_SLIDES;
+}
+
+export async function getNavSetting(): Promise<NavItemSetting[]> {
+  // 传 null 让 resolveNavItems 走同一条回落分支：没配过和配坏了应该看到同样的导航栏。
+  const stored = await get<unknown>("nav", null);
+  return resolveNavItems(stored);
 }
 
 export async function saveSetting(key: string, value: unknown): Promise<void> {

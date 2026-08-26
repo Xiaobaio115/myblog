@@ -248,6 +248,21 @@ img {
   transform: translateY(-1px);
 }
 
+/*
+  960px 以下导航链接整体收进抽屉，这一段只管 961~1100px 这条窄带：
+  默认九项在这里会挤到换行、把导航栏顶高一截。收紧内边距和间距让它留在一行，
+  文字大小不动——那才是真正影响可读性的东西。
+*/
+@media (min-width: 961px) and (max-width: 1100px) {
+  .nav-links {
+    gap: 4px;
+  }
+
+  .nav-btn {
+    padding: 10px 11px;
+  }
+}
+
 .hero {
   padding: 78px 0 34px;
   text-align: center;
@@ -3580,6 +3595,14 @@ html, body {
 }
 
 .mobile-nav-drawer {
+  /*
+    导航项数量现在由后台决定（最多 20 项），抽屉必须能滚。
+    做成 flex 列：品牌行和头像块固定，链接区吃掉剩余高度并自己滚动，
+    这样加再多项也不会有够不着的入口——抽屉打开时 body 的滚动是锁住的，
+    页面级滚动救不了它。
+  */
+  display: flex;
+  flex-direction: column;
   width: min(300px, 82vw);
   height: 100%;
   padding: 18px;
@@ -3593,6 +3616,7 @@ html, body {
 
 .mobile-nav-brand {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 28px;
@@ -3616,6 +3640,7 @@ html, body {
 
 .mobile-nav-profile {
   display: flex;
+  flex-shrink: 0;
   flex-direction: column;
   align-items: center;
   gap: 5px;
@@ -3681,6 +3706,15 @@ html, body {
 .mobile-nav-links {
   display: grid;
   gap: 6px;
+  /* min-height: 0 是关键：flex 子项默认不肯缩到内容高度以下，少了它 overflow 不生效。 */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  /* 滚动条压在圆角链接上不好看，留一点内缩 */
+  padding-right: 2px;
+  scrollbar-width: thin;
 }
 
 .mobile-nav-link {

@@ -22,7 +22,20 @@ function isSafeLink(value: string) {
   }
 }
 
+/**
+ * 允许内联展示的图片 data URL。
+ *
+ * 未配置 Blob 时，模型生成的图片会以 base64 内联进正文，不放开这一条的话
+ * 图片会被降级成一行 alt 文字——功能看着像坏了，实际是被这里挡掉的。
+ *
+ * 类型白名单和 base64 形状都要卡死：这段文本名义上来自模型，
+ * 但真正的信任边界在这里，不能假设上游已经校验过。
+ * 尤其不能放开 svg，它能携带可执行脚本。
+ */
+const SAFE_INLINE_IMAGE = /^data:image\/(?:png|jpeg|webp|gif);base64,(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/i;
+
 function isSafeImage(value: string) {
+  if (SAFE_INLINE_IMAGE.test(value.trim())) return true;
   try {
     const url = new URL(value, INTERNAL_ORIGIN);
     if (value.startsWith("/") && !value.startsWith("//")) return true;

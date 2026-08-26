@@ -16,11 +16,14 @@ import type {
 } from "@/lib/settings";
 import { adminFetch } from "@/lib/admin-api";
 import { HomeHeroForm } from "./home-hero-form";
+import { NavForm } from "./nav-form";
+import { resolveNavItems } from "@/lib/nav-items";
 
-type Tab = "profile" | "homeHero" | "socials" | "skills" | "education" | "projects" | "travel" | "world";
+type Tab = "profile" | "nav" | "homeHero" | "socials" | "skills" | "education" | "projects" | "travel" | "world";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "profile", label: "👤 个人信息" },
+  { key: "nav", label: "☰ 导航栏" },
   { key: "homeHero", label: "▣ 首页轮播" },
   { key: "socials", label: "🔗 社交链接" },
   { key: "skills", label: "🛠 技能栈" },
@@ -125,6 +128,15 @@ export default function AdminSettingsPage() {
                   saving={saving}
                   onChange={(v) => setSettings({ ...settings, profile: v })}
                   onSave={(v) => saveSection("profile", v)}
+                />
+              )}
+              {tab === "nav" && (
+                <NavForm
+                  // 走 resolveNavItems 而不是直接用返回值：老数据里没有的新入口能在后台直接看到。
+                  value={resolveNavItems(settings.nav)}
+                  saving={saving}
+                  onChange={(v) => setSettings({ ...settings, nav: v })}
+                  onSave={(v) => saveSection("nav", v)}
                 />
               )}
               {tab === "homeHero" && (

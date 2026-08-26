@@ -43,8 +43,11 @@ type PublicAiModel = {
   id: string;
   label: string;
   providerLabel: string;
+  /** 能看图（输入） */
   supportsVision: boolean;
   supportsReasoning: boolean;
+  /** 能画图（输出）。和 supportsVision 是两件独立能力，别混用。 */
+  supportsImageOutput: boolean;
 };
 
 type ConversationSummary = {
@@ -969,7 +972,7 @@ export default function AiChatPage({ developerMode = false }: { developerMode?: 
             <label className={styles.sidebarModeSelect}>
               <span>使用模型</span>
               <select value={modelId} disabled={sending} onChange={(event) => handleModelChange(event.target.value)}>
-                {models.map((model) => <option value={model.id} key={model.id}>{model.providerLabel} · {model.label}{model.supportsVision ? " · 视觉" : ""}</option>)}
+                {models.map((model) => <option value={model.id} key={model.id}>{model.providerLabel} · {model.label}{model.supportsVision ? " · 视觉" : ""}{model.supportsImageOutput ? " · 生图" : ""}</option>)}
               </select>
             </label>
           ) : null}
@@ -1153,7 +1156,20 @@ export default function AiChatPage({ developerMode = false }: { developerMode?: 
               </label>
             ) : null}
             <ThemeToggle />
-            <Link href={developerMode ? "/admin" : "/"} className={styles.closeLink} aria-label={developerMode ? "返回后台" : "返回博客"} title={developerMode ? "返回后台" : "返回博客"}>×</Link>
+            {/*
+              /ai 是全屏页，不套 SiteFrame，所以没有站点导航栏。
+              这里原来只有一个「×」，容易被读成「关掉当前弹窗」而不是「离开这个页面回站点」。
+              换成箭头加文字，去处写明白；窄屏没有横向余量，文字由 CSS 收起，退回纯图标。
+            */}
+            <Link
+              href={developerMode ? "/admin" : "/"}
+              className={`${styles.closeLink} ${styles.exitLink}`}
+              aria-label={developerMode ? "返回后台" : "返回博客"}
+              title={developerMode ? "返回后台" : "返回博客"}
+            >
+              <span aria-hidden="true">←</span>
+              <span className={styles.exitLabel}>{developerMode ? "后台" : "回博客"}</span>
+            </Link>
           </div>
         </header>
 
